@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element db_object_id="5c4ea7c41b85ca1030d6fdd49b4bcb9a" label="Job Log Table Chunks" max_length="40" name="x_snc_instanc_sync_job_log_table_chunks" type="collection">
+        <element label="Chunk" max_length="40" name="chunk" type="integer"/>
+        <element label="End Time" max_length="40" name="end_time" type="glide_date_time"/>
+        <element label="Job Log Table" max_length="32" name="job_log_table" reference="x_snc_instanc_sync_job_log_table" type="reference"/>
+        <element display="true" label="Name" max_length="255" name="name" type="string"/>
+        <element label="Offset" max_length="40" name="offset" type="integer"/>
+        <element label="Start Time" max_length="40" name="start_time" type="glide_date_time"/>
+        <element choice="1" label="Status" max_length="40" name="status" type="choice">
+            <choice/>
+        </element>
+        <index name="index">
+            <element name="job_log_table"/>
+        </index>
+    </element>
+</database>

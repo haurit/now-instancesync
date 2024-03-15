@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element db_object_id="06dbab041b85ca1030d6fdd49b4bcb75" label="Job Log" max_length="40" name="x_snc_instanc_sync_job_log" type="collection">
+        <element label="End Time" max_length="40" name="end_time" type="glide_date_time"/>
+        <element label="Job Config" max_length="32" name="job_config" reference="x_snc_instanc_sync_job_config" type="reference"/>
+        <element display="true" label="Name" max_length="255" name="name" type="string"/>
+        <element label="Start Time" max_length="40" name="start_time" type="glide_date_time"/>
+        <element choice="1" default="not_started" label="Status" max_length="40" name="status" type="choice">
+            <choice/>
+        </element>
+        <index name="index">
+            <element name="job_config"/>
+        </index>
+    </element>
+</database>
