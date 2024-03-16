@@ -3,10 +3,15 @@
         <element label="Basetable" max_length="32" name="basetable" reference="sys_db_object" type="reference"/>
         <element label="End Time" max_length="40" name="end_time" type="glide_date_time"/>
         <element label="Job Log" max_length="32" name="job_log" reference="x_snc_instanc_sync_job_log" type="reference"/>
-        <element label="Name" max_length="255" name="name" type="string"/>
+        <element calculation="(function calculatedFieldValue(current) {&#13;&#10;&#13;&#10;&#9;return current.getDisplayValue('table') + '_' + current.getDisplayValue('start_time');&#13;&#10;&#13;&#10;})(current);" label="Name" max_length="255" name="name" type="string" virtual="true"/>
         <element label="Start Time" max_length="40" name="start_time" type="glide_date_time"/>
-        <element choice="1" label="Status" max_length="40" name="status" type="choice">
-            <choice/>
+        <element choice="3" default="not_started" label="Status" max_length="40" name="status" read_only="true" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Not started" sequence="100" value="not_started"/>
+                <element inactive_on_update="false" label="Running" sequence="200" value="running"/>
+                <element inactive_on_update="false" label="Completed" sequence="300" value="completed"/>
+                <element inactive_on_update="false" label="Cancelled" sequence="400" value="cancelled"/>
+            </choice>
         </element>
         <element label="Table" max_length="32" name="table" reference="sys_db_object" type="reference"/>
         <index name="index">

@@ -3,11 +3,19 @@
         <element label="Chunk" max_length="40" name="chunk" type="integer"/>
         <element label="End Time" max_length="40" name="end_time" type="glide_date_time"/>
         <element label="Job Log Table" max_length="32" name="job_log_table" reference="x_snc_instanc_sync_job_log_table" type="reference"/>
-        <element display="true" label="Name" max_length="255" name="name" type="string"/>
+        <element calculation="(function calculatedFieldValue(current) {&#13;&#10;&#13;&#10;&#9;return current.getDisplayValue('job_log_table') + '_' + current.getValue('chunk');&#13;&#10;&#13;&#10;})(current);" display="true" label="Name" max_length="255" name="name" type="string" virtual="true"/>
         <element label="Offset" max_length="40" name="offset" type="integer"/>
         <element label="Start Time" max_length="40" name="start_time" type="glide_date_time"/>
-        <element choice="1" label="Status" max_length="40" name="status" type="choice">
-            <choice/>
+        <element choice="3" default="not_started" label="Status" max_length="40" name="status" type="choice">
+            <choice>
+                <element inactive_on_update="false" label="Not started" sequence="100" value="not_started"/>
+                <element inactive_on_update="false" label="Running" sequence="200" value="running"/>
+                <element inactive_on_update="false" label="Completed" sequence="300" value="completed"/>
+                <element inactive_on_update="false" label="Pending retry" sequence="400" value="pending_retry"/>
+                <element inactive_on_update="false" label="Failed" sequence="500" value="failed"/>
+                <element inactive_on_update="false" label="Cancelled" sequence="600" value="cancelled"/>
+                <element inactive_on_update="false" label="Pending children" sequence="700" value="pending_children"/>
+            </choice>
         </element>
         <index name="index">
             <element name="job_log_table"/>
