@@ -17,12 +17,12 @@ JobRunner.prototype = {
 	runTrigger: function (grCopyJobLogTableChunk) {
 		var dtNow = new GlideDateTime();
 		var sChunkId = grCopyJobLogTableChunk.getUniqueValue();
-		var grCopyJobLog = new GlideRecord('x_tsigh_platform_m_copy_job_log');
-		var grCopyJobLogTable = new GlideRecord('x_tsigh_platform_m_copy_job_log_table');
+		var grCopyJobLog = new GlideRecord('x_snc_instanc_sync_job_log');
+		var grCopyJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
 		if ((grCopyJobLog.get(grCopyJobLogTableChunk.getValue('copy_job_log'))) && (grCopyJobLogTable.get(grCopyJobLogTableChunk.getValue('copy_job_log_table')))) {
 			var sTableId = grCopyJobLogTable.getValue('table');
 			var sTableName = (sTableId) ? String(grCopyJobLogTable.table.name) : '';
-			var grCopyJobConfig = new GlideRecord('x_tsigh_platform_m_copy_job_config');
+			var grCopyJobConfig = new GlideRecord('x_snc_instanc_sync_job_config');
 			if ((grCopyJobConfig.get(grCopyJobLog.getValue('copy_job_config'))) && (sTableName)) {
 				grCopyJobLogTableChunk.setValue('start_time', dtNow);
 				var _ConnectionHandler = new CopyJobConnectionHandler(grCopyJobConfig);
@@ -146,7 +146,7 @@ JobRunner.prototype = {
 	}, // function runTrigger
 
 	_writeRecordError: function (sTableId, sRecordSysId, sRecordName, sErrorCode, sErrorMessage, grCopyJobLogTableChunk) {
-		var grError = new GlideRecord('x_tsigh_platform_m_copy_job_error');
+		var grError = new GlideRecord('x_snc_instanc_sync_job_error');
 		grError.setValue('copy_job_log', grCopyJobLogTableChunk.getValue('copy_job_log'));
 		grError.setValue('copy_job_log_table', grCopyJobLogTableChunk.getValue('copy_job_log_table'));
 		grError.setValue('copy_job_log_table_chunk', grCopyJobLogTableChunk.getUniqueValue());
@@ -192,13 +192,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>1</sys_mod_count>
+        <sys_mod_count>2</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-16 06:30:54</sys_updated_on>
+        <sys_updated_on>2024-03-17 17:21:49</sys_updated_on>
     </sys_script_include>
 </record_update>

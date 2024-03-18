@@ -2,6 +2,7 @@
     <element db_object_id="5c4ea7c41b85ca1030d6fdd49b4bcb9a" label="Job Log Table Chunks" max_length="40" name="x_snc_instanc_sync_job_log_table_chunks" type="collection">
         <element label="Chunk" max_length="40" name="chunk" type="integer"/>
         <element label="End Time" max_length="40" name="end_time" type="glide_date_time"/>
+        <element label="Job Log" max_length="32" name="job_log" read_only="true" reference="x_snc_instanc_sync_job_log" type="reference"/>
         <element label="Job Log Table" max_length="32" name="job_log_table" reference="x_snc_instanc_sync_job_log_table" type="reference"/>
         <element calculation="(function calculatedFieldValue(current) {&#13;&#10;&#13;&#10;&#9;return current.getDisplayValue('job_log_table') + '_' + current.getValue('chunk');&#13;&#10;&#13;&#10;})(current);" display="true" label="Name" max_length="255" name="name" type="string" virtual="true"/>
         <element label="Offset" max_length="40" name="offset" type="integer"/>
@@ -18,6 +19,9 @@
             </choice>
         </element>
         <index name="index">
+            <element name="job_log"/>
+        </index>
+        <index name="index2">
             <element name="job_log_table"/>
         </index>
     </element>

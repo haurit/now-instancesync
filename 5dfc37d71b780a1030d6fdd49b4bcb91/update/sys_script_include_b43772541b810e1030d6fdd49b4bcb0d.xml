@@ -17,6 +17,7 @@ JobController.prototype = {
 		this._gt = new global.GlobalTools();
 		this._gtArray = new global.GlobalToolsArray();
 		this._gtObject = new global.GlobalToolsObject();
+		this._gtTable = new global.GlobalToolsTable();
 		this._gtRecordRead = new global.GlobalToolsRecordRead();
 		this._gtRecordWriteValidate = new global.GlobalToolsRecordWriteValidate();
 		this._gtAttachment = new global.GlobalToolsAttachment();
@@ -27,19 +28,6 @@ JobController.prototype = {
 		this._gdDigest = new GlideDigest();
 		this._grJobConfig = grJobConfig;
 		this._sJobCfgId = grJobConfig.getUniqueValue();
-		/*
-		this._NOWCOTools = new global.NOWCOTools();
-		this.oConfig = {
-			'bLog': this.bLog, // extensive logging
-			'bNoAutoSysFields': true, // true = do not set system fields / false = do set system fields like created by, created, updated etc.
-			'bNoWorkflow': true, // true = do not run business rules / false = run business rules
-			'bNoDomain': true, // true = pass a no domain query (if that is allowed by the user on the remote system) / false = use regular domain
-			'bKeepSysId': true, // true = keep the same system id / false = create a new system id on insert
-			'bNoEngine': true, // true = do not enforce data policy
-		}; // initial config
-		this.iAvailableTriggers = 30;
-		this.iDefaultChunkSize = 2000;
-		*/
 	}, // function initialize
 
 	insertJob: function () {
@@ -173,8 +161,9 @@ JobController.prototype = {
 		return bSuccess;
 	}, // function setStatus
 
-	initiateTables: function (grJobLog) {
+	initiateJob: function (grJobLog) {
 		var bSuccess = false;
+		var bConfigIsObject = false;
 		var sTableQuery = this._getValue('sTableQuery', '');
 		var aTables = this._getValue('aTables', []);
 		var oTables = this._getValue('oTables', {});
@@ -184,6 +173,7 @@ JobController.prototype = {
 		if ((!sTableQuery) && (this._gt.getType(oTables) == 'object')) {
 			var aObjectKeys = Object.keys(oTables);
 			if (this._gtArray.isValidArray(aObjectKeys)) {
+				bConfigIsObject = true;
 				sTableQuery = 'nameIN' + aObjectKeys.join(',');
 			} // if object keys
 		} // if no query
@@ -191,96 +181,97 @@ JobController.prototype = {
 			var grTable = this._gtRecordRead.getRecords('sys_db_object', sTableQuery);
 			if ((grTable) && (grTable.hasNext())) {
 				bSuccess = true;
+				var sTableId = '';
+				var sTableName = '';
+				var sQuery = '';
 				while (grTable.next()) {
-					gs.info('tomtom found table: ' + grTable.getValue('name'));
+					sTableId = grTable.getUniqueValue();
+					sTableName = grTable.getValue('name');
+					if (bConfigIsObject) {
+						sQuery = this._getValue(sTableName, '', oTables);
+					} else {
+						var _getCfg = new x_snc_json_cfg_mgr.getCfg(this._getValue('sTableJSONPrefix', '') + sTableName);
+						if (_getCfg) {
+							sQuery = _getCfg.getValue('config/sQuery', '');
+						} // if config per table
+					} // if config obj
+					var bSplitTables = false;
+					var aTableExtensions = this._gtTable.getTableExtensions(sTableName);
+					if (this._gtArray.isValidArray(aTableExtensions)) {
+						var grTarget = new GlideRecord(sTableName);
+						if (grTarget.isValidField('sys_class_name')) {
+							if (this._getValue('bTableAutoExtend', true) === true) {
+								if (this._getValue('bDeltaLoad', true) === true) {
+									sQuery = this.calcDeltaLoadQuery(sTableName, sQuery, true, grJobLog);
+								} // if delta load query
+								var oTableCount = this._gtRESTAPI.doNOWRESTCount(sTableName, sQuery, 'sys_class_name');
+								if ((oTableCount) && (Object.keys(oTableCount).length > 0)) {
+									Object.keys(oTableCount).forEach(function (sTableCountName) {
+										bSplitTables = true;
+										sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableCountName);
+										if (oTableCount[sTableCountName] > 0) {
+											var sTableCountId = this._gtRecordRead.getSysIdByQuery('sys_db_object', 'name=' + sTableCountName);
+											this.initiateTable(sTableCountId, sTableCountName, sQuery, oTableCount[sTableCountName], grJobLog);
+										} // if table count
+									}, this); // each count
+								} else {
+									gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
+								} // if table count
+							} else {
+								sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableName);
+							} // if table calc extend tables
+						} // if has class field
+					} // if extentions
+					if (!bSplitTables) {
+						if (this._getValue('bDeltaLoad', true) === true) {
+							sQuery = this.calcDeltaLoadQuery(sTableName, sQuery, false, grJobLog);
+						} // if delta load query
+						var iTableCount = this._gtRESTAPI.doNOWRESTCount(sTableName, sQuery);
+						gs.info('tomtom table: ' + sTableName + ' (' + sTableId + ') with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
+						if (!iTableCount) {
+							gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
+						} else if (iTableCount > 0) {
+							this.initiateTable(sTableId, sTableName, sQuery, iTableCount, grJobLog);
+						} // if table count
+					} // if not split tables
 				} // while table
 			} // if table
 		} // if table query
 		if (!bSuccess) {
-			gs.error('JobController.initiateTables failed to because no valid table is found for job log ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')');
+			gs.error('JobController.initiateJob failed to initiate tables because no valid table is found for job log ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')');
 		} // if not success
-
-		// TODO use JSON
-		/*
-				var grCloneDataConfig = new GlideRecord('x_tsigh_platform_m_clone_data_config');
-				if (grJobConfig.getValue('condition')) {
-					grCloneDataConfig.addEncodedQuery(grJobConfig.getValue('condition'));
-				} // if condition
-				grCloneDataConfig.query();
-				while (grCloneDataConfig.next()) {
-					var sTableId = grCloneDataConfig.getValue('table');
-					var sTableName = grCloneDataConfig.getValue('table_field');
-					var sQuery = '';
-					var grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
-					grJobLogTable.setValue('job_log', grJobLog.getUniqueValue());
-					grJobLogTable.setValue('basetable', sTableId);
-					if (grJobConfig.getValue('profile') == 'Job_condition') {
-						sQuery = grCloneDataConfig.getValue('data_job_condition');
-					} else {
-						sQuery = grCloneDataConfig.getValue('profile_' + grJobConfig.getValue('profile') + '_preserve_condition');
-					} // if copy job profile
-					sQuery = ((sQuery) && (sQuery != 'true')) ? sQuery : '';
-					grJobLogTable.setValue('condition', sQuery);
-					grJobLogTable.setValue('scheduled', grJobConfig.getValue('schedule_chunks_in_background'));
-					if ((grCloneDataConfig.getValue('preserve_action') == 'insert_only') || ((grCloneDataConfig.getValue('preserve_action') == 'default') && (grJobConfig.getValue('action') == 'insert_only'))) {
-						grJobLogTable.setValue('update', false);
-					} else if ((grCloneDataConfig.getValue('preserve_action') == 'update_only') || ((grCloneDataConfig.getValue('preserve_action') == 'default') && (grJobConfig.getValue('action') == 'update_only'))) {
-						grJobLogTable.setValue('insert', false);
-					} // if action
-					if (grCloneDataConfig.getValue('preserve_attachments') == '1') {
-						grJobLogTable.setValue('attachment', true);
-					} // if table attachments
-					var aTableExtensions = this._NOWCOTools.getTableExtensions(sTableName);
-					var bSplitTables = false;
-					if ((aTableExtensions) && (aTableExtensions.length > 0)) {
-						var grTarget = new GlideRecord(sTableName);
-						if (grTarget.isValidField('sys_class_name')) {
-							var oTableCount = _ConnectionHandler.doRESTCount(sTableName, sQuery, 'sys_class_name');
-							if ((oTableCount) && (Object.keys(oTableCount).length > 0)) {
-								Object.keys(oTableCount).forEach(function (sTableCountName) {
-									bSplitTables = true;
-									var aQuery = [];
-									sQuery.split('^NQ').forEach(function (sORQuery) {
-										aQuery.push('sys_class_name=' + sTableCountName + '^' + sORQuery);
-									}, this); // each big or query
-									//gs.info('tomtom 2 sTableName: ' + sTableName + ' sTableCountName: ' + sTableCountName + ' count: ' + oTableCount[sTableCountName] + ' sQuery: ' + aQuery.join('^NQ'));
-									if (oTableCount[sTableCountName] > 0) {
-										this.initiateTable('', sTableCountName, aQuery.join('^NQ'), oTableCount[sTableCountName], grJobConfig, grJobLog, grJobLogTable, _ConnectionHandler);
-									} // if table count
-								}, this); // each count
-							} else {
-								gs.error('JobController.initiateTables count failed for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
-							} // if table count
-						} // if target has class field
-					} // if table has extention
-					if (!bSplitTables) {
-						var iTableCount = _ConnectionHandler.doRESTCount(sTableName, sQuery);
-						if (!iTableCount) {
-							gs.error('JobController.initiateTables count failed for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
-						} else if (iTableCount > 0) {
-							this.initiateTable(sTableId, sTableName, sQuery, iTableCount, grJobConfig, grJobLog, grJobLogTable, _ConnectionHandler);
-						} // if table count
-					} // if not split tables
-				} // while clone data config
-				*/
 		return bSuccess;
-	}, // function initiateTables
+	}, // function initiateJob
 
-	initiateTable: function (sTableId, sTableName, sQuery, iTableCount, grJobConfig, grJobLog, grJobLogTable, _ConnectionHandler) {
-		if (!sTableId) {
-			sTableId = this._getTableFieldNameOrId(sTableName, true);
-		} // if not tableid
+	calcDeltaLoadQuery: function (sTableName, sQuery, bTableAutoExtend, grJobLog) {
+		// bTableAutoExtend = get max timespan from last job end - 1 + new job start
+		// else take only table specific timestamps
+		var sDeltaQuery = '';
+		var dtStartTime = new GlideDateTime();
+		dtStartTime.setNumericValue(0);
+		var dtEndTime = new GlideDateTime(grJobLog.getValue('start_time'));
+		sDeltaQuery = 'sys_updated_onBETWEEN' + dtStartTime + '@' + dtEndTime;
+		sQuery = this._gtRecordRead.combineQueries(sQuery, sDeltaQuery);
+		return sQuery;
+	}, // function 
+
+	initiateTable: function (sTableId, sTableName, sQuery, iTableCount, grJobLog) {
 		if (!gs.tableExists(sTableName)) {
 			gs.error('JobController.initiateTable table does not exists ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
 			return;
 		} // if table does not exist
+		gs.info('tomtom table: ' + sTableName + ' (' + sTableId + ') with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
+		/*
 		var grJobLogTableExist = new GlideRecord('x_snc_instanc_sync_job_log_table');
 		grJobLogTableExist.addEncodedQuery('job_log=' + grJobLog.getUniqueValue() + '^table=' + sTableId);
 		grJobLogTableExist.query();
 		if (!grJobLogTableExist.next()) {
+			var grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
+			grJobLogTable.setValue('job_log', grJobLog.getUniqueValue());
+			grJobLogTable.setValue('basetable', sTableId);
 			var sChunkSize = grJobConfig.getValue('chunk_size');
 			var iChunkSize = Number(sChunkSize);
-			iChunkSize = ((iChunkSize < 1) || (iChunkSize > 10000)) ? this.iDefaultChunkSize : iChunkSize;
+			iChunkSize = ((iChunkSize < 1) || (iChunkSize > 10000)) ? this._getValue('iDefaultChunkSize', 2000) : iChunkSize;
 			var iChunks = Math.ceil(iTableCount / iChunkSize);
 			grJobLogTable.setValue('table', sTableId);
 			grJobLogTable.setValue('condition', sQuery);
@@ -289,16 +280,17 @@ JobController.prototype = {
 			var dtNow = new GlideDateTime();
 			grJobLogTable.setValue('start_time', dtNow);
 			if (grJobLogTable.insert()) {
-				this.insertTableChunks(sTableId, sTableName, sQuery, iTableCount, iChunkSize, iChunks, grJobConfig, grJobLog, grJobLogTable, _ConnectionHandler);
+				this.insertTableChunks(sTableId, sTableName, sQuery, iTableCount, iChunkSize, iChunks, grJobLog, grJobLogTable);
 			} else {
 				gs.error('JobController.initiateTable failed to insert table job for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
 			} // if insert failed
 		} else {
 			gs.error('JobController.initiateTable table exists for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
 		} // if not exist
+		*/
 	}, // function initiateTable
 
-	insertTableChunks: function (sTableId, sTableName, sQuery, iTableCount, iChunkSize, iChunks, grJobConfig, grJobLog, grJobLogTable, _ConnectionHandler) {
+	insertTableChunks: function (sTableId, sTableName, sQuery, iTableCount, iChunkSize, iChunks, grJobLog, grJobLogTable) {
 		var grJobLogTableChunk = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
 		grJobLogTableChunk.addEncodedQuery('job_log_table=' + grJobLogTable.getUniqueValue());
 		grJobLogTableChunk.query();
@@ -311,8 +303,8 @@ JobController.prototype = {
 			for (var iChunk = 0; iChunk < iChunks; iChunk++) {
 				grJobLogTableChunk.setValue('chunk', iChunk);
 				grJobLogTableChunk.setValue('offset', iChunkSize * iChunk);
-				var iExpectedRecordCount = ((iChunkSize * iChunk) < (iTableCount - iChunkSize)) ? iChunkSize : iTableCount - (iChunkSize * iChunk);
-				grJobLogTableChunk.setValue('expected_record_count', iExpectedRecordCount);
+				//var iExpectedRecordCount = ((iChunkSize * iChunk) < (iTableCount - iChunkSize)) ? iChunkSize : iTableCount - (iChunkSize * iChunk);
+				//grJobLogTableChunk.setValue('expected_record_count', iExpectedRecordCount);
 				if (!grJobLogTableChunk.insert()) {
 					gs.error('JobController.insertTableChunks failed insert chunk with error: ' + grJobLogTableChunk.getLastErrorMessage());
 				} // if insert fails
@@ -425,19 +417,6 @@ JobController.prototype = {
 		} // while chunks
 	}, // function updateChunks
 
-	_getTableFieldNameOrId: function (sLookupValue, bId) {
-		var sLookupField = (bId) ? 'table_field' : 'table';
-		var sResultField = (bId) ? 'table' : 'table_field';
-		var grCloneDataConfig = new GlideRecord('x_tsigh_platform_m_clone_data_config');
-		if (grCloneDataConfig.get(sLookupField, sLookupValue)) {
-			return grCloneDataConfig.getValue(sResultField);
-		} // if found in clone data config
-		var sQuery = (bId) ? 'name=' + sLookupValue : 'sys_id=' + sLookupValue;
-		var grTable = this._NOWCOTools.getRecords('sys_db_object', sQuery, [], [], 1);
-		if ((grTable) && (grTable.next())) {
-			return (bId) ? grTable.getUniqueValue() : grTable.getValue('name');
-		} // if found in db object
-	}, // function _getTableFieldNameOrId
 
 	/* TODO: Error Codes as Choices
 	Chunk Errors
@@ -472,13 +451,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>30</sys_mod_count>
+        <sys_mod_count>49</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-16 17:07:34</sys_updated_on>
+        <sys_updated_on>2024-03-18 13:58:09</sys_updated_on>
     </sys_script_include>
 </record_update>
