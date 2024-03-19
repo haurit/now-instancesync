@@ -196,6 +196,76 @@
             <sys_user/>
             <type/>
         </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>parent_chunk</element>
+            <position>14</position>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-03-19 07:04:06</sys_created_on>
+            <sys_id>f9a96a5d1bcdce1030d6fdd49b4bcbd8</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table_chunks" sys_domain="global" view="Default view">bd96b41c1b89ca1030d6fdd49b4bcb39</sys_ui_section>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-03-19 07:04:06</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>expected_record_count</element>
+            <position>15</position>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-03-19 07:06:50</sys_created_on>
+            <sys_id>b54aee9d1bcdce1030d6fdd49b4bcb90</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table_chunks" sys_domain="global" view="Default view">bd96b41c1b89ca1030d6fdd49b4bcb39</sys_ui_section>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-03-19 07:06:50</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>successful_record_count</element>
+            <position>16</position>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-03-19 07:11:59</sys_created_on>
+            <sys_id>d17b2a511b01025030d6fdd49b4bcbdd</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table_chunks" sys_domain="global" view="Default view">bd96b41c1b89ca1030d6fdd49b4bcb39</sys_ui_section>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-03-19 07:11:59</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>no_operation_count</element>
+            <position>17</position>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-03-19 07:12:30</sys_created_on>
+            <sys_id>349b2e511b01025030d6fdd49b4bcb55</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table_chunks" sys_domain="global" view="Default view">bd96b41c1b89ca1030d6fdd49b4bcb39</sys_ui_section>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-03-19 07:12:30</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>error_code</element>
+            <position>18</position>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-03-19 07:32:03</sys_created_on>
+            <sys_id>8b0072951b01025030d6fdd49b4bcba5</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table_chunks" sys_domain="global" view="Default view">bd96b41c1b89ca1030d6fdd49b4bcb39</sys_ui_section>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-03-19 07:32:03</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
         <sys_ui_section action="INSERT_OR_UPDATE">
             <caption/>
             <header>false</header>

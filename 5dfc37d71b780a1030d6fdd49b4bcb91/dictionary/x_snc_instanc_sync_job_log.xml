@@ -4,7 +4,7 @@
         <element label="Job Config" max_length="32" name="job_config" reference="x_snc_instanc_sync_job_config" type="reference"/>
         <element calculation="(function calculatedFieldValue(current) {&#13;&#10;&#13;&#10;&#9;return current.job_config.getDisplayValue() + '_' + current.getDisplayValue('start_time');&#13;&#10;&#13;&#10;})(current);" display="true" label="Name" max_length="255" name="name" type="string" virtual="true"/>
         <element label="Start Time" max_length="40" name="start_time" type="glide_date_time"/>
-        <element choice="3" default="not_started" label="Status" max_length="40" name="status" read_only="true" type="choice">
+        <element choice="3" default="not_started" label="Status" max_length="40" name="status" type="choice">
             <choice>
                 <element inactive_on_update="false" label="Not started" sequence="100" value="not_started"/>
                 <element inactive_on_update="false" label="Running" sequence="200" value="running"/>

@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
     <sys_script_include action="INSERT_OR_UPDATE">
-        <access>package_private</access>
+        <access>public</access>
         <active>true</active>
         <api_name>x_snc_instanc_sync.JobRunner</api_name>
         <caller_access/>
@@ -15,6 +15,7 @@ JobRunner.prototype = {
 	}, // function initialize
 
 	runTrigger: function (grCopyJobLogTableChunk) {
+		gs.info('tomtom start runner');
 		var dtNow = new GlideDateTime();
 		var sChunkId = grCopyJobLogTableChunk.getUniqueValue();
 		var grCopyJobLog = new GlideRecord('x_snc_instanc_sync_job_log');
@@ -25,6 +26,7 @@ JobRunner.prototype = {
 			var grCopyJobConfig = new GlideRecord('x_snc_instanc_sync_job_config');
 			if ((grCopyJobConfig.get(grCopyJobLog.getValue('copy_job_config'))) && (sTableName)) {
 				grCopyJobLogTableChunk.setValue('start_time', dtNow);
+				/*
 				var _ConnectionHandler = new CopyJobConnectionHandler(grCopyJobConfig);
 				var sQuery = grCopyJobLogTable.getValue('condition');
 				var iChunkSize = Number(grCopyJobConfig.getValue('chunk_size'));
@@ -130,6 +132,7 @@ JobRunner.prototype = {
 					grCopyJobLogTableChunk.setValue('status', 'failed');
 					grCopyJobLogTableChunk.setValue('error_code', -102); // error scope is not writable
 				} // if scope is not writable and legacy access is false
+				*/
 			} else {
 				grCopyJobLogTableChunk.setValue('status', 'failed');
 				grCopyJobLogTableChunk.setValue('error_code', -101); // error loading copy job config or table name empty
@@ -140,12 +143,14 @@ JobRunner.prototype = {
 		} // if copy job table
 		dtNow = new GlideDateTime();
 		grCopyJobLogTableChunk.setValue('end_time', dtNow);
-		if (!grCopyJobLogTableChunk.update()) {
-			gs.error('CopyJobTrigger.runTrigger error writing chunk record: ' + sChunkId + ' Error: ' + grCopyJobLogTableChunk.getLastErrorMessage());
-		} // if error
+		//if (!grCopyJobLogTableChunk.update()) {
+		//	gs.error('CopyJobTrigger.runTrigger error writing chunk record: ' + sChunkId + ' Error: ' + grCopyJobLogTableChunk.getLastErrorMessage());
+		//} // if error
 	}, // function runTrigger
 
 	_writeRecordError: function (sTableId, sRecordSysId, sRecordName, sErrorCode, sErrorMessage, grCopyJobLogTableChunk) {
+		gs.info('tomtom write error not implemented yet.');
+		/*
 		var grError = new GlideRecord('x_snc_instanc_sync_job_error');
 		grError.setValue('copy_job_log', grCopyJobLogTableChunk.getValue('copy_job_log'));
 		grError.setValue('copy_job_log_table', grCopyJobLogTableChunk.getValue('copy_job_log_table'));
@@ -156,8 +161,10 @@ JobRunner.prototype = {
 		grError.setValue('error_code', sErrorCode);
 		grError.setValue('error_message', sErrorMessage);
 		grError.insert();
+		*/
 	}, // function _writeRecordError
 
+	/*
 	_doAttachment: function (sTargetTableName, sTargetId, oConfig, iOffset, _ConnectionHandler) {
 		var sQuery = '', sTableName = '';
 		iOffset = (iOffset) ? iOffset : 0;
@@ -182,23 +189,24 @@ JobRunner.prototype = {
 			}, this); // each record
 		} // if records
 	}, // function _doAttachment
+	*/
 
 	type: 'JobRunner',
 	version: '1.0.0',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
-	email: 'tom.hauri@servicenow.com',
+	email: 'tom@hauri.biz',
 };]]></script>
         <sys_class_name>sys_script_include</sys_class_name>
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>2</sys_mod_count>
+        <sys_mod_count>8</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-17 17:21:49</sys_updated_on>
+        <sys_updated_on>2024-03-19 08:03:42</sys_updated_on>
     </sys_script_include>
 </record_update>

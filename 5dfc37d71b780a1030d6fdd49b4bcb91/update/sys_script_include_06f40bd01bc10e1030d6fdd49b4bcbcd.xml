@@ -54,16 +54,14 @@ JobScheduler.prototype = {
 				if (grJobLog.getValue('status') == 'not_started') {
 					if (this.bLog) { gs.info('JobScheduler.runScheduler job not started: ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')'); }
 					if (_JobCtr.initiateJob(grJobLog)) {
-						/*
 						grJobLog.setValue('status', 'running');
 						if (!grJobLog.update()) {
 							gs.error('JobScheduler.runScheduler failed to update job log to running with error: ' + grJobLog.getLastErrorMessage());
 						} // if no success
-						*/
 					} // if success
 				} else {
 					if (this.bLog) { gs.info('JobScheduler.runScheduler job running: ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')'); }
-					sStatus = ''; // _JobCtr.updateTables(grJobLog);
+					sStatus = _JobCtr.updateTables(grJobLog);
 					if (sStatus) {
 						if (sStatus == 'completed') {
 							var dtNow = new GlideDateTime();
@@ -81,7 +79,7 @@ JobScheduler.prototype = {
 		} // while copy job
 		if (bHasOpenJobs) {
 			if (this.bLog) { gs.info('JobScheduler.runScheduler bHasOpenJobs: ' + bHasOpenJobs + ' iAvailableTriggers: ' + this.iAvailableTriggers); }
-			//this.manageTriggers();
+			this.manageTriggers();
 		} // if open jobs
 		if (this.bLog) { gs.info('JobScheduler.runScheduler ended'); }
 	}, // function runScheduler
@@ -138,11 +136,11 @@ JobScheduler.prototype = {
 		while (gaJobLogTableChunk.next()) {
 			iTargetOverloaded = Number(gaJobLogTableChunk.getAggregate('COUNT'));
 		} // while errors
-		if ((iTargetOverloaded > 1) && (iTargetOverloaded < 20)) {
+		if ((iTargetOverloaded > 1) && (iTargetOverloaded < 10)) {
 			iAvailableTriggers = iAvailableTriggers - iTargetOverloaded;
-		} else if (iTargetOverloaded > 20) {
-			iAvailableTriggers = iAvailableTriggers - 20;
-		} // if target overload 429 is more than 1 and is smaller 20
+		} else if (iTargetOverloaded > 10) {
+			iAvailableTriggers = iAvailableTriggers - 10;
+		} // if target overload 429 is more than 1 and is smaller 10
 		if (this.bLog) { gs.info('JobScheduler.manageTriggers iAvailableTriggers: ' + iAvailableTriggers + ' iRunningTriggers: ' + iRunningTriggers + ' iTargetOverloaded: ' + iTargetOverloaded); }
 		if (iAvailableTriggers > 1) {
 			var grJobLogTableChunk = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
@@ -178,19 +176,19 @@ JobScheduler.prototype = {
 	type: 'JobScheduler',
 	version: '1.0.0',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
-	email: 'tom.hauri@servicenow.com',
+	email: 'tom@hauri.biz',
 };]]></script>
         <sys_class_name>sys_script_include</sys_class_name>
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 06:32:06</sys_created_on>
         <sys_id>06f40bd01bc10e1030d6fdd49b4bcbcd</sys_id>
-        <sys_mod_count>30</sys_mod_count>
+        <sys_mod_count>34</sys_mod_count>
         <sys_name>JobScheduler</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_06f40bd01bc10e1030d6fdd49b4bcbcd</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-18 06:22:45</sys_updated_on>
+        <sys_updated_on>2024-03-19 08:04:09</sys_updated_on>
     </sys_script_include>
 </record_update>
