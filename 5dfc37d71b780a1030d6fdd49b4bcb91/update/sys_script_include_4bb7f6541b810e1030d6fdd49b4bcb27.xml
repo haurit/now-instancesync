@@ -1,0 +1,212 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>public</access>
+        <active>true</active>
+        <api_name>x_snc_instanc_sync.JobRunner</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <name>JobRunner</name>
+        <script><![CDATA[var JobRunner = Class.create();
+JobRunner.prototype = {
+	initialize: function () {
+		//this._NOWCOTools = new global.NOWCOTools();
+		this.iMaxRetryCount = 5;
+	}, // function initialize
+
+	runTrigger: function (grCopyJobLogTableChunk) {
+		gs.info('tomtom start runner');
+		var dtNow = new GlideDateTime();
+		var sChunkId = grCopyJobLogTableChunk.getUniqueValue();
+		var grCopyJobLog = new GlideRecord('x_snc_instanc_sync_job_log');
+		var grCopyJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
+		if ((grCopyJobLog.get(grCopyJobLogTableChunk.getValue('copy_job_log'))) && (grCopyJobLogTable.get(grCopyJobLogTableChunk.getValue('copy_job_log_table')))) {
+			var sTableId = grCopyJobLogTable.getValue('table');
+			var sTableName = (sTableId) ? String(grCopyJobLogTable.table.name) : '';
+			var grCopyJobConfig = new GlideRecord('x_snc_instanc_sync_job_config');
+			if ((grCopyJobConfig.get(grCopyJobLog.getValue('copy_job_config'))) && (sTableName)) {
+				grCopyJobLogTableChunk.setValue('start_time', dtNow);
+				/*
+				var _ConnectionHandler = new CopyJobConnectionHandler(grCopyJobConfig);
+				var sQuery = grCopyJobLogTable.getValue('condition');
+				var iChunkSize = Number(grCopyJobConfig.getValue('chunk_size'));
+				var iOffset = grCopyJobLogTableChunk.getValue('offset');
+				var iErrorCode = grCopyJobLogTableChunk.error_code;
+				if (Number(grCopyJobLogTableChunk.getValue('chunk')) == -1) {
+					iChunkSize = Number(grCopyJobLogTableChunk.getValue('expected_record_count'));
+				} // if split chunk
+				var sConfig = grCopyJobLog.getValue('config');
+				var oConfig = JSON.parse(sConfig);
+				oConfig['bInsert'] = (grCopyJobLogTable.getValue('insert') == '1') ? true : false;
+				oConfig['bUpdate'] = (grCopyJobLogTable.getValue('update') == '1') ? true : false;
+				var bAttachment = (grCopyJobLogTable.getValue('attachment') == '1') ? true : false;
+				oConfig['sTargetTable'] = sTableName;
+				oConfig['aQueryFields'] = ['sys_id'];
+				var iSuccessRecordCount = 0;
+				var iNoOpRecordCount = 0;
+				var iErrorCount = 0;
+				iErrorCode = -103; // undefined error
+				var oScopeInfo = this._NOWCOTools.getTableScopeInfo(sTableName);
+				var sScopeId = ((oScopeInfo) && (oScopeInfo.hasOwnProperty('id'))) ? oScopeInfo['id'] : '';
+				var bIsScopeWritable = ((oScopeInfo) && (oScopeInfo.hasOwnProperty('write'))) ? oScopeInfo['write'] : false;
+				bIsScopeWritable = (sScopeId == 'global') ? true : bIsScopeWritable;
+				var bLegacyCrossScopeAccessPolicyInScript = (gs.getProperty('glide.record.legacy_cross_scope_access_policy_in_script') == 'true') ? true : false;
+				if ((bIsScopeWritable) || (bLegacyCrossScopeAccessPolicyInScript)) {
+					try {
+						var aRecords = _ConnectionHandler.doRESTQuery(sTableName, sQuery, iOffset, iChunkSize);
+					} catch (oEx) {
+						aRecords = '';
+						if (String(oEx).indexOf('33554432') != -1) {
+							iErrorCode = -105;
+							gs.error('CopyJobTrigger.runTrigger sTableName: ' + sTableName + ' sChunkId: ' + sChunkId + ' iErrorCode: ' + iErrorCode + ' iChunkSize: ' + iChunkSize + ' iOffset: ' + iOffset + ' Error: ' + String(oEx));
+						} else {
+							iErrorCode = -104; // Undefined error during rest query
+							gs.error('CopyJobTrigger.runTrigger sTableName: ' + sTableName + ' error in rest query: ' + String(oEx));
+						} // if string to long
+					} // if catch
+					var sSysId = '', sName = '', sTargetId = '';
+					if ((aRecords) && (Array.isArray(aRecords)) && (aRecords.length > 0)) {
+						aRecords.forEach(function (oRecord) {
+							if (oRecord.hasOwnProperty('sys_id')) {
+								var oError = {};
+								sSysId = oRecord['sys_id'];
+								try {
+									if (bIsScopeWritable) {
+										sTargetId = this._NOWCOTools.doRecord(oRecord, oConfig, oError);
+									} else {
+										oConfig['bNoWorkflow'] = false; // not allowed in scoped apps
+										oConfig['bNoAutoSysFields'] = false; // not allowed in scoped apps
+										oConfig['bNoDomain'] = false; // not allowed in scoped apps
+										oConfig['bNoEngine'] = false; // not allowed in scoped apps
+										sTargetId = this._NOWCOTools.runFunctionInScope(this._NOWCOTools.doRecord.toString(), sScopeId, oRecord, oConfig, oError);
+									} // if scope is not writable try 
+									if ((oError.hasOwnProperty('code')) && (oError['code'] == '000')) {
+										iNoOpRecordCount++;
+									} else if (sTargetId) {
+										iSuccessRecordCount++;
+										if (bAttachment) {
+											this._doAttachment(sTableName, sTargetId, oConfig, 0, _ConnectionHandler);
+										} // if attachment
+									} else {
+										iErrorCount++;
+										sName = (oRecord.hasOwnProperty('number')) ? oRecord['number'] : '';
+										sName = (!sName) && (oRecord.hasOwnProperty('name')) ? oRecord['name'] : '';
+										if (oError.hasOwnProperty('code')) {
+											gs.error('CopyJobTrigger.runTrigger sTableName: ' + sTableName + ' sSysId: ' + sSysId + ' error writing record: ' + JSON.stringify(oError));
+											this._writeRecordError(sTableId, sSysId, sName, Number(oError['code']), oError['message'], grCopyJobLogTableChunk);
+										} else {
+											gs.error('CopyJobTrigger.runTrigger sTableName: ' + sTableName + ' sSysId: ' + sSysId + ' error writing record: No Error Details! aRecords: ' + aRecords.length);
+											this._writeRecordError(sTableId, sSysId, sName, -99, 'No error details', grCopyJobLogTableChunk);
+										} // if error code
+									} // if success
+								} catch (oEx) {
+									iErrorCount++;
+									//gs.error('CopyJobTrigger.runTrigger sTableName: ' + sTableName + ' error writing record: ' + String(oEx));
+									this._writeRecordError(sTableId, sSysId, '', -97, String(oEx), grCopyJobLogTableChunk);
+								} // if catch
+							} else {
+								iErrorCount++;
+								//gs.error('CopyJobTrigger.runTrigger sTableName: ' + sTableName + ' sSysId: empty oRecord: ' + JSON.stringify(oRecord));
+								this._writeRecordError(sTableId, '', '', -98, 'No SysId in Payload', grCopyJobLogTableChunk);
+							} // if no sys id
+						}, this); // each record
+						grCopyJobLogTableChunk.setValue('successful_record_count', iSuccessRecordCount);
+						grCopyJobLogTableChunk.setValue('no_operation_count', iNoOpRecordCount);
+						grCopyJobLogTableChunk.setValue('error_count', iErrorCount);
+						grCopyJobLogTableChunk.setValue('status', 'completed');
+						grCopyJobLogTableChunk.setValue('error_code', 0);
+					} else if (iErrorCode == -105) {
+						grCopyJobLogTableChunk.setValue('status', 'pending_retry');
+						grCopyJobLogTableChunk.setValue('error_code', -105); // error string size to big
+					} else {
+						var iCurrentRetryCount = Number(grCopyJobLogTableChunk.getValue('retry_count')) + 1;
+						var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
+						if ((aRecords) && (typeof aRecords == 'object') && (aRecords.hasOwnProperty('error_code'))) {
+							iErrorCode = aRecords['error_code'];
+						} // if has error code
+						grCopyJobLogTableChunk.setValue('status', sStatus);
+						grCopyJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
+						grCopyJobLogTableChunk.setValue('error_code', iErrorCode); // error no records
+					} // if records
+				} else {
+					grCopyJobLogTableChunk.setValue('status', 'failed');
+					grCopyJobLogTableChunk.setValue('error_code', -102); // error scope is not writable
+				} // if scope is not writable and legacy access is false
+				*/
+			} else {
+				grCopyJobLogTableChunk.setValue('status', 'failed');
+				grCopyJobLogTableChunk.setValue('error_code', -101); // error loading copy job config or table name empty
+			} // if no config
+		} else {
+			grCopyJobLogTableChunk.setValue('status', 'failed');
+			grCopyJobLogTableChunk.setValue('error_code', -100); // error loading copy job table or copy job
+		} // if copy job table
+		dtNow = new GlideDateTime();
+		grCopyJobLogTableChunk.setValue('end_time', dtNow);
+		//if (!grCopyJobLogTableChunk.update()) {
+		//	gs.error('CopyJobTrigger.runTrigger error writing chunk record: ' + sChunkId + ' Error: ' + grCopyJobLogTableChunk.getLastErrorMessage());
+		//} // if error
+	}, // function runTrigger
+
+	_writeRecordError: function (sTableId, sRecordSysId, sRecordName, sErrorCode, sErrorMessage, grCopyJobLogTableChunk) {
+		gs.info('tomtom write error not implemented yet.');
+		/*
+		var grError = new GlideRecord('x_snc_instanc_sync_job_error');
+		grError.setValue('copy_job_log', grCopyJobLogTableChunk.getValue('copy_job_log'));
+		grError.setValue('copy_job_log_table', grCopyJobLogTableChunk.getValue('copy_job_log_table'));
+		grError.setValue('copy_job_log_table_chunk', grCopyJobLogTableChunk.getUniqueValue());
+		grError.setValue('table', sTableId);
+		grError.setValue('remote_record_sysid', sRecordSysId);
+		grError.setValue('remote_record_display_name', sRecordName);
+		grError.setValue('error_code', sErrorCode);
+		grError.setValue('error_message', sErrorMessage);
+		grError.insert();
+		*/
+	}, // function _writeRecordError
+
+	/*
+	_doAttachment: function (sTargetTableName, sTargetId, oConfig, iOffset, _ConnectionHandler) {
+		var sQuery = '', sTableName = '';
+		iOffset = (iOffset) ? iOffset : 0;
+		if (sTargetTableName == 'sys_attachment_doc') {
+			sTableName = 'sys_attachment_doc';
+			sQuery = 'sys_attachment=' + sTargetId;
+		} else {
+			sTableName = 'sys_attachment';
+			sQuery = 'table_sys_id=' + sTargetId + '^table_name=' + sTargetTableName;
+		} // if docs
+		oConfig['sTargetTable'] = sTableName;
+		var aRecords = _ConnectionHandler.doRESTQuery(sTableName, sQuery, iOffset, 10000);
+		var sSysId = '', oError = {};
+		if ((aRecords) && (Array.isArray(aRecords)) && (aRecords.length > 0)) {
+			aRecords.forEach(function (oRecord) {
+				if (oRecord.hasOwnProperty('sys_id')) {
+					sTargetId = this._NOWCOTools.doRecord(oRecord, oConfig, oError);
+					if ((sTableName == 'sys_attachment') && ((sTargetId))) {
+						this._doAttachment('sys_attachment_doc', sTargetId, oConfig, 0, _ConnectionHandler);
+					} // if attachment
+				} // if sysid
+			}, this); // each record
+		} // if records
+	}, // function _doAttachment
+	*/
+
+	type: 'JobRunner',
+	version: '1.0.0',
+	author: 'ServiceNow Customer Outcomes, Tom Hauri',
+	email: 'tom@hauri.biz',
+};]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-03-16 05:32:21</sys_created_on>
+        <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
+        <sys_mod_count>8</sys_mod_count>
+        <sys_name>JobRunner</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-03-19 08:03:42</sys_updated_on>
+    </sys_script_include>
+</record_update>

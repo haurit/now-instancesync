@@ -1,0 +1,15 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element db_object_id="e2718c6f1b780a1030d6fdd49b4bcb4a" label="Job Config" max_length="40" name="x_snc_instanc_sync_job_config" type="collection">
+        <element label="Connection &amp; Credential Alias" max_length="32" name="connection_credential_alias" reference="sys_alias" type="reference"/>
+        <element label="Description" max_length="4000" name="description" type="string"/>
+        <element label="JSON Configuration" max_length="32" name="json_configuration" reference="x_snc_json_cfg_mgr_json_configuration" type="reference"/>
+        <element label="Name" max_length="100" name="name" type="string"/>
+        <element default="javascript:global.getNextObjNumberPadded();" display="true" label="Number" max_length="40" name="number" read_only="true" type="string"/>
+        <index name="index">
+            <element name="connection_credential_alias"/>
+        </index>
+        <index name="index2">
+            <element name="json_configuration"/>
+        </index>
+    </element>
+</database>

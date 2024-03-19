@@ -1,0 +1,194 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_snc_instanc_sync.JobScheduler</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <name>JobScheduler</name>
+        <script><![CDATA[var JobScheduler = Class.create();
+JobScheduler.prototype = {
+	initialize: function () {
+		this.bLog = false;
+		this._gt = new global.GlobalTools();
+		this._gtArray = new global.GlobalToolsArray();
+		this._gtObject = new global.GlobalToolsObject();
+		this.iAvailableTriggers = Number(gs.getProperty('x_snc_instanc_sync.available.triggers', 20));
+		if (isNaN(this.iAvailableTriggers)) {
+			this.iAvailableTriggers = 20;
+		} // if trigger is not a number set default
+		this.bSchedulerEnabled = Boolean(gs.getProperty('x_snc_instanc_sync.scheduler.enabled', false));
+	}, // function initialize
+
+	checkScheduler: function () {
+		if (this.bSchedulerEnabled !== true) {
+			if (this.bLog) { gs.info('JobScheduler.runScheduler not enabled, check property x_snc_instanc_sync.scheduler.enabled.'); }
+			return false;
+		} // if scheduler is not active
+		var grJobLog = new GlideRecord('x_snc_instanc_sync_job_log');
+		grJobLog.addEncodedQuery('status!=cancelled^status!=completed');
+		grJobLog.setLimit(1);
+		grJobLog.query();
+		if (grJobLog.hasNext()) {
+			return true;
+		} // if job
+	}, // function checkScheduler
+
+	runScheduler: function () {
+		if (this.bLog) { gs.info('JobScheduler.runScheduler started'); }
+		var sStatus = '';
+		var bHasOpenJobs = false;
+		var grJobLog = new GlideRecord('x_snc_instanc_sync_job_log');
+		grJobLog.addEncodedQuery('status!=completed^status!=cancelled');
+		grJobLog.orderByDesc('sys_created_on');
+		grJobLog.query();
+		while (grJobLog.next()) {
+			if (this.bLog) { gs.info('JobScheduler.runScheduler job found: ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')'); }
+			sStatus = '';
+			bHasOpenJobs = true;
+			var grJobConfig = new GlideRecord('x_snc_instanc_sync_job_config');
+			if (grJobConfig.get(grJobLog.getValue('job_config'))) {
+				if (this.bLog) { gs.info('JobScheduler.runScheduler job cfg found: ' + grJobConfig.getDisplayValue() + ' (' + grJobConfig.getUniqueValue() + ')'); }
+				var _JobCtr = new JobController(grJobConfig);
+				if (grJobLog.getValue('status') == 'not_started') {
+					if (this.bLog) { gs.info('JobScheduler.runScheduler job not started: ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')'); }
+					if (_JobCtr.initiateJob(grJobLog)) {
+						grJobLog.setValue('status', 'running');
+						if (!grJobLog.update()) {
+							gs.error('JobScheduler.runScheduler failed to update job log to running with error: ' + grJobLog.getLastErrorMessage());
+						} // if no success
+					} // if success
+				} else {
+					if (this.bLog) { gs.info('JobScheduler.runScheduler job running: ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')'); }
+					sStatus = _JobCtr.updateTables(grJobLog);
+					if (sStatus) {
+						if (sStatus == 'completed') {
+							var dtNow = new GlideDateTime();
+							grJobLog.setValue('end_time', dtNow);
+						} // if completed
+						grJobLog.setValue('status', sStatus);
+						if (!grJobLog.update()) {
+							gs.error('JobScheduler.runScheduler failed to update job log to status with error: ' + grJobLog.getLastErrorMessage());
+						} // if no success
+					} // if new status
+				} // if not started
+			} else {
+				gs.error('JobScheduler.runScheduler failed to find config for job: ' + grJobLog.getUniqueValue());
+			} // if copy job config
+		} // while copy job
+		if (bHasOpenJobs) {
+			if (this.bLog) { gs.info('JobScheduler.runScheduler bHasOpenJobs: ' + bHasOpenJobs + ' iAvailableTriggers: ' + this.iAvailableTriggers); }
+			this.manageTriggers();
+		} // if open jobs
+		if (this.bLog) { gs.info('JobScheduler.runScheduler ended'); }
+	}, // function runScheduler
+
+	manageTriggers: function () {
+		var iCurrentChunk = 0;
+		var iCurrentChunkSize = 0;
+		var iCurrentOffset = 0;
+		var iNewChunk = 0;
+		var iNewChunkSize = 0;
+		var iOffset = 0;
+		var grJobLogTableChunkSizeIssue = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
+		grJobLogTableChunkSizeIssue.addEncodedQuery('job_log.statusNOT INcompleted,cancelled^status=pending_retry^error_code=-105');
+		grJobLogTableChunkSizeIssue.query();
+		while (grJobLogTableChunkSizeIssue.next()) {
+			iCurrentChunk = Number(grJobLogTableChunkSizeIssue.getValue('chunk'));
+			iCurrentChunkSize = Number(grJobLogTableChunkSizeIssue.getValue('expected_record_count'));
+			iCurrentOffset = Number(grJobLogTableChunkSizeIssue.getValue('offset'));
+			iOffset = 0;
+			if (iCurrentChunkSize == 1) {
+				grJobLogTableChunkSizeIssue.setValue('status', 'failed');
+				if (!grJobLogTableChunkSizeIssue.update()) {
+					gs.error('JobScheduler.manageTriggers failed update chunk size issue to failed with error: ' + grJobLogTableChunkSizeIssue.getLastErrorMessage());
+				} // if update
+			} else {
+				iNewChunk = -1; // for all split chunks
+				iOffset = iCurrentOffset;
+				iNewChunkSize = Math.ceil(iCurrentChunkSize / 2);
+				this.createSplitChunk(grJobLogTableChunkSizeIssue.getValue('job_log'), grJobLogTableChunkSizeIssue.getValue('job_log_table'), grJobLogTableChunkSizeIssue.getUniqueValue(), iNewChunk, iNewChunkSize, iOffset);
+				iOffset = iCurrentOffset + iNewChunkSize;
+				iNewChunkSize = iCurrentChunkSize - iNewChunkSize;
+				this.createSplitChunk(grJobLogTableChunkSizeIssue.getValue('job_log'), grJobLogTableChunkSizeIssue.getValue('job_log_table'), grJobLogTableChunkSizeIssue.getUniqueValue(), iNewChunk, iNewChunkSize, iOffset);
+				grJobLogTableChunkSizeIssue.setValue('status', 'pending_children');
+				if (!grJobLogTableChunkSizeIssue.update()) {
+					gs.error('JobScheduler.manageTriggers failed update chunk size issue to pending children with error: ' + grJobLogTableChunkSizeIssue.getLastErrorMessage());
+				} // if update
+			} // if chunk bigger than 1
+		} // while size issues
+		var iAvailableTriggers = this.iAvailableTriggers;
+		var iRunningTriggers = 0;
+		var iTargetOverloaded = 0;
+		var gaTrigger = new GlideAggregate('sys_trigger');
+		gaTrigger.addEncodedQuery('document=xJoblogx^state!=-1');
+		gaTrigger.addAggregate('COUNT');
+		gaTrigger.query();
+		while (gaTrigger.next()) {
+			iRunningTriggers = gaTrigger.getAggregate('COUNT');
+		} // while status
+		iAvailableTriggers = iAvailableTriggers - iRunningTriggers;
+		var gaJobLogTableChunk = new GlideAggregate('x_snc_instanc_sync_job_log_table_chunks');
+		gaJobLogTableChunk.addEncodedQuery('job_log.statusNOT INcompleted,cancelled^status=pending_retry^error_code=429');
+		gaJobLogTableChunk.addAggregate('COUNT');
+		gaJobLogTableChunk.query();
+		while (gaJobLogTableChunk.next()) {
+			iTargetOverloaded = Number(gaJobLogTableChunk.getAggregate('COUNT'));
+		} // while errors
+		if ((iTargetOverloaded > 1) && (iTargetOverloaded < 10)) {
+			iAvailableTriggers = iAvailableTriggers - iTargetOverloaded;
+		} else if (iTargetOverloaded > 10) {
+			iAvailableTriggers = iAvailableTriggers - 10;
+		} // if target overload 429 is more than 1 and is smaller 10
+		if (this.bLog) { gs.info('JobScheduler.manageTriggers iAvailableTriggers: ' + iAvailableTriggers + ' iRunningTriggers: ' + iRunningTriggers + ' iTargetOverloaded: ' + iTargetOverloaded); }
+		if (iAvailableTriggers > 1) {
+			var grJobLogTableChunk = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
+			grJobLogTableChunk.addEncodedQuery('job_log.statusNOT INcompleted,cancelled^statusINpending_retry,not_started');
+			grJobLogTableChunk.setLimit(iAvailableTriggers);
+			grJobLogTableChunk.orderBy('sys_created_on');
+			grJobLogTableChunk.query();
+			while (grJobLogTableChunk.next()) {
+				grJobLogTableChunk.setValue('status', 'running');
+				if (grJobLogTableChunk.update()) {
+					this._gt.scheduleScript('x_snc_instanc_sync.JobRunner', 'runTrigger', 1, [grJobLogTableChunk], [], 'Job_' + grJobLogTableChunk.getValue('chunk') + '_' + grJobLogTableChunk.getDisplayValue('job_log_table'), 'xJoblogx', grJobLogTableChunk.getValue('job_log'));
+				} else {
+					gs.error('JobScheduler.manageTriggers failed update chunk with error: ' + grJobLogTableChunk.getLastErrorMessage());
+				} // if no update
+			} // if triggers
+		} // if available trigger
+	}, // function manageTriggers
+
+	createSplitChunk: function (sJobId, sJobTableId, sJobChunkId, iChunk, iChunkSize, iOffset) {
+		var grJobLogTableChunk = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
+		grJobLogTableChunk.setValue('job_log', sJobId);
+		grJobLogTableChunk.setValue('job_log_table', sJobTableId);
+		grJobLogTableChunk.setValue('parent_chunk', sJobChunkId);
+		grJobLogTableChunk.setValue('status', 'not_started');
+		grJobLogTableChunk.setValue('chunk', iChunk);
+		grJobLogTableChunk.setValue('expected_record_count', iChunkSize);
+		grJobLogTableChunk.setValue('offset', iOffset);
+		if (!grJobLogTableChunk.insert()) {
+			gs.error('JobScheduler.createChunk failed insert chunk with error: ' + grJobLogTableChunk.getLastErrorMessage());
+		} // if insert fails
+	}, // function createSplitChunk
+
+	type: 'JobScheduler',
+	version: '1.0.0',
+	author: 'ServiceNow Customer Outcomes, Tom Hauri',
+	email: 'tom@hauri.biz',
+};]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-03-16 06:32:06</sys_created_on>
+        <sys_id>06f40bd01bc10e1030d6fdd49b4bcbcd</sys_id>
+        <sys_mod_count>34</sys_mod_count>
+        <sys_name>JobScheduler</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_script_include_06f40bd01bc10e1030d6fdd49b4bcbcd</sys_update_name>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-03-19 08:04:09</sys_updated_on>
+    </sys_script_include>
+</record_update>
