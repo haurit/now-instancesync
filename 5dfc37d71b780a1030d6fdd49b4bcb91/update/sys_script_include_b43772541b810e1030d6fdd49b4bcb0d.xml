@@ -19,14 +19,11 @@ JobController.prototype = {
 		this._gtObject = new global.GlobalToolsObject();
 		this._gtTable = new global.GlobalToolsTable();
 		this._gtRecordRead = new global.GlobalToolsRecordRead();
-		this._gtRecordWriteValidate = new global.GlobalToolsRecordWriteValidate();
-		this._gtAttachment = new global.GlobalToolsAttachment();
+		this._gtRecordWrite = new global.GlobalToolsRecordWrite();
 		this._gtRESTAPI = new global.GlobalToolsRESTAPI(grJobConfig.getValue('connection_credential_alias'));
 		var _getCfg = new x_snc_json_cfg_mgr.getCfg(grJobConfig.getValue('json_configuration'));
 		this.oConfig = _getCfg.getConfig();
 		this._getValue = _getCfg.getValue;
-		this._gdDigest = new GlideDigest();
-		this._grJobConfig = grJobConfig;
 		this._sJobCfgId = grJobConfig.getUniqueValue();
 	}, // function initialize
 
@@ -44,6 +41,7 @@ JobController.prototype = {
 			gs.addErrorMessage(this._gtObject.getValue('message', gs.getMessage('job_connection_error'), oTestConnection));
 			return;
 		} // if connection
+		this.validateScheduler();
 		grJobLog.setValue('job_config', this._sJobCfgId);
 		var dtNow = new GlideDateTime();
 		grJobLog.setValue('start_time', dtNow);
@@ -54,6 +52,36 @@ JobController.prototype = {
 			gs.addErrorMessage(gs.getMessage('job_insert_error'));
 		} // if insert success
 	}, // function startJob
+
+	validateScheduler: function () {
+		var grScheduledScript = new GlideRecord('sysauto_script');
+		if (!grScheduledScript.get('970972d41b810e1030d6fdd49b4bcb6a')) {
+			var oConfig = {
+				sTargetTable: 'sysauto_script',
+				bKeepSysId: true,
+				bInsert: true,
+				aQueryFields: 'sys_id'
+			}; // schedule config
+			var oValues = {
+				active: true,
+				conditional: true,
+				condition: 'var _JobScheduler = new JobScheduler();\n_JobScheduler.checkScheduler();',
+				name: 'JobScheduler',
+				run_period: '1970-01-01 00:00:30',
+				run_type: 'periodically',
+				script: 'var _JobScheduler = new JobScheduler();\n_JobScheduler.runScheduler();',
+				sys_name: 'JobScheduler',
+				sys_package: '5dfc37d71b780a1030d6fdd49b4bcb91',
+				sys_scope: '5dfc37d71b780a1030d6fdd49b4bcb91',
+				sys_id: '970972d41b810e1030d6fdd49b4bcb6a'
+			}; // schedule value
+			var oError = {};
+			var sScheduleId = this._gtRecordWrite.doRecord(oValues, oConfig, oError);
+			if (!sScheduleId) {
+				gs.error('JobController.validateScheduler failed to insert scheduler with error: ' + JSON.stringify(oError));
+			} // if error inserting schedule
+		} // if schedule exists
+	}, // function validateScheduler
 
 	cancelJob: function () {
 		var grJobLog = new GlideRecord('x_snc_instanc_sync_job_log');
@@ -164,9 +192,9 @@ JobController.prototype = {
 	initiateJob: function (grJobLog) {
 		var bSuccess = false;
 		var bConfigIsObject = false;
-		var sTableQuery = this._getValue('sTableQuery', '');
-		var aTables = this._getValue('aTables', []);
-		var oTables = this._getValue('oTables', {});
+		var sTableQuery = this._getValue('job/sTableQuery', '');
+		var aTables = this._getValue('job/aTables', []);
+		var oTables = this._getValue('job/oTables', {});
 		if ((!sTableQuery) && (this._gtArray.isValidArray(aTables))) {
 			sTableQuery = 'nameIN' + aTables.join(',');
 		} // if valid array
@@ -198,15 +226,25 @@ JobController.prototype = {
 					sTableName = grTable.getValue('name');
 					if (bConfigIsObject) {
 						sQuery = this._getValue(sTableName + '/sQuery', '', oTables);
-						iChunkSize = this._getValue(sTableName + '/iChunkSize', '', oTables);
+						iChunkSize = this._getValue(sTableName + '/iChunkSize', iChunkSize, oTables);
 					} else {
-						var _getCfg = new x_snc_json_cfg_mgr.getCfg(this._getValue('sTableJSONPrefix', '') + sTableName);
-						if (_getCfg) {
-							sQuery = _getCfg.getValue('config/sQuery', '');
-							iChunkSize = _getCfg.getValue('config/iChunkSize', '');
-						} // if config per table
+						var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
+						if (this._gtArray.isValidArray(aHierarchy)) {
+							aHierarchy.some(function (sTableInHierarchy) {
+								if (sTableInHierarchy != 'cmdb') {
+									var _getTableCfg = new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + sTableInHierarchy);
+									if (_getTableCfg) {
+										if (_getTableCfg.getValue('config')) {
+											sQuery = _getTableCfg.getValue('config/sQuery', '');
+											iChunkSize = _getTableCfg.getValue('job/iChunkSize', iChunkSize);
+											return true;
+										} // if valid obj
+									} // if config
+								} // if not cmdb root
+							}, this); // each table in hierarchy
+						} // if hierarchy
 					} // if config obj
-					if (this._getValue('bDeltaLoad', true) === true) {
+					if (this._getValue('job/bDeltaLoad', true) === true) {
 						sQuery = this.addDeltaLoadQuery(sTableName, sQuery, grJobLog);
 					} // if delta load query
 					bSplitTables = false;
@@ -214,7 +252,7 @@ JobController.prototype = {
 					if (this._gtArray.isValidArray(aTableExtensions)) {
 						var grTarget = new GlideRecord(sTableName);
 						if (grTarget.isValidField('sys_class_name')) {
-							if (this._getValue('bTableAutoExtend', true) === true) {
+							if (this._getValue('job/bTableAutoExtend', true) === true) {
 								oTableCount = this._gtRESTAPI.doNOWRESTCount(sTableName, sQuery, 'sys_class_name');
 								if ((oTableCount) && (Object.keys(oTableCount).length > 0)) {
 									Object.keys(oTableCount).forEach(function (sTableCountName) {
@@ -287,7 +325,7 @@ JobController.prototype = {
 		var grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
 		grJobLogTable.setValue('job_log', grJobLog.getUniqueValue());
 		grJobLogTable.setValue('basetable', sBaseTableId);
-		iChunkSize = ((iChunkSize < 1) || (iChunkSize > 10000)) ? Number(this._getValue('iChunkSize', 2000)) : iChunkSize;
+		iChunkSize = ((iChunkSize < 1) || (iChunkSize > 10000)) ? Number(this._getValue('job/iChunkSize', 2000)) : iChunkSize;
 		var iChunks = Math.ceil(iTableCount / iChunkSize);
 		grJobLogTable.setValue('table', sTableId);
 		grJobLogTable.setValue('condition', sQuery);
@@ -314,6 +352,7 @@ JobController.prototype = {
 			grJobLogTableChunk.setValue('job_log_table', grJobLogTable.getUniqueValue());
 			for (var iChunk = 0; iChunk < iChunks; iChunk++) {
 				grJobLogTableChunk.setValue('chunk', iChunk);
+				grJobLogTableChunk.setValue('chunksize', iChunkSize);
 				grJobLogTableChunk.setValue('offset', iChunkSize * iChunk);
 				var iExpectedRecordCount = ((iChunkSize * iChunk) < (iTableCount - iChunkSize)) ? iChunkSize : iTableCount - (iChunkSize * iChunk);
 				grJobLogTableChunk.setValue('expected_record_count', iExpectedRecordCount);
@@ -468,13 +507,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>67</sys_mod_count>
+        <sys_mod_count>86</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-19 08:03:57</sys_updated_on>
+        <sys_updated_on>2024-03-20 06:54:24</sys_updated_on>
     </sys_script_include>
 </record_update>
