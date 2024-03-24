@@ -58,6 +58,10 @@ JobRunner.prototype = {
 				//gs.info('tomtom oJob: ' + JSON.stringify(oJob) + ' oConfig: ' + JSON.stringify(oConfig));
 				var bDeltaCompareAttachment = this._gtObject.getValue('bDeltaCompareAttachment', false, oJob);
 				var aDeltaCompareRemoveFields = this._gtObject.getValue('aDeltaCompareRemoveFields', [], oJob);
+				var bLogErrorDetails = this._gtObject.getValue('bLogErrorDetails', false, oJob);
+				if (bLogErrorDetails) {
+					this._gtObject.setValue('sErrorReturnType', 'full', oConfig);
+				} // if log error details
 				var iChunkSize = grJobLogTableChunk.getValue('chunksize');
 				var sQuery = grJobLogTable.getValue('condition');
 				var iOffset = grJobLogTableChunk.getValue('offset');
@@ -123,7 +127,7 @@ JobRunner.prototype = {
 								} // if compare attachment
 								if (bChangeDetected === true) {
 									var sResultId = this._gtRecordWriteValidate.validateAndWrite(oConfig, oRecord, oError);
-									if (sResultId) {
+									if ((sResultId) && (sResultId != -1)) {
 										iSuccessRecordCount++;
 									} else {
 										iErrorCount++;
@@ -234,13 +238,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>47</sys_mod_count>
+        <sys_mod_count>49</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-23 14:51:56</sys_updated_on>
+        <sys_updated_on>2024-03-24 10:03:48</sys_updated_on>
     </sys_script_include>
 </record_update>
