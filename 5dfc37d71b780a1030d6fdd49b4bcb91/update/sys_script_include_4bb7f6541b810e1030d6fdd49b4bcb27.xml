@@ -129,28 +129,28 @@ JobRunner.prototype = {
 									var sResultId = this._gtRecordWriteValidate.validateAndWrite(oConfig, oRecord, oError);
 									if ((sResultId) && (sResultId != -1)) {
 										iSuccessRecordCount++;
+										if (bDeltaCompareAttachment) {
+											this._gtAttachment.deleteAttachment(sTableName, sSysId, 'sim_' + sSysId + '.json', true);
+											this._gtAttachment.writeAttachmentByTableId(sTableName, sSysId, 'sim_' + sSysId + '.json', JSON.stringify(oRecordCompare), 'json', false, true);
+										} // if compare attachment
 									} else {
 										iErrorCount++;
 										sName = (oRecord.hasOwnProperty('number')) ? oRecord['number'] : '';
 										sName = (!sName) && (oRecord.hasOwnProperty('name')) ? oRecord['name'] : '';
-										this._writeRecordError(sClassName, sSysId, sName, oError, grJobLogTableChunk);
+										this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, grJobLogTableChunk);
 									} // if result
-									if (bDeltaCompareAttachment) {
-										this._gtAttachment.deleteAttachment(sClassName, sSysId, 'sim_' + sSysId + '.json', true);
-										this._gtAttachment.writeAttachmentByTableId(sClassName, sSysId, 'sim_' + sSysId + '.json', JSON.stringify(oRecordCompare), 'json', false, true);
-									} // if compare attachment
 								} else {
 									iNoOpRecordCount++;
 								} // if diff
 							} catch (oEx) {
 								iErrorCount++;
 								//gs.error('JobRunner.runTrigger sTableName: ' + sTableName + ' error writing record: ' + String(oEx));
-								this._writeRecordError(sTableId, sSysId, '', {'code': -97, 'message': String(oEx)}, grJobLogTableChunk);
+								this._writeRecordError(sTableId, sTableName, sSysId, '', { 'code': -97, 'message': String(oEx) }, grJobLogTableChunk);
 							} // if catch
 						} else {
 							iErrorCount++;
 							//gs.error('JobRunner.runTrigger sTableName: ' + sTableName + ' sSysId: empty oRecord: ' + JSON.stringify(oRecord));
-							this._writeRecordError(sTableId, '', '', {'code': -98, 'message': 'No SysId in Payload'}, grJobLogTableChunk);
+							this._writeRecordError(sTableId, sTableName, '', '', { 'code': -98, 'message': 'No SysId in Payload' }, grJobLogTableChunk);
 						} // if no sys id
 					}, this); // each record
 					grJobLogTableChunk.setValue('successful_record_count', iSuccessRecordCount);
@@ -181,53 +181,61 @@ JobRunner.prototype = {
 		} // if copy job table
 		dtNow = new GlideDateTime();
 		grJobLogTableChunk.setValue('end_time', dtNow);
-		//if (!grJobLogTableChunk.update()) {
-		//	gs.error('JobRunner.runTrigger error writing chunk record: ' + sChunkId + ' Error: ' + grJobLogTableChunk.getLastErrorMessage());
-		//} // if error
+		if (!grJobLogTableChunk.update()) {
+			gs.error('JobRunner.runTrigger error writing chunk record: ' + sChunkId + ' Error: ' + grJobLogTableChunk.getLastErrorMessage());
+		} // if error
 	}, // function runTrigger
 
-	_writeRecordError: function (sTableId, sRecordSysId, sRecordName, oError, grJobLogTableChunk) {
-		gs.info('tomtom sTableId: ' + sTableId + ' sRecordSysId: ' + sRecordSysId + ' sRecordName: ' + sRecordName + ' oError: ' + JSON.stringify(oError));
-		/*
-		var grError = new GlideRecord('x_snc_instanc_sync_job_error');
-		grError.setValue('copy_job_log', grJobLogTableChunk.getValue('job_log'));
-		grError.setValue('copy_job_log_table', grJobLogTableChunk.getValue('job_log_table'));
-		grError.setValue('copy_job_log_table_chunk', grJobLogTableChunk.getUniqueValue());
-		grError.setValue('table', sTableId);
-		grError.setValue('remote_record_sysid', sRecordSysId);
-		grError.setValue('remote_record_display_name', sRecordName);
-		grError.setValue('error_code', sErrorCode);
-		grError.setValue('error_message', sErrorMessage);
-		grError.insert();
-		*/
+	_writeRecordError: function (sTableId, sTableName, sRecordSysId, sRecordName, oError, grJobLogTableChunk) {
+		//gs.info('tomtom sTableId: ' + sTableId + ' sRecordSysId: ' + sRecordSysId + ' sRecordName: ' + sRecordName + ' oError: ' + JSON.stringify(oError));
+		var aErrorMessages = this._gtObject.getValue('default/aErrorMessages', oError, oError);
+		var grRecordError = new GlideRecord('x_snc_instanc_sync_job_log_record_error');
+		grRecordError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
+		grRecordError.setValue('job_log_table', grJobLogTableChunk.getValue('job_log_table'));
+		grRecordError.setValue('job_log_table_chunk', grJobLogTableChunk.getUniqueValue());
+		grRecordError.setValue('table', sTableId);
+		grRecordError.setValue('remote_record_sysid', sRecordSysId);
+		grRecordError.setValue('remote_record_display_name', sRecordName);
+		grRecordError.setValue('error_messages', JSON.stringify(aErrorMessages));
+		grRecordError.insert();
+		if (this._gtArray.isValidArray(aErrorMessages)) {
+			var aMessageDetailArgs = [], sErrorCode = '', sFieldId = '', sValue = '', sValidValues = '', aHierarchy = [], grDict, grMappingError;
+			aErrorMessages.forEach(function (oErrorMsg) {
+				if (this._gtObject.getValue('sErrorType', '', oErrorMsg) == 'value') {
+					aMessageDetailArgs = this._gtObject.getValue('aMessageDetailArgs', '', oErrorMsg);
+					if (this._gtArray.isValidArray(aMessageDetailArgs)) {
+						sErrorCode = this._gtObject.getValue('sCode', '', oErrorMsg);
+						sFieldId = aMessageDetailArgs[0];
+						sValue = aMessageDetailArgs[1];
+						sValidValues = aMessageDetailArgs[2];
+						if ((sFieldId) && (sValue)) {
+							aHierarchy = this._gtTable.getTableHierarchy(sTableName);
+							aHierarchy.reverse();
+							aHierarchy.some(function (sDictField) {
+								grDict = this._gtRecordRead.getRecord('sys_dictionary', 'name=' + sDictField + '^element=' + sFieldId, false, false, false);
+								if (grDict) {
+									sFieldId = grDict.getUniqueValue();
+									return true;
+								} // if value
+							}, this); // field
+							grMappingError = new GlideRecord('x_snc_instanc_sync_job_log_mapping_error');
+							grMappingError.addEncodedQuery('job_log=' + grJobLogTableChunk.getValue('job_log') + '^field=' + sFieldId + '^value=' + sValue);
+							grMappingError.setLimit(1);
+							grMappingError.query();
+							if (!grMappingError.hasNext()) {
+								grMappingError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
+								grMappingError.setValue('field', sFieldId);
+								grMappingError.setValue('error_code', sErrorCode);
+								grMappingError.setValue('value', sValue);
+								grMappingError.setValue('valid_values', sValidValues);
+								grMappingError.insert();
+							} // if error does not exist
+						} // if field and value
+					} // if error detail args
+				} // if value error
+			}, this); // each error message
+		} // if error messages
 	}, // function _writeRecordError
-
-	/*
-	_doAttachment: function (sTargetTableName, sTargetId, oConfig, iOffset, _ConnectionHandler) {
-		var sQuery = '', sTableName = '';
-		iOffset = (iOffset) ? iOffset : 0;
-		if (sTargetTableName == 'sys_attachment_doc') {
-			sTableName = 'sys_attachment_doc';
-			sQuery = 'sys_attachment=' + sTargetId;
-		} else {
-			sTableName = 'sys_attachment';
-			sQuery = 'table_sys_id=' + sTargetId + '^table_name=' + sTargetTableName;
-		} // if docs
-		oConfig['sTargetTable'] = sTableName;
-		var aRecords = _ConnectionHandler.doRESTQuery(sTableName, sQuery, iOffset, 10000);
-		var sSysId = '', oError = {};
-		if ((aRecords) && (Array.isArray(aRecords)) && (aRecords.length > 0)) {
-			aRecords.forEach(function (oRecord) {
-				if (oRecord.hasOwnProperty('sys_id')) {
-					sTargetId = this._NOWCOTools.doRecord(oRecord, oConfig, oError);
-					if ((sTableName == 'sys_attachment') && ((sTargetId))) {
-						this._doAttachment('sys_attachment_doc', sTargetId, oConfig, 0, _ConnectionHandler);
-					} // if attachment
-				} // if sysid
-			}, this); // each record
-		} // if records
-	}, // function _doAttachment
-	*/
 
 	type: 'JobRunner',
 	version: '1.0.0',
@@ -238,13 +246,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>50</sys_mod_count>
+        <sys_mod_count>55</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-24 10:12:28</sys_updated_on>
+        <sys_updated_on>2024-03-24 16:00:48</sys_updated_on>
     </sys_script_include>
 </record_update>

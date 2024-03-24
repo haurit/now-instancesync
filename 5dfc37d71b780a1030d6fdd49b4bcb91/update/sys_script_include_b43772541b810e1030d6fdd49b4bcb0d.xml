@@ -190,6 +190,7 @@ JobController.prototype = {
 	}, // function setStatus
 
 	initiateJob: function (grJobLog) {
+		if (this.bLog) { gs.info('JobController.initiateJob start grJobLog: ' + grJobLog.getUniqueValue()); }
 		var bSuccess = false;
 		var bConfigIsObject = false;
 		var sTableQuery = this._getValue('job/sTableQuery', '');
@@ -286,6 +287,7 @@ JobController.prototype = {
 		if (!bSuccess) {
 			gs.error('JobController.initiateJob failed to initiate tables because no valid table is found for job log ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')');
 		} // if not success
+		if (this.bLog) { gs.info('JobController.initiateJob end grJobLog: ' + grJobLog.getUniqueValue() + ' bSuccess: ' + bSuccess); }
 		return bSuccess;
 	}, // function initiateJob
 
@@ -298,7 +300,7 @@ JobController.prototype = {
 		grJobLogLast.setLimit(1);
 		grJobLogLast.query();
 		if (grJobLogLast.next()) {
-			dtStartTime.setGlideDateTime(grJobLogLast.getValue('start_time'));
+			dtStartTime.setValue(grJobLogLast.start_time);
 			dtStartTime.addSeconds(-1);
 		} // if last job log
 		var sDeltaQuery = '';
@@ -507,13 +509,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>86</sys_mod_count>
+        <sys_mod_count>88</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-20 06:54:24</sys_updated_on>
+        <sys_updated_on>2024-03-24 19:04:07</sys_updated_on>
     </sys_script_include>
 </record_update>
