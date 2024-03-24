@@ -199,30 +199,33 @@ JobRunner.prototype = {
 		grRecordError.setValue('error_messages', JSON.stringify(aErrorMessages));
 		grRecordError.insert();
 		if (this._gtArray.isValidArray(aErrorMessages)) {
+			var aMessageDetailArgs = [], sErrorCode = '', sFieldId = '', sValue = '', sValidValues = '', aHierarchy = [], grDict, grMappingError;
 			aErrorMessages.forEach(function (oErrorMsg) {
 				if (this._gtObject.getValue('sErrorType', '', oErrorMsg) == 'value') {
-					var aMessageDetailArgs = this._gtObject.getValue('aMessageDetailArgs', '', oErrorMsg);
+					aMessageDetailArgs = this._gtObject.getValue('aMessageDetailArgs', '', oErrorMsg);
 					if (this._gtArray.isValidArray(aMessageDetailArgs)) {
-						var sFieldId = aMessageDetailArgs[0];
-						var sValue = aMessageDetailArgs[1];
-						var sValidValues = aMessageDetailArgs[2];
+						sErrorCode = this._gtObject.getValue('sCode', '', oErrorMsg);
+						sFieldId = aMessageDetailArgs[0];
+						sValue = aMessageDetailArgs[1];
+						sValidValues = aMessageDetailArgs[2];
 						if ((sFieldId) && (sValue)) {
-							var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
+							aHierarchy = this._gtTable.getTableHierarchy(sTableName);
 							aHierarchy.reverse();
 							aHierarchy.some(function (sDictField) {
-								var grDict = this._gtRecordRead.getRecord('sys_dictionary', 'name=' + sDictField + '^element=' + sFieldId, false, false, false);
+								grDict = this._gtRecordRead.getRecord('sys_dictionary', 'name=' + sDictField + '^element=' + sFieldId, false, false, false);
 								if (grDict) {
 									sFieldId = grDict.getUniqueValue();
 									return true;
 								} // if value
 							}, this); // field
-							var grMappingError = new GlideRecord('x_snc_instanc_sync_job_log_mapping_error');
+							grMappingError = new GlideRecord('x_snc_instanc_sync_job_log_mapping_error');
 							grMappingError.addEncodedQuery('job_log=' + grJobLogTableChunk.getValue('job_log') + '^field=' + sFieldId + '^value=' + sValue);
 							grMappingError.setLimit(1);
 							grMappingError.query();
 							if (!grMappingError.hasNext()) {
 								grMappingError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
 								grMappingError.setValue('field', sFieldId);
+								grMappingError.setValue('error_code', sErrorCode);
 								grMappingError.setValue('value', sValue);
 								grMappingError.setValue('valid_values', sValidValues);
 								grMappingError.insert();
@@ -243,13 +246,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>53</sys_mod_count>
+        <sys_mod_count>54</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-24 15:21:19</sys_updated_on>
+        <sys_updated_on>2024-03-24 15:50:53</sys_updated_on>
     </sys_script_include>
 </record_update>

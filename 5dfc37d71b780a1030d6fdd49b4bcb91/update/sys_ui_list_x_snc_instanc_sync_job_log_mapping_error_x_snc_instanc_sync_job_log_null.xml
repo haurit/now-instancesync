@@ -3,62 +3,92 @@
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>field</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_mapping_error" element="NULL" name="x_snc_instanc_sync_job_log_mapping_error" parent="x_snc_instanc_sync_job_log" relationship="NULL" sys_domain="global" view="Default view">ee9e86871b8d061030d6fdd49b4bcb80</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_mapping_error" element="NULL" name="x_snc_instanc_sync_job_log_mapping_error" parent="x_snc_instanc_sync_job_log" relationship="NULL" sys_domain="global" view="Default view">6071d28b1b8d061030d6fdd49b4bcb89</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>0</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-24 15:35:17</sys_created_on>
-            <sys_id>2e9e86871b8d061030d6fdd49b4bcb81</sys_id>
+            <sys_created_on>2024-03-24 15:47:43</sys_created_on>
+            <sys_id>ac71d28b1b8d061030d6fdd49b4bcb89</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-24 15:35:17</sys_updated_on>
+            <sys_updated_on>2024-03-24 15:47:43</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
-            <element>field.name</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_mapping_error" element="NULL" name="x_snc_instanc_sync_job_log_mapping_error" parent="x_snc_instanc_sync_job_log" relationship="NULL" sys_domain="global" view="Default view">ee9e86871b8d061030d6fdd49b4bcb80</list_id>
+            <element>field.element</element>
+            <list_id display_value="x_snc_instanc_sync_job_log_mapping_error" element="NULL" name="x_snc_instanc_sync_job_log_mapping_error" parent="x_snc_instanc_sync_job_log" relationship="NULL" sys_domain="global" view="Default view">6071d28b1b8d061030d6fdd49b4bcb89</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>1</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-24 15:35:17</sys_created_on>
-            <sys_id>229e86871b8d061030d6fdd49b4bcb82</sys_id>
+            <sys_created_on>2024-03-24 15:47:43</sys_created_on>
+            <sys_id>a071d28b1b8d061030d6fdd49b4bcb8a</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-24 15:35:17</sys_updated_on>
+            <sys_updated_on>2024-03-24 15:47:43</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
-            <element>value</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_mapping_error" element="NULL" name="x_snc_instanc_sync_job_log_mapping_error" parent="x_snc_instanc_sync_job_log" relationship="NULL" sys_domain="global" view="Default view">ee9e86871b8d061030d6fdd49b4bcb80</list_id>
+            <element>field.name</element>
+            <list_id display_value="x_snc_instanc_sync_job_log_mapping_error" element="NULL" name="x_snc_instanc_sync_job_log_mapping_error" parent="x_snc_instanc_sync_job_log" relationship="NULL" sys_domain="global" view="Default view">6071d28b1b8d061030d6fdd49b4bcb89</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>2</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-24 15:35:17</sys_created_on>
-            <sys_id>269e86871b8d061030d6fdd49b4bcb82</sys_id>
+            <sys_created_on>2024-03-24 15:47:43</sys_created_on>
+            <sys_id>a471d28b1b8d061030d6fdd49b4bcb8a</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-24 15:35:17</sys_updated_on>
+            <sys_updated_on>2024-03-24 15:47:43</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
-            <element>valid_values</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_mapping_error" element="NULL" name="x_snc_instanc_sync_job_log_mapping_error" parent="x_snc_instanc_sync_job_log" relationship="NULL" sys_domain="global" view="Default view">ee9e86871b8d061030d6fdd49b4bcb80</list_id>
+            <element>error_code</element>
+            <list_id display_value="x_snc_instanc_sync_job_log_mapping_error" element="NULL" name="x_snc_instanc_sync_job_log_mapping_error" parent="x_snc_instanc_sync_job_log" relationship="NULL" sys_domain="global" view="Default view">6071d28b1b8d061030d6fdd49b4bcb89</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>3</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-24 15:35:17</sys_created_on>
-            <sys_id>2a9e86871b8d061030d6fdd49b4bcb82</sys_id>
+            <sys_created_on>2024-03-24 15:47:43</sys_created_on>
+            <sys_id>a871d28b1b8d061030d6fdd49b4bcb8a</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-24 15:35:17</sys_updated_on>
+            <sys_updated_on>2024-03-24 15:47:43</sys_updated_on>
+        </sys_ui_list_element>
+        <sys_ui_list_element action="INSERT_OR_UPDATE">
+            <average_value>false</average_value>
+            <element>value</element>
+            <list_id display_value="x_snc_instanc_sync_job_log_mapping_error" element="NULL" name="x_snc_instanc_sync_job_log_mapping_error" parent="x_snc_instanc_sync_job_log" relationship="NULL" sys_domain="global" view="Default view">6071d28b1b8d061030d6fdd49b4bcb89</list_id>
+            <max_value>false</max_value>
+            <min_value>false</min_value>
+            <position>4</position>
+            <sum>false</sum>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-03-24 15:47:43</sys_created_on>
+            <sys_id>ac71d28b1b8d061030d6fdd49b4bcb8a</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-03-24 15:47:43</sys_updated_on>
+        </sys_ui_list_element>
+        <sys_ui_list_element action="INSERT_OR_UPDATE">
+            <average_value>false</average_value>
+            <element>valid_values</element>
+            <list_id display_value="x_snc_instanc_sync_job_log_mapping_error" element="NULL" name="x_snc_instanc_sync_job_log_mapping_error" parent="x_snc_instanc_sync_job_log" relationship="NULL" sys_domain="global" view="Default view">6071d28b1b8d061030d6fdd49b4bcb89</list_id>
+            <max_value>false</max_value>
+            <min_value>false</min_value>
+            <position>5</position>
+            <sum>false</sum>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-03-24 15:47:43</sys_created_on>
+            <sys_id>a071d28b1b8d061030d6fdd49b4bcb8b</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-03-24 15:47:43</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
@@ -72,10 +102,10 @@
             <sum>false</sum>
             <sys_class_name>sys_ui_list</sys_class_name>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-24 15:35:17</sys_created_on>
+            <sys_created_on>2024-03-24 15:47:43</sys_created_on>
             <sys_domain>global</sys_domain>
             <sys_domain_path>/</sys_domain_path>
-            <sys_id>ee9e86871b8d061030d6fdd49b4bcb80</sys_id>
+            <sys_id>6071d28b1b8d061030d6fdd49b4bcb89</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_name>x_snc_instanc_sync_job_log_mapping_error</sys_name>
             <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
@@ -83,7 +113,7 @@
             <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
             <sys_update_name>sys_ui_list_x_snc_instanc_sync_job_log_mapping_error_x_snc_instanc_sync_job_log_null</sys_update_name>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-24 15:35:17</sys_updated_on>
+            <sys_updated_on>2024-03-24 15:47:43</sys_updated_on>
             <sys_user/>
             <view display_value="Default view" name="NULL">Default view</view>
             <view_name/>
