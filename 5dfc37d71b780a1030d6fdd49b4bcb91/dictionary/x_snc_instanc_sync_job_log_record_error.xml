@@ -1,0 +1,23 @@
+<?xml version="1.0" encoding="UTF-8"?><database>
+    <element db_object_id="e87f79871b4d061030d6fdd49b4bcbeb" label="Job Log Record Error" max_length="40" name="x_snc_instanc_sync_job_log_record_error" type="collection">
+        <element label="Error Messages" max_length="8192" name="error_messages" type="string"/>
+        <element label="Job Log" max_length="32" name="job_log" reference="x_snc_instanc_sync_job_log" type="reference"/>
+        <element label="Job Log Table" max_length="32" name="job_log_table" reference="x_snc_instanc_sync_job_log_table" type="reference"/>
+        <element label="Job Log Table Chunk" max_length="32" name="job_log_table_chunk" reference="x_snc_instanc_sync_job_log_table_chunks" type="reference"/>
+        <element label="Remote Record Display Name" max_length="1024" name="remote_record_display_name" type="string"/>
+        <element label="Remote Record SysId" max_length="40" name="remote_record_sysid" type="string"/>
+        <element label="Table" max_length="32" name="table" reference="sys_db_object" type="reference"/>
+        <index name="index">
+            <element name="job_log"/>
+        </index>
+        <index name="index2">
+            <element name="job_log_table"/>
+        </index>
+        <index name="index3">
+            <element name="job_log_table_chunk"/>
+        </index>
+        <index name="index4">
+            <element name="table"/>
+        </index>
+    </element>
+</database>

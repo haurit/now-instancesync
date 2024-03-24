@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update>
+    <sys_documentation element="error_messages" label="Error Messages" language="en" table="x_snc_instanc_sync_job_log_record_error">
+        <sys_documentation action="INSERT_OR_UPDATE">
+            <element>error_messages</element>
+            <help/>
+            <hint/>
+            <label>Error Messages</label>
+            <language>en</language>
+            <name>x_snc_instanc_sync_job_log_record_error</name>
+            <plural>Error Messages</plural>
+            <sys_class_name>sys_documentation</sys_class_name>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-03-24 14:36:59</sys_created_on>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_name>Error Messages</sys_name>
+            <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+            <sys_policy/>
+            <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+            <sys_update_name>sys_documentation_x_snc_instanc_sync_job_log_record_error_error_messages_en</sys_update_name>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-03-24 14:36:59</sys_updated_on>
+            <url/>
+            <url_target/>
+        </sys_documentation>
+    </sys_documentation>
+</record_update>
