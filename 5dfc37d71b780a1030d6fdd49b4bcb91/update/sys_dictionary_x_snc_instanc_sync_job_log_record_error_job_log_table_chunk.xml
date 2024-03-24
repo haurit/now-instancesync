@@ -41,7 +41,7 @@
         <read_only>false</read_only>
         <read_roles/>
         <reference display_value="" name="x_snc_instanc_sync_job_log_table_chunks">x_snc_instanc_sync_job_log_table_chunks</reference>
-        <reference_cascade_rule/>
+        <reference_cascade_rule>delete</reference_cascade_rule>
         <reference_floats>false</reference_floats>
         <reference_key/>
         <reference_qual/>
@@ -58,7 +58,7 @@
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_dictionary_x_snc_instanc_sync_job_log_record_error_job_log_table_chunk</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-24 14:36:58</sys_updated_on>
+        <sys_updated_on>2024-03-24 15:55:12</sys_updated_on>
         <table_reference>false</table_reference>
         <text_index>false</text_index>
         <unique>false</unique>

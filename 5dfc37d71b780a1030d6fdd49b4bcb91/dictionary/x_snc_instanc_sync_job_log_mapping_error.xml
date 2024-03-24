@@ -2,7 +2,7 @@
     <element db_object_id="374186c71b4d061030d6fdd49b4bcb12" label="Job Log Mapping Error" max_length="40" name="x_snc_instanc_sync_job_log_mapping_error" type="collection">
         <element label="Error Code" max_length="40" name="error_code" type="string"/>
         <element label="Field" max_length="32" name="field" reference="sys_dictionary" type="reference"/>
-        <element label="Job Log" max_length="32" name="job_log" reference="x_snc_instanc_sync_job_log" type="reference"/>
+        <element label="Job Log" max_length="32" name="job_log" reference="x_snc_instanc_sync_job_log" reference_cascade_rule="delete" type="reference"/>
         <element label="Valid Values" max_length="8192" name="valid_values" type="string"/>
         <element label="Value" max_length="1024" name="value" type="string"/>
         <index name="index">
