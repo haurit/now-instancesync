@@ -48,29 +48,33 @@ JobScheduler.prototype = {
 			var grJobConfig = new GlideRecord('x_snc_instanc_sync_job_config');
 			if (grJobConfig.get(grJobLog.getValue('job_config'))) {
 				if (this.bLog) { gs.info('JobScheduler.runScheduler job cfg found: ' + grJobConfig.getDisplayValue() + ' (' + grJobConfig.getUniqueValue() + ')'); }
-				var _JobCtr = new JobController(grJobConfig);
-				if (grJobLog.getValue('status') == 'not_started') {
-					if (this.bLog) { gs.info('JobScheduler.runScheduler job not started: ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')'); }
-					if (_JobCtr.initiateJob(grJobLog)) {
-						grJobLog.setValue('status', 'running');
-						if (!grJobLog.update()) {
-							gs.error('JobScheduler.runScheduler failed to update job log to running with error: ' + grJobLog.getLastErrorMessage());
-						} // if no success
-					} // if success
-				} else {
-					if (this.bLog) { gs.info('JobScheduler.runScheduler job running: ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')'); }
-					sStatus = _JobCtr.updateTables(grJobLog);
-					if (sStatus) {
-						if (sStatus == 'completed') {
-							var dtNow = new GlideDateTime();
-							grJobLog.setValue('end_time', dtNow);
-						} // if completed
-						grJobLog.setValue('status', sStatus);
-						if (!grJobLog.update()) {
-							gs.error('JobScheduler.runScheduler failed to update job log to status with error: ' + grJobLog.getLastErrorMessage());
-						} // if no success
-					} // if new status
-				} // if not started
+				try {
+					var _JobCtr = new JobController(grJobConfig);
+					if (grJobLog.getValue('status') == 'not_started') {
+						if (this.bLog) { gs.info('JobScheduler.runScheduler job not started: ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')'); }
+						if (_JobCtr.initiateJob(grJobLog)) {
+							grJobLog.setValue('status', 'running');
+							if (!grJobLog.update()) {
+								gs.error('JobScheduler.runScheduler failed to update job log to running with error: ' + grJobLog.getLastErrorMessage());
+							} // if no success
+						} // if success
+					} else {
+						if (this.bLog) { gs.info('JobScheduler.runScheduler job running: ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')'); }
+						sStatus = _JobCtr.updateTables(grJobLog);
+						if (sStatus) {
+							if (sStatus == 'completed') {
+								var dtNow = new GlideDateTime();
+								grJobLog.setValue('end_time', dtNow);
+							} // if completed
+							grJobLog.setValue('status', sStatus);
+							if (!grJobLog.update()) {
+								gs.error('JobScheduler.runScheduler failed to update job log to status with error: ' + grJobLog.getLastErrorMessage());
+							} // if no success
+						} // if new status
+					} // if not started
+				} catch (oEx) {
+					gs.error('JobScheduler.runScheduler error during initiation for job: ' + grJobLog.getUniqueValue() + ' with message: ' + String(oEx));
+				} // initiate job
 			} else {
 				gs.error('JobScheduler.runScheduler failed to find config for job: ' + grJobLog.getUniqueValue());
 			} // if copy job config
@@ -181,13 +185,13 @@ JobScheduler.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 06:32:06</sys_created_on>
         <sys_id>06f40bd01bc10e1030d6fdd49b4bcbcd</sys_id>
-        <sys_mod_count>39</sys_mod_count>
+        <sys_mod_count>40</sys_mod_count>
         <sys_name>JobScheduler</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_06f40bd01bc10e1030d6fdd49b4bcbcd</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-19 16:51:21</sys_updated_on>
+        <sys_updated_on>2024-03-24 16:14:51</sys_updated_on>
     </sys_script_include>
 </record_update>
