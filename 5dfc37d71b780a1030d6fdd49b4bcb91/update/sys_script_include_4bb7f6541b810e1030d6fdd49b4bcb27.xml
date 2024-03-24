@@ -181,13 +181,13 @@ JobRunner.prototype = {
 		} // if copy job table
 		dtNow = new GlideDateTime();
 		grJobLogTableChunk.setValue('end_time', dtNow);
-		//if (!grJobLogTableChunk.update()) {
-		//	gs.error('JobRunner.runTrigger error writing chunk record: ' + sChunkId + ' Error: ' + grJobLogTableChunk.getLastErrorMessage());
-		//} // if error
+		if (!grJobLogTableChunk.update()) {
+			gs.error('JobRunner.runTrigger error writing chunk record: ' + sChunkId + ' Error: ' + grJobLogTableChunk.getLastErrorMessage());
+		} // if error
 	}, // function runTrigger
 
 	_writeRecordError: function (sTableId, sTableName, sRecordSysId, sRecordName, oError, grJobLogTableChunk) {
-		gs.info('tomtom sTableId: ' + sTableId + ' sRecordSysId: ' + sRecordSysId + ' sRecordName: ' + sRecordName + ' oError: ' + JSON.stringify(oError));
+		//gs.info('tomtom sTableId: ' + sTableId + ' sRecordSysId: ' + sRecordSysId + ' sRecordName: ' + sRecordName + ' oError: ' + JSON.stringify(oError));
 		var aErrorMessages = this._gtObject.getValue('default/aErrorMessages', oError, oError);
 		var grRecordError = new GlideRecord('x_snc_instanc_sync_job_log_record_error');
 		grRecordError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
@@ -246,13 +246,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>54</sys_mod_count>
+        <sys_mod_count>55</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-24 15:50:53</sys_updated_on>
+        <sys_updated_on>2024-03-24 16:00:48</sys_updated_on>
     </sys_script_include>
 </record_update>
