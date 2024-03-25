@@ -209,7 +209,6 @@ JobController.prototype = {
 		if (sTableQuery) {
 			var grTable = this._gtRecordRead.getRecords('sys_db_object', sTableQuery);
 			if ((grTable) && (grTable.hasNext())) {
-				bSuccess = true;
 				var sBaseTableId = '';
 				var sTableId = '';
 				var sTableName = '';
@@ -230,6 +229,7 @@ JobController.prototype = {
 					if (bConfigIsObject) {
 						sQuery = this._getValue(sTableName + '/sQuery', '', oTables);
 						iChunkSize = this._getValue(sTableName + '/iChunkSize', iChunkSize, oTables);
+						oClassMap = this._getValue(sTableName + '/oClassMap', {}, oTables);
 					} else {
 						var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
 						if (this._gtArray.isValidArray(aHierarchy)) {
@@ -273,6 +273,7 @@ JobController.prototype = {
 												sClassQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sMappedClass);
 											} // if table found
 											if (sTableCountId) {
+												bSuccess = true;
 												this.initiateTable(sTableCountId, sTableCountName, sBaseTableId, sMappedClass, sClassQuery, iTableCount, iChunkSize, grJobLog);
 											} else {
 												gs.error('JobController.initiateJob table not found for ' + sTableCountName + ' count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue());
@@ -280,7 +281,7 @@ JobController.prototype = {
 										} // if table count
 									}, this); // each count
 								} else {
-									gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
+									gs.error('JobController.initiateJob count failed for split table ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
 								} // if table count
 							} else {
 								sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableName);
@@ -293,15 +294,20 @@ JobController.prototype = {
 						if ((!iTableCount) || (isNaN(iTableCount))) {
 							gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
 						} else if (iTableCount > 0) {
+							bSuccess = true;
 							this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, grJobLog);
 						} // if table count
 						Object.keys(oClassMap).forEach(function (sMappedClass) {
+							//gs.info('tomtom sMappedClass: ' +  sMappedClass + ' sTableName: ' + sTableName + ' oClassMap[sMappedClass] ' + oClassMap[sMappedClass]);
 							if (oClassMap[sMappedClass] == sTableName) {
-								iTableCount = this._gtRESTAPI.doNOWRESTCount(sClassMapTable, sQuery);
+								var reTableName = new RegExp(sTableName, 'gi');
+								sQuery = sQuery.replace(reTableName, sMappedClass);
+								iTableCount = this._gtRESTAPI.doNOWRESTCount(sMappedClass, sQuery);
 								//gs.info('tomtom no split table: ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
 								if ((!iTableCount) || (isNaN(iTableCount))) {
 									gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' for job: ' + grJobLog.getUniqueValue());
 								} else if (iTableCount > 0) {
+									bSuccess = true;
 									this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, grJobLog);
 								} // if table count
 							} // if mapped class found
@@ -341,6 +347,7 @@ JobController.prototype = {
 			gs.error('JobController.initiateTable table does not exists ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
 			return;
 		} // if table does not exist
+		//gs.info('tomtom initiateTable sTableName: ' + sTableName + ' sMappedClass: ' + sMappedClass);
 		var grJobLogTableExist = new GlideRecord('x_snc_instanc_sync_job_log_table');
 		var sTableExistMappedClassQuery = (sMappedClass) ? '^mapped_class=' + sMappedClass : '';
 		grJobLogTableExist.addEncodedQuery('job_log=' + grJobLog.getUniqueValue() + '^table=' + sTableId + sTableExistMappedClassQuery);
@@ -540,13 +547,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>93</sys_mod_count>
+        <sys_mod_count>94</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-25 07:25:06</sys_updated_on>
+        <sys_updated_on>2024-03-25 09:47:07</sys_updated_on>
     </sys_script_include>
 </record_update>
