@@ -10,6 +10,7 @@
         <script><![CDATA[var JobRunner = Class.create();
 JobRunner.prototype = {
 	initialize: function () {
+		this.bLog = true;
 		this.iMaxRetryCount = Number(gs.getProperty('x_snc_instanc_sync.max.retry', 5));
 		if (isNaN(this.iMaxRetryCount)) {
 			this.iMaxRetryCount = 5;
@@ -25,6 +26,7 @@ JobRunner.prototype = {
 	}, // function initialize
 
 	runTrigger: function (grJobLogTableChunk) {
+		if (this.bLog) { gs.info('JobRunner.runTrigger started'); }
 		try {
 			var dtNow = new GlideDateTime();
 			var sChunkId = grJobLogTableChunk.getUniqueValue();
@@ -104,7 +106,11 @@ JobRunner.prototype = {
 									var oRecordCompare = JSON.parse(JSON.stringify(oRecord));
 									try {
 										var sSysId = this._gtObject.getValue('sys_id', '', oRecord);
-										var sClassName = (sMappedClass) ? sTableName : this._gtObject.getValue('sys_class_name', '', oRecord);
+										var sClassName = this._gtObject.getValue('sys_class_name', '', oRecord);
+										if (sMappedClass) {
+											sClassName = sTableName;
+											this._gtObject.setValue('sys_class_name', sClassName, oRecord);
+										} // if mapped class
 										this._gtObject.setValue('sTargetTable', sClassName, oConfig);
 										if (this._gtArray.isValidArray(aDeltaCompareRemoveFields)) {
 											aDeltaCompareRemoveFields.forEach(function (sDeltaCompareRemoveField) {
@@ -145,8 +151,8 @@ JobRunner.prototype = {
 											if ((sResultId) && (sResultId != -1)) {
 												iSuccessRecordCount++;
 												if (bDeltaCompareAttachment) {
-													this._gtAttachment.deleteAttachment(sTableName, sSysId, 'sim_' + sSysId + '.json', true);
-													this._gtAttachment.writeAttachmentByTableId(sTableName, sSysId, 'sim_' + sSysId + '.json', JSON.stringify(oRecordCompare), 'json', false, true);
+													this._gtAttachment.deleteAttachment(sClassName, sSysId, 'sim_' + sSysId + '.json', true);
+													this._gtAttachment.writeAttachmentByTableId(sClassName, sSysId, 'sim_' + sSysId + '.json', JSON.stringify(oRecordCompare), 'json', false, true);
 												} // if compare attachment
 											} else {
 												iErrorCount++;
@@ -173,23 +179,23 @@ JobRunner.prototype = {
 							grJobLogTableChunk.setValue('error_count', iErrorCount);
 							grJobLogTableChunk.setValue('status', 'completed');
 							grJobLogTableChunk.setValue('error_code', 0);
+						} else if (iErrorCode == -105) {
+							grJobLogTableChunk.setValue('status', 'pending_retry');
+							grJobLogTableChunk.setValue('error_code', -105); // error string size to big
 						} else {
-							grJobLogTableChunk.setValue('status', 'failed');
-							grJobLogTableChunk.setValue('error_code', -106); // error config not found
-						}
-					} else if (iErrorCode == -105) {
-						grJobLogTableChunk.setValue('status', 'pending_retry');
-						grJobLogTableChunk.setValue('error_code', -105); // error string size to big
+							var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
+							var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
+							if ((aRecords) && (typeof aRecords == 'object') && (aRecords.hasOwnProperty('error_code'))) {
+								iErrorCode = aRecords['error_code'];
+							} // if has error code
+							grJobLogTableChunk.setValue('status', sStatus);
+							grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
+							grJobLogTableChunk.setValue('error_code', iErrorCode); // error no records
+						} // if records
 					} else {
-						var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
-						var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
-						if ((aRecords) && (typeof aRecords == 'object') && (aRecords.hasOwnProperty('error_code'))) {
-							iErrorCode = aRecords['error_code'];
-						} // if has error code
-						grJobLogTableChunk.setValue('status', sStatus);
-						grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
-						grJobLogTableChunk.setValue('error_code', iErrorCode); // error no records
-					} // if records
+						grJobLogTableChunk.setValue('status', 'failed');
+						grJobLogTableChunk.setValue('error_code', -106); // error config not found
+					} // if no valid config
 				} else {
 					grJobLogTableChunk.setValue('status', 'failed');
 					grJobLogTableChunk.setValue('error_code', -101); // error loading job config or table name empty
@@ -206,6 +212,7 @@ JobRunner.prototype = {
 		} catch (oEx) {
 			gs.error('JobRunner.runTrigger error with message: ' + String(oEx));
 		} // initiate job
+		if (this.bLog) { gs.info('JobRunner.runTrigger ended'); }
 	}, // function runTrigger
 
 	_writeRecordError: function (sTableId, sTableName, sRecordSysId, sRecordName, oError, grJobLogTableChunk) {
@@ -268,13 +275,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>59</sys_mod_count>
+        <sys_mod_count>61</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-25 10:40:28</sys_updated_on>
+        <sys_updated_on>2024-03-25 16:34:24</sys_updated_on>
     </sys_script_include>
 </record_update>
