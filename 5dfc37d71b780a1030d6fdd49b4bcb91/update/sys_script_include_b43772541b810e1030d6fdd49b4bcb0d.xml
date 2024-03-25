@@ -229,6 +229,7 @@ JobController.prototype = {
 					sBaseTableId = sTableId;
 					sTableName = grTable.getValue('name');
 					sMappedClass = '';
+					iPriority = 100;
 					if (bConfigIsObject) {
 						sQuery = this._getValue(sTableName + '/sQuery', '', oTables);
 						iChunkSize = this._getValue(sTableName + '/iChunkSize', iChunkSize, oTables);
@@ -560,13 +561,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>98</sys_mod_count>
+        <sys_mod_count>99</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-25 20:30:49</sys_updated_on>
+        <sys_updated_on>2024-03-25 20:31:42</sys_updated_on>
     </sys_script_include>
 </record_update>
