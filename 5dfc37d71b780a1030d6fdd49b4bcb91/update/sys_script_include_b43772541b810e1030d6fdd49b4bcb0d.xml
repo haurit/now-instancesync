@@ -230,12 +230,12 @@ JobController.prototype = {
 					sTableName = grTable.getValue('name');
 					sMappedClass = '';
 					iPriority = 100;
-					var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
 					if (bConfigIsObject) {
 						sQuery = this._getValue(sTableName + '/sQuery', '', oTables);
 						iChunkSize = this._getValue(sTableName + '/iChunkSize', iChunkSize, oTables);
 						oClassMap = this._getValue(sTableName + '/oClassMap', {}, oTables);
 					} else {
+						var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
 						if (this._gtArray.isValidArray(aHierarchy)) {
 							aHierarchy.some(function (sTableInHierarchy) {
 								if (sTableInHierarchy != 'cmdb') {
@@ -257,18 +257,7 @@ JobController.prototype = {
 						sQuery = this.addDeltaLoadQuery(sTableName, sQuery, grJobLog);
 					} // if delta load query
 					if (this._gtArray.isValidArray(aPriorityClasses)) {
-						if (this._gtArray.isValidArray(aHierarchy)) {
-							aHierarchy.some(function (sTableInHierarchy) {
-								if (sTableInHierarchy != 'cmdb') {
-									if (aPriorityClasses.indexOf(sTableInHierarchy) != -1) {
-										iPriority = 50;
-										return true;
-									} // if match
-								} // if not cmdb
-							}, this); // each table in hierarchy
-						} else if (aPriorityClasses.indexOf(sTableName) != -1) {
-							iPriority = 50;
-						} // if hierarchy
+						iPriority = this.getTablePriority(sTableName, aPriorityClasses);
 					} // if priority classes
 					bSplitTables = false;
 					aTableExtensions = this._gtTable.getTableExtensions(sTableName);
@@ -284,9 +273,9 @@ JobController.prototype = {
 										bSplitTables = true;
 										iTableCount = oTableCount[sTableCountName];
 										if (oTableCount[sTableCountName] > 0) {
-											if (aPriorityClasses.indexOf(sTableCountName) != -1) {
-												iPriority = 50;
-											} // if priority class
+											if (this._gtArray.isValidArray(aPriorityClasses)) {
+												iPriority = this.getTablePriority(sTableCountName, aPriorityClasses);
+											} // if priority classes
 											sTableCountId = this._gtRecordRead.getSysIdByQuery('sys_db_object', 'name=' + sTableCountName);
 											if (sTableCountId) {
 												sClassQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableCountName);
@@ -365,6 +354,24 @@ JobController.prototype = {
 		sQuery = this._gtRecordRead.combineQueries(sQuery, sDeltaQuery);
 		return sQuery;
 	}, // function addDeltaLoadQuery
+
+	getTablePriority: function (sTableName, aPriorityClasses) {
+		var iPriority = 100;
+		var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
+		if (this._gtArray.isValidArray(aHierarchy)) {
+			aHierarchy.some(function (sTableInHierarchy) {
+				if (sTableInHierarchy != 'cmdb') {
+					if (aPriorityClasses.indexOf(sTableInHierarchy) != -1) {
+						iPriority = 50;
+						return true;
+					} // if match
+				} // if not cmdb
+			}, this); // each table in hierarchy
+		} else if (aPriorityClasses.indexOf(sTableName) != -1) {
+			iPriority = 50;
+		} // if hierarchy
+		return iPriority;
+	}, // function getTablePriority
 
 	initiateTable: function (sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, grJobLog) {
 		if (!gs.tableExists(sTableName)) {
@@ -572,13 +579,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>104</sys_mod_count>
+        <sys_mod_count>105</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-26 09:02:25</sys_updated_on>
+        <sys_updated_on>2024-03-26 14:11:30</sys_updated_on>
     </sys_script_include>
 </record_update>
