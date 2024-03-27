@@ -196,7 +196,7 @@ JobController.prototype = {
 		var sTableQuery = this._getValue('job/sTableQuery', '');
 		var aTables = this._getValue('job/aTables', []);
 		var oTables = this._getValue('job/oTables', {});
-		var aPriorityClasses = this._getValue('job/aPriorityClasses', []);
+		var oPriorityClasses = this._getValue('job/oPriorityClasses', {});
 		var iChunkSize = this._getValue('job/iChunkSize', 2000);
 		if ((!sTableQuery) && (this._gtArray.isValidArray(aTables))) {
 			sTableQuery = 'nameIN' + aTables.join(',');
@@ -245,7 +245,7 @@ JobController.prototype = {
 											sQuery = _getTableCfg.getValue('config/sQuery', '');
 											iChunkSize = _getTableCfg.getValue('job/iChunkSize', iChunkSize);
 											oClassMap = _getTableCfg.getValue('job/oClassMap', {});
-											aPriorityClasses = _getTableCfg.getValue('job/aPriorityClasses', aPriorityClasses);
+											oPriorityClasses = _getTableCfg.getValue('job/oPriorityClasses', oPriorityClasses);
 											return true;
 										} // if valid obj
 									} // if config
@@ -256,8 +256,8 @@ JobController.prototype = {
 					if (this._getValue('job/bDeltaLoad', true) === true) {
 						sQuery = this.addDeltaLoadQuery(sTableName, sQuery, grJobLog);
 					} // if delta load query
-					if (this._gtArray.isValidArray(aPriorityClasses)) {
-						iPriority = this.getTablePriority(sTableName, aPriorityClasses);
+					if (this._gtObject.isObject(oPriorityClasses)) {
+						iPriority = this.getTablePriority(sTableName, oPriorityClasses);
 					} // if priority classes
 					bSplitTables = false;
 					aTableExtensions = this._gtTable.getTableExtensions(sTableName);
@@ -273,8 +273,8 @@ JobController.prototype = {
 										bSplitTables = true;
 										iTableCount = oTableCount[sTableCountName];
 										if (oTableCount[sTableCountName] > 0) {
-											if (this._gtArray.isValidArray(aPriorityClasses)) {
-												iPriority = this.getTablePriority(sTableCountName, aPriorityClasses);
+											if (this._gtObject.isObject(oPriorityClasses)) {
+												iPriority = this.getTablePriority(sTableCountName, oPriorityClasses);
 											} // if priority classes
 											sTableCountId = this._gtRecordRead.getSysIdByQuery('sys_db_object', 'name=' + sTableCountName);
 											if (sTableCountId) {
@@ -355,20 +355,37 @@ JobController.prototype = {
 		return sQuery;
 	}, // function addDeltaLoadQuery
 
-	getTablePriority: function (sTableName, aPriorityClasses) {
+	getTablePriority: function (sTableName, oPriorityClasses) {
 		var iPriority = 100;
+		var _getPriority = function (sTmpTableName) {
+			var iTmpPriority = -1;
+			var aClasses = [];
+			Object.keys(oPriorityClasses).some(function (iObjPriority) {
+				aClasses = oPriorityClasses[iObjPriority];
+				if (this._gtArray.isValidArray(aClasses)) {
+					if (aClasses.indexOf(sTmpTableName) != -1) {
+						iTmpPriority = iObjPriority;
+						return true;
+					} // if table
+				} // if valid array
+			}, this); // some priority classes
+			return iTmpPriority;
+		}; // function _getPriority
+		var iTmpPriority = _getPriority(sTableName);
 		var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
 		if (this._gtArray.isValidArray(aHierarchy)) {
+			iTmpPriority = -1;
 			aHierarchy.some(function (sTableInHierarchy) {
 				if (sTableInHierarchy != 'cmdb') {
-					if (aPriorityClasses.indexOf(sTableInHierarchy) != -1) {
-						iPriority = 50;
+					iTmpPriority = _getPriority(sTableInHierarchy);
+					if (iTmpPriority > 0) {
+						iPriority = iTmpPriority;
 						return true;
 					} // if match
 				} // if not cmdb
 			}, this); // each table in hierarchy
-		} else if (aPriorityClasses.indexOf(sTableName) != -1) {
-			iPriority = 50;
+		} else if (iTmpPriority > 0) {
+			iPriority = iTmpPriority;
 		} // if hierarchy
 		return iPriority;
 	}, // function getTablePriority
@@ -579,13 +596,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>105</sys_mod_count>
+        <sys_mod_count>106</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-26 14:11:30</sys_updated_on>
+        <sys_updated_on>2024-03-27 06:44:36</sys_updated_on>
     </sys_script_include>
 </record_update>
