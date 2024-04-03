@@ -154,6 +154,9 @@ JobRunner.prototype = {
 													this._gtAttachment.deleteAttachment(sClassName, sSysId, 'sim_' + sSysId + '.json', true);
 													this._gtAttachment.writeAttachmentByTableId(sClassName, sSysId, 'sim_' + sSysId + '.json', JSON.stringify(oRecordCompare), '', false, true);
 												} // if compare attachment
+												if (this._gtObject.getValue('default/bError', false, oError)) {
+													this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, grJobLogTableChunk);
+												} // mapping error
 											} else {
 												iErrorCount++;
 												sName = (oRecord.hasOwnProperty('number')) ? oRecord['number'] : '';
@@ -166,12 +169,12 @@ JobRunner.prototype = {
 									} catch (oEx) {
 										iErrorCount++;
 										//gs.error('JobRunner.runTrigger sTableName: ' + sTableName + ' error writing record: ' + String(oEx));
-										this._writeRecordError(sTableId, sTableName, sSysId, '', { 'code': -97, 'message': String(oEx) }, grJobLogTableChunk);
+										this._writeRecordError(sTableId, sTableName, sSysId, '', { code: -97, message: String(oEx) }, grJobLogTableChunk);
 									} // if catch
 								} else {
 									iErrorCount++;
 									//gs.error('JobRunner.runTrigger sTableName: ' + sTableName + ' sSysId: empty oRecord: ' + JSON.stringify(oRecord));
-									this._writeRecordError(sTableId, sTableName, '', '', { 'code': -98, 'message': 'No SysId in Payload' }, grJobLogTableChunk);
+									this._writeRecordError(sTableId, sTableName, '', '', { code: -98, message: 'No SysId in Payload' }, grJobLogTableChunk);
 								} // if no sys id
 							}, this); // each record
 							grJobLogTableChunk.setValue('successful_record_count', iSuccessRecordCount);
@@ -217,7 +220,7 @@ JobRunner.prototype = {
 
 	_writeRecordError: function (sTableId, sTableName, sRecordSysId, sRecordName, oError, grJobLogTableChunk) {
 		//gs.info('tomtom sTableId: ' + sTableId + ' sRecordSysId: ' + sRecordSysId + ' sRecordName: ' + sRecordName + ' oError: ' + JSON.stringify(oError));
-		var aErrorMessages = this._gtObject.getValue('default/aErrorMessages', oError, oError);
+		var aErrorMessages = this._gtObject.getValue('default/aErrorMessages', [], oError);
 		var grRecordError = new GlideRecord('x_snc_instanc_sync_job_log_record_error');
 		grRecordError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
 		grRecordError.setValue('job_log_table', grJobLogTableChunk.getValue('job_log_table'));
@@ -275,13 +278,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>63</sys_mod_count>
+        <sys_mod_count>64</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-26 07:53:45</sys_updated_on>
+        <sys_updated_on>2024-04-03 15:42:13</sys_updated_on>
     </sys_script_include>
 </record_update>
