@@ -7,6 +7,13 @@
         <element label="Mapping Errors" max_length="4000" name="mapping_errors" reference="x_snc_instanc_sync_job_log_mapping_error" type="glide_list"/>
         <element label="Remote Record Display Name" max_length="1024" name="remote_record_display_name" type="string"/>
         <element label="Remote Record SysId" max_length="40" name="remote_record_sysid" type="string"/>
+        <element choice="3" default="0" label="Status" max_length="40" name="status" type="integer">
+            <choice>
+                <element inactive_on_update="false" label="Failed" value="0"/>
+                <element inactive_on_update="false" label="Fixed" value="2"/>
+                <element inactive_on_update="false" label="Warning" value="1"/>
+            </choice>
+        </element>
         <element label="Table" max_length="32" name="table" reference="sys_db_object" type="reference"/>
         <index name="index">
             <element name="job_log"/>

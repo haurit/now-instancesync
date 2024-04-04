@@ -423,6 +423,7 @@ JobController.prototype = {
 		} // if table exists
 		//gs.info('tomtom init table: ' + sTableName + ' (' + sTableId + ') with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
 		var grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
+		grJobLogTable.initialize();
 		grJobLogTable.setValue('job_log', grJobLog.getUniqueValue());
 		if (iRESTRequestDuration > 0) {
 			grJobLogTable.rest_request_duration.setDateNumericValue(iRESTRequestDuration);
@@ -617,13 +618,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>109</sys_mod_count>
+        <sys_mod_count>110</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-04-04 06:01:45</sys_updated_on>
+        <sys_updated_on>2024-04-04 07:39:46</sys_updated_on>
     </sys_script_include>
 </record_update>

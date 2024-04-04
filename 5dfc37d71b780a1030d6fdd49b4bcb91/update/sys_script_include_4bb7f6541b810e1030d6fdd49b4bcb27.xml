@@ -230,6 +230,9 @@ JobRunner.prototype = {
 		grRecordError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
 		grRecordError.setValue('job_log_table', grJobLogTableChunk.getValue('job_log_table'));
 		grRecordError.setValue('job_log_table_chunk', grJobLogTableChunk.getUniqueValue());
+		if ((this._gtObject.getValue('default/bNoActionError', true, oError) === false) && (this._gtObject.getValue('default/bFatalError', true, oError) === false)) {
+			grRecordError.setValue('status', 1);
+		} // if inserted
 		grRecordError.setValue('table', sTableId);
 		grRecordError.setValue('remote_record_sysid', sRecordSysId);
 		grRecordError.setValue('remote_record_display_name', sRecordName);
@@ -291,13 +294,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>66</sys_mod_count>
+        <sys_mod_count>67</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-04-04 05:44:50</sys_updated_on>
+        <sys_updated_on>2024-04-04 07:49:51</sys_updated_on>
     </sys_script_include>
 </record_update>

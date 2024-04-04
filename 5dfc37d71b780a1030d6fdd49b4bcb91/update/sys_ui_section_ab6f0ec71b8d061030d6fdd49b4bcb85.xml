@@ -154,6 +154,20 @@
             <sys_user/>
             <type/>
         </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>status</element>
+            <position>11</position>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-04-04 07:44:00</sys_created_on>
+            <sys_id>5a3c01221bddc21030d6fdd49b4bcb0e</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_record_error" sys_domain="global" view="Default view">ab6f0ec71b8d061030d6fdd49b4bcb85</sys_ui_section>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-04-04 07:44:00</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
         <sys_ui_section action="INSERT_OR_UPDATE">
             <caption/>
             <header>false</header>
