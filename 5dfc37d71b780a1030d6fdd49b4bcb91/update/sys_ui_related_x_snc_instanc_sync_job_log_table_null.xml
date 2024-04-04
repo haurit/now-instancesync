@@ -2,17 +2,31 @@
     <sys_ui_related sys_domain="global" table="x_snc_instanc_sync_job_log_table" version="2" view="">
         <sys_ui_related_list_entry action="INSERT_OR_UPDATE">
             <filter/>
-            <list_id display_value="Job Log Table - Default view" name="x_snc_instanc_sync_job_log_table" related_list="NULL" sys_domain="global" view="Default view">cfa63a141b810e1030d6fdd49b4bcb8e</list_id>
+            <list_id display_value="Job Log Table - Default view" name="x_snc_instanc_sync_job_log_table" related_list="NULL" sys_domain="global" view="Default view">57bc46071b8d061030d6fdd49b4bcb7c</list_id>
             <order_by/>
             <position>0</position>
             <related_list>x_snc_instanc_sync_job_log_table_chunks.job_log_table</related_list>
             <sys_class_name>sys_ui_related_list_entry</sys_class_name>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-16 05:27:04</sys_created_on>
-            <sys_id>0fa63a141b810e1030d6fdd49b4bcb8f</sys_id>
+            <sys_created_on>2024-03-24 15:27:08</sys_created_on>
+            <sys_id>d3bc46071b8d061030d6fdd49b4bcb7d</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-16 05:27:04</sys_updated_on>
+            <sys_updated_on>2024-03-24 15:27:08</sys_updated_on>
+        </sys_ui_related_list_entry>
+        <sys_ui_related_list_entry action="INSERT_OR_UPDATE">
+            <filter/>
+            <list_id display_value="Job Log Table - Default view" name="x_snc_instanc_sync_job_log_table" related_list="NULL" sys_domain="global" view="Default view">57bc46071b8d061030d6fdd49b4bcb7c</list_id>
+            <order_by/>
+            <position>1</position>
+            <related_list>x_snc_instanc_sync_job_log_record_error.job_log_table</related_list>
+            <sys_class_name>sys_ui_related_list_entry</sys_class_name>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-03-24 15:27:08</sys_created_on>
+            <sys_id>d7bc46071b8d061030d6fdd49b4bcb7d</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-03-24 15:27:08</sys_updated_on>
         </sys_ui_related_list_entry>
         <sys_ui_related_list action="INSERT_OR_UPDATE">
             <calculated_name>Job Log Table - Default view</calculated_name>
@@ -23,10 +37,10 @@
             <related_list/>
             <sys_class_name>sys_ui_related_list</sys_class_name>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-16 05:27:04</sys_created_on>
+            <sys_created_on>2024-03-24 15:27:08</sys_created_on>
             <sys_domain>global</sys_domain>
             <sys_domain_path>/</sys_domain_path>
-            <sys_id>cfa63a141b810e1030d6fdd49b4bcb8e</sys_id>
+            <sys_id>57bc46071b8d061030d6fdd49b4bcb7c</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_name>Job Log Table - Default view</sys_name>
             <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
@@ -34,7 +48,7 @@
             <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
             <sys_update_name>sys_ui_related_x_snc_instanc_sync_job_log_table_null</sys_update_name>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-16 05:27:04</sys_updated_on>
+            <sys_updated_on>2024-03-24 15:27:08</sys_updated_on>
             <sys_user/>
             <view display_value="Default view" name="NULL">Default view</view>
             <view_name/>

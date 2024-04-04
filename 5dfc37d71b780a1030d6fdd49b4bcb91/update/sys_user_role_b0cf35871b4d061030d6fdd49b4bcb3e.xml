@@ -1,0 +1,26 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_user_role">
+    <sys_user_role action="INSERT_OR_UPDATE">
+        <assignable_by/>
+        <can_delegate>true</can_delegate>
+        <description/>
+        <elevated_privilege>false</elevated_privilege>
+        <grantable>true</grantable>
+        <includes_roles/>
+        <limit_concurrent_sessions>false</limit_concurrent_sessions>
+        <name>x_snc_instanc_sync.job_log_record_error_user</name>
+        <scoped_admin>false</scoped_admin>
+        <suffix>job_log_record_error_user</suffix>
+        <sys_class_name>sys_user_role</sys_class_name>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-03-24 14:30:27</sys_created_on>
+        <sys_id>b0cf35871b4d061030d6fdd49b4bcb3e</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_snc_instanc_sync.job_log_record_error_user</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_user_role_b0cf35871b4d061030d6fdd49b4bcb3e</sys_update_name>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-03-24 14:30:27</sys_updated_on>
+    </sys_user_role>
+</record_update>
