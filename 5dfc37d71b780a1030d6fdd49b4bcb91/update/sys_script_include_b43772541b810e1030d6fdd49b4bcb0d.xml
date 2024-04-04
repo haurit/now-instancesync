@@ -219,11 +219,15 @@ JobController.prototype = {
 				var sMappedClass = '';
 				var sQuery = '';
 				var bSplitTables = false;
+				var iAutoExtendedTables = -1;
 				var iTableCount = 0;
 				var aTableExtensions = [];
 				var oTableCount = {};
 				var sTableCountId = '';
 				var sClassQuery = '';
+				var gdtStart = new GlideDateTime();
+				var gdtEnd = new GlideDateTime();
+				var iRESTRequestDuration = -1;
 				while (grTable.next()) {
 					sTableId = grTable.getUniqueValue();
 					sBaseTableId = sTableId;
@@ -260,13 +264,19 @@ JobController.prototype = {
 						iPriority = this.getTableHierarchyPriority(sTableName, oPriorityClasses);
 					} // if priority classes
 					bSplitTables = false;
+					iAutoExtendedTables = -1;
 					aTableExtensions = this._gtTable.getTableExtensions(sTableName);
 					if (this._gtArray.isValidArray(aTableExtensions)) {
 						var grTarget = new GlideRecord(sTableName);
 						if (grTarget.isValidField('sys_class_name')) {
 							if (this._getValue('job/bTableAutoExtend', true) === true) {
+								gdtStart = new GlideDateTime();
 								oTableCount = this._gtRESTAPI.doNOWRESTCount(sTableName, sQuery, 'sys_class_name');
-								if ((oTableCount) && (Object.keys(oTableCount).length > 0)) {
+								gdtEnd = new GlideDateTime();
+								iRESTRequestDuration = gdtEnd.getNumericValue() - gdtStart.getNumericValue();
+								iAutoExtendedTables = (oTableCount) ? Object.keys(oTableCount).length : -1;
+								if (iAutoExtendedTables > 0) {
+									iRESTRequestDuration =  Math.round(iRESTRequestDuration / iAutoExtendedTables);
 									Object.keys(oTableCount).forEach(function (sTableCountName) {
 										sMappedClass = '';
 										iPriority = 100;
@@ -287,7 +297,7 @@ JobController.prototype = {
 											} // if table found
 											if (sTableCountId) {
 												bSuccess = true;
-												this.initiateTable(sTableCountId, sTableCountName, sBaseTableId, sMappedClass, sClassQuery, iTableCount, iChunkSize, iPriority, grJobLog);
+												this.initiateTable(sTableCountId, sTableCountName, sBaseTableId, sMappedClass, sClassQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
 											} else {
 												gs.error('JobController.initiateJob table not found for ' + sTableCountName + ' count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue());
 											} // if table exists
@@ -302,26 +312,32 @@ JobController.prototype = {
 						} // if has class field
 					} // if extentions
 					if (!bSplitTables) {
+						gdtStart = new GlideDateTime();
 						iTableCount = this._gtRESTAPI.doNOWRESTCount(sTableName, sQuery);
+						gdtEnd = new GlideDateTime();
+						iRESTRequestDuration = gdtEnd.getNumericValue() - gdtStart.getNumericValue();
 						//gs.info('tomtom no split table: ' + sTableName + ' (' + sTableId + ') with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
 						if ((!iTableCount) || (isNaN(iTableCount))) {
 							gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
 						} else if (iTableCount > 0) {
 							bSuccess = true;
-							this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, grJobLog);
+							this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
 						} // if table count
 						Object.keys(oClassMap).forEach(function (sMappedClass) {
 							//gs.info('tomtom sMappedClass: ' +  sMappedClass + ' sTableName: ' + sTableName + ' oClassMap[sMappedClass] ' + oClassMap[sMappedClass]);
 							if (oClassMap[sMappedClass] == sTableName) {
 								var reTableName = new RegExp(sTableName, 'gi');
 								sQuery = sQuery.replace(reTableName, sMappedClass);
+								gdtStart = new GlideDateTime();
 								iTableCount = this._gtRESTAPI.doNOWRESTCount(sMappedClass, sQuery);
+								gdtEnd = new GlideDateTime();
+								iRESTRequestDuration = gdtEnd.getNumericValue() - gdtStart.getNumericValue();
 								//gs.info('tomtom no split table: ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
 								if ((!iTableCount) || (isNaN(iTableCount))) {
 									gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' for job: ' + grJobLog.getUniqueValue());
 								} else if (iTableCount > 0) {
 									bSuccess = true;
-									this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, grJobLog);
+									this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
 								} // if table count
 							} // if mapped class found
 						}, this); // each class map table
@@ -390,7 +406,7 @@ JobController.prototype = {
 		return iTmpPriority;
 	}, // function getTablePriority
 
-	initiateTable: function (sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, grJobLog) {
+	initiateTable: function (sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog) {
 		if (!gs.tableExists(sTableName)) {
 			gs.error('JobController.initiateTable table does not exists ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
 			return;
@@ -408,8 +424,13 @@ JobController.prototype = {
 		//gs.info('tomtom init table: ' + sTableName + ' (' + sTableId + ') with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
 		var grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
 		grJobLogTable.setValue('job_log', grJobLog.getUniqueValue());
+		if (iRESTRequestDuration > 0) {
+			grJobLogTable.rest_request_duration.setDateNumericValue(iRESTRequestDuration);
+		} // if duration
 		grJobLogTable.setValue('basetable', sBaseTableId);
 		iChunkSize = ((isNaN(iChunkSize)) || (iChunkSize < 1) || (iChunkSize > 10000)) ? 2000 : iChunkSize;
+		var iMaxClassSize = this._getValue('job/iMaxClassSize', -1);
+		iTableCount = (iMaxClassSize != -1) ? iMaxClassSize : iTableCount;
 		var iChunks = Math.ceil(iTableCount / iChunkSize);
 		grJobLogTable.setValue('table', sTableId);
 		if (sMappedClass) {
@@ -596,13 +617,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>107</sys_mod_count>
+        <sys_mod_count>108</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-27 07:05:48</sys_updated_on>
+        <sys_updated_on>2024-04-04 05:30:53</sys_updated_on>
     </sys_script_include>
 </record_update>

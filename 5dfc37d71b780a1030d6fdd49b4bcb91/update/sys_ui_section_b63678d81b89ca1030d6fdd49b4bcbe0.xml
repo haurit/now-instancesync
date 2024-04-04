@@ -4,13 +4,13 @@
             <element>.begin_split</element>
             <position>0</position>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>9879a51f1bc9461030d6fdd49b4bcbab</sys_id>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>b57ee42e1b1dc21030d6fdd49b4bcb0a</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_ui_formatter/>
             <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
             <sys_user/>
             <type>.begin_split</type>
         </sys_ui_element>
@@ -18,13 +18,13 @@
             <element>name</element>
             <position>1</position>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>1079a51f1bc9461030d6fdd49b4bcbac</sys_id>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>717ee42e1b1dc21030d6fdd49b4bcb0b</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_ui_formatter/>
             <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
             <sys_user/>
             <type/>
         </sys_ui_element>
@@ -32,13 +32,13 @@
             <element>job_log</element>
             <position>2</position>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>9479a51f1bc9461030d6fdd49b4bcbac</sys_id>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>f57ee42e1b1dc21030d6fdd49b4bcb0b</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_ui_formatter/>
             <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
             <sys_user/>
             <type/>
         </sys_ui_element>
@@ -46,13 +46,13 @@
             <element>table</element>
             <position>3</position>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>1c79a51f1bc9461030d6fdd49b4bcbac</sys_id>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>7d7ee42e1b1dc21030d6fdd49b4bcb0b</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_ui_formatter/>
             <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
             <sys_user/>
             <type/>
         </sys_ui_element>
@@ -60,113 +60,127 @@
             <element>start_time</element>
             <position>4</position>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>9079a51f1bc9461030d6fdd49b4bcbad</sys_id>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>f17ee42e1b1dc21030d6fdd49b4bcb0c</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_ui_formatter/>
             <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>condition</element>
+            <position>5</position>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>797ee42e1b1dc21030d6fdd49b4bcb0c</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
             <sys_user/>
             <type/>
         </sys_ui_element>
         <sys_ui_element action="INSERT_OR_UPDATE">
             <element>.split</element>
-            <position>5</position>
+            <position>6</position>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>2879a51f1bc9461030d6fdd49b4bcbad</sys_id>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>fd7ee42e1b1dc21030d6fdd49b4bcb0c</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_ui_formatter/>
             <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
             <sys_user/>
             <type>.split</type>
         </sys_ui_element>
         <sys_ui_element action="INSERT_OR_UPDATE">
             <element>status</element>
-            <position>6</position>
+            <position>7</position>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>ac79a51f1bc9461030d6fdd49b4bcbad</sys_id>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>757ee42e1b1dc21030d6fdd49b4bcb0d</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_ui_formatter/>
             <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
             <sys_user/>
             <type/>
         </sys_ui_element>
         <sys_ui_element action="INSERT_OR_UPDATE">
             <element>basetable</element>
-            <position>7</position>
+            <position>8</position>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>e879a51f1bc9461030d6fdd49b4bcbba</sys_id>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>f97ee42e1b1dc21030d6fdd49b4bcb0d</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_ui_formatter/>
             <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
             <sys_user/>
             <type/>
         </sys_ui_element>
         <sys_ui_element action="INSERT_OR_UPDATE">
             <element>mapped_class</element>
-            <position>8</position>
+            <position>9</position>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>6079a51f1bc9461030d6fdd49b4bcbbb</sys_id>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>717ee42e1b1dc21030d6fdd49b4bcb0e</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_ui_formatter/>
             <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
             <sys_user/>
             <type/>
         </sys_ui_element>
         <sys_ui_element action="INSERT_OR_UPDATE">
             <element>end_time</element>
-            <position>9</position>
+            <position>10</position>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>e479a51f1bc9461030d6fdd49b4bcbbb</sys_id>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>f57ee42e1b1dc21030d6fdd49b4bcb0e</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_ui_formatter/>
             <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
+            <sys_user/>
+            <type/>
+        </sys_ui_element>
+        <sys_ui_element action="INSERT_OR_UPDATE">
+            <element>rest_request_duration</element>
+            <position>11</position>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>7d7ee42e1b1dc21030d6fdd49b4bcb0e</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_ui_formatter/>
+            <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
             <sys_user/>
             <type/>
         </sys_ui_element>
         <sys_ui_element action="INSERT_OR_UPDATE">
             <element>.end_split</element>
-            <position>10</position>
+            <position>12</position>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>6c79a51f1bc9461030d6fdd49b4bcbbb</sys_id>
+            <sys_created_on>2024-04-04 05:33:59</sys_created_on>
+            <sys_id>f17ee42e1b1dc21030d6fdd49b4bcb0f</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_ui_formatter/>
             <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
+            <sys_updated_on>2024-04-04 05:33:59</sys_updated_on>
             <sys_user/>
             <type>.end_split</type>
-        </sys_ui_element>
-        <sys_ui_element action="INSERT_OR_UPDATE">
-            <element>condition</element>
-            <position>11</position>
-            <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-03-25 07:31:25</sys_created_on>
-            <sys_id>e079a51f1bc9461030d6fdd49b4bcbbc</sys_id>
-            <sys_mod_count>0</sys_mod_count>
-            <sys_ui_formatter/>
-            <sys_ui_section caption="NULL" display_value="" name="x_snc_instanc_sync_job_log_table" sys_domain="global" view="Default view">b63678d81b89ca1030d6fdd49b4bcbe0</sys_ui_section>
-            <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-03-25 07:31:25</sys_updated_on>
-            <sys_user/>
-            <type/>
         </sys_ui_element>
         <sys_ui_section action="INSERT_OR_UPDATE">
             <caption/>

@@ -12,6 +12,7 @@
         <element label="Offset" max_length="40" name="offset" type="integer"/>
         <element label="Parent Chunk" max_length="32" name="parent_chunk" reference="x_snc_instanc_sync_job_log_table_chunks" type="reference"/>
         <element label="Priority" max_length="40" name="priority" type="integer"/>
+        <element label="REST Request Duration" max_length="40" name="rest_request_duration" type="glide_duration"/>
         <element label="Retry Count" max_length="40" name="retry_count" type="integer"/>
         <element label="Start Time" max_length="40" name="start_time" type="glide_date_time"/>
         <element choice="3" default="not_started" label="Status" max_length="40" name="status" type="choice">

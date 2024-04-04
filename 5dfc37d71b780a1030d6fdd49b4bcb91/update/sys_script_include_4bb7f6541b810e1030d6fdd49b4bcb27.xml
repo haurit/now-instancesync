@@ -87,7 +87,11 @@ JobRunner.prototype = {
 						var iErrorCount = 0;
 						var iErrorCode = -103; // undefined error
 						try {
+							var gdtStart = new GlideDateTime();
 							var aRecords = (sMappedClass) ? _gtRESTAPI.doNOWRESTQuery(sMappedClass, sQuery, iOffset, iChunkSize) : _gtRESTAPI.doNOWRESTQuery(sTableName, sQuery, iOffset, iChunkSize);
+							var gdtEnd = new GlideDateTime();
+							var iDuration = gdtEnd.getNumericValue() - gdtStart.getNumericValue();
+							grJobLogTableChunk.rest_request_duration.setDateNumericValue(iDuration);
 						} catch (oEx) {
 							aRecords = '';
 							if (String(oEx).indexOf('33554432') != -1) {
@@ -221,6 +225,7 @@ JobRunner.prototype = {
 	_writeRecordError: function (sTableId, sTableName, sRecordSysId, sRecordName, oError, grJobLogTableChunk) {
 		//gs.info('tomtom sTableId: ' + sTableId + ' sRecordSysId: ' + sRecordSysId + ' sRecordName: ' + sRecordName + ' oError: ' + JSON.stringify(oError));
 		var aErrorMessages = this._gtObject.getValue('default/aErrorMessages', [], oError);
+		var aMappingErrors = [];
 		var grRecordError = new GlideRecord('x_snc_instanc_sync_job_log_record_error');
 		grRecordError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
 		grRecordError.setValue('job_log_table', grJobLogTableChunk.getValue('job_log_table'));
@@ -229,9 +234,8 @@ JobRunner.prototype = {
 		grRecordError.setValue('remote_record_sysid', sRecordSysId);
 		grRecordError.setValue('remote_record_display_name', sRecordName);
 		grRecordError.setValue('error_messages', JSON.stringify(aErrorMessages));
-		grRecordError.insert();
 		if (this._gtArray.isValidArray(aErrorMessages)) {
-			var aMessageDetailArgs = [], sErrorCode = '', sFieldId = '', sValue = '', sValidValues = '', aHierarchy = [], grDict, grMappingError;
+			var aMessageDetailArgs = [], sErrorCode = '', sFieldId = '', sValue = '', sValidValues = '', aHierarchy = [], grDict, grMappingError, sMappingErrorId;
 			aErrorMessages.forEach(function (oErrorMsg) {
 				if (this._gtObject.getValue('sErrorType', '', oErrorMsg) == 'value') {
 					aMessageDetailArgs = this._gtObject.getValue('aMessageDetailArgs', '', oErrorMsg);
@@ -260,13 +264,22 @@ JobRunner.prototype = {
 								grMappingError.setValue('error_code', sErrorCode);
 								grMappingError.setValue('value', sValue);
 								grMappingError.setValue('valid_values', sValidValues);
-								grMappingError.insert();
+								sMappingErrorId = grMappingError.insert();
+								if (sMappingErrorId) {
+									aMappingErrors.push(sMappingErrorId);
+								} else {
+									gs.error('JobRunner._writeRecordError error writing mapping error record for chunk ' + grJobLogTableChunk.getUniqueValue() + ' record ' + sRecordSysId + '. Error: ' + grMappingError.getLastErrorMessage());
+								} // if error on insert
 							} // if error does not exist
 						} // if field and value
 					} // if error detail args
 				} // if value error
 			}, this); // each error message
 		} // if error messages
+		grRecordError.setValue('mapping_errors', aMappingErrors.join(','));
+		if (!grRecordError.insert()) {
+			gs.error('JobRunner._writeRecordError error writing error record for chunk ' + grJobLogTableChunk.getUniqueValue() + ' record ' + sRecordSysId + '. Error: ' + grRecordError.getLastErrorMessage());
+		} // if error on insert
 	}, // function _writeRecordError
 
 	type: 'JobRunner',
@@ -278,13 +291,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>64</sys_mod_count>
+        <sys_mod_count>66</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-04-03 15:42:13</sys_updated_on>
+        <sys_updated_on>2024-04-04 05:44:50</sys_updated_on>
     </sys_script_include>
 </record_update>
