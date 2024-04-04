@@ -1,6 +1,6 @@
 <?xml version="1.0" encoding="UTF-8"?><database>
     <element db_object_id="e2718c6f1b780a1030d6fdd49b4bcb4a" label="Job Config" max_length="40" name="x_snc_instanc_sync_job_config" type="collection">
-        <element label="Connection &amp; Credential Alias" mandatory="true" max_length="32" name="connection_credential_alias" reference="sys_alias" type="reference"/>
+        <element default="0c8515aa1bddc21030d6fdd49b4bcbf1" label="Connection &amp; Credential Alias" mandatory="true" max_length="32" name="connection_credential_alias" reference="sys_alias" type="reference"/>
         <element label="Description" max_length="4000" name="description" type="string"/>
         <element label="JSON Configuration" mandatory="true" max_length="32" name="json_configuration" reference="x_snc_json_cfg_mgr_json_configuration" type="reference"/>
         <element label="Name" mandatory="true" max_length="100" name="name" type="string"/>
