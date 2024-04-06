@@ -26,17 +26,31 @@
         <list_link>false</list_link>
         <list_save_with_form_button>false</list_save_with_form_button>
         <list_style/>
-        <messages/>
+        <messages>map_select_target</messages>
         <name>Map Value</name>
         <onclick>selectTargetRecord()</onclick>
-        <order>100</order>
+        <order>-10000</order>
         <script><![CDATA[function selectTargetRecord() {
-    var sysId = g_form.getUniqueValue();
-    var gDialog = new GlideDialogWindow('MappingCfgTargetRecord');
-    gDialog.setSize('600','600');
-    gDialog.setPreference('sysparm_sysID', sysId);
-    gDialog.setTitle('Create Incident');
-    gDialog.render();
+    var sSysId = g_form.getUniqueValue();
+	var sTable = g_form.getValue('table');
+	var sQuery = '';
+	if (g_form.getValue('type') == 'choice') {
+		sQuery = 'name=' + sTable + '^element=' + g_form.getValue('field');
+		sTable = 'sys_choice';
+	} else {
+		sQuery = '';
+	} // if choice
+	//console.log('tomtom sTable: ' + sTable + ' sQuery: ' + sQuery);
+    var gModal = new GlideModal('x_snc_instanc_sync_MappingCfgTargetRecord');
+    gModal.setWidth(600);
+    gModal.setPreference('sysparm_mappingid', sSysId);
+	gModal.setPreference('sysparm_targettable', sTable);
+	gModal.setPreference('sysparm_targetquery', sQuery);
+	gModal.setPreference('sysparm_popupmessage', getMessage('map_select_target'));
+	gModal.setTitle(getMessage('map_select_target'));
+    gModal.render();
+
+
 }]]></script>
         <show_insert>false</show_insert>
         <show_multiple_update>false</show_multiple_update>
@@ -48,7 +62,7 @@
         <sys_domain>global</sys_domain>
         <sys_domain_path>/</sys_domain_path>
         <sys_id>1a99d11b1b51c61030d6fdd49b4bcb59</sys_id>
-        <sys_mod_count>1</sys_mod_count>
+        <sys_mod_count>16</sys_mod_count>
         <sys_name>Map Value</sys_name>
         <sys_overrides/>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
@@ -56,7 +70,7 @@
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_ui_action_1a99d11b1b51c61030d6fdd49b4bcb59</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-04-06 18:22:07</sys_updated_on>
+        <sys_updated_on>2024-04-06 20:17:59</sys_updated_on>
         <table>x_snc_instanc_sync_mapping_config</table>
         <ui11_compatible>true</ui11_compatible>
         <ui16_compatible>false</ui16_compatible>
