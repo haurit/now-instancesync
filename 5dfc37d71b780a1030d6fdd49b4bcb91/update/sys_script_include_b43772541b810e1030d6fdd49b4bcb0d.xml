@@ -196,6 +196,10 @@ JobController.prototype = {
 		var sTableQuery = this._getValue('job/sTableQuery', '');
 		var aTables = this._getValue('job/aTables', []);
 		var oTables = this._getValue('job/oTables', {});
+		var iPriorityDefault = this._getValue('job/iPriorityDefault', 1000);
+		if ((iPriorityDefault <= 1) && (iPriorityDefault >= 100000)) {
+			iPriorityDefault = 100000;
+		} // if default priority not between 1 and 100000 set 100000 as default
 		var oPriorityClasses = this._getValue('job/oPriorityClasses', {});
 		var iChunkSize = this._getValue('job/iChunkSize', 2000);
 		if ((!sTableQuery) && (this._gtArray.isValidArray(aTables))) {
@@ -214,7 +218,7 @@ JobController.prototype = {
 				var sBaseTableId = '';
 				var sTableId = '';
 				var sTableName = '';
-				var iPriority = 100;
+				var iPriority = iPriorityDefault;
 				var oClassMap = {};
 				var sMappedClass = '';
 				var sQuery = '';
@@ -233,7 +237,7 @@ JobController.prototype = {
 					sBaseTableId = sTableId;
 					sTableName = grTable.getValue('name');
 					sMappedClass = '';
-					iPriority = 100;
+					iPriority = iPriorityDefault;
 					if (bConfigIsObject) {
 						sQuery = this._getValue(sTableName + '/sQuery', '', oTables);
 						iChunkSize = this._getValue(sTableName + '/iChunkSize', iChunkSize, oTables);
@@ -258,10 +262,10 @@ JobController.prototype = {
 						} // if hierarchy
 					} // if config obj
 					if (this._getValue('job/bDeltaLoad', true) === true) {
-						sQuery = this.addDeltaLoadQuery(sTableName, sQuery, grJobLog);
+						sQuery = this.addDeltaLoadQuery(sTableName, sQuery, this._getValue('job/iDeltaLoadOverlapSeconds', -1), grJobLog);
 					} // if delta load query
 					if (this._gtObject.isObject(oPriorityClasses)) {
-						iPriority = this.getTableHierarchyPriority(sTableName, oPriorityClasses);
+						iPriority = this.getTableHierarchyPriority(sTableName, oPriorityClasses, iPriorityDefault);
 					} // if priority classes
 					bSplitTables = false;
 					iAutoExtendedTables = -1;
@@ -279,12 +283,12 @@ JobController.prototype = {
 									iRESTRequestDuration =  Math.round(iRESTRequestDuration / iAutoExtendedTables);
 									Object.keys(oTableCount).forEach(function (sTableCountName) {
 										sMappedClass = '';
-										iPriority = 100;
+										iPriority = iPriorityDefault;
 										bSplitTables = true;
 										iTableCount = oTableCount[sTableCountName];
 										if (oTableCount[sTableCountName] > 0) {
 											if (this._gtObject.isObject(oPriorityClasses)) {
-												iPriority = this.getTableHierarchyPriority(sTableCountName, oPriorityClasses);
+												iPriority = this.getTableHierarchyPriority(sTableCountName, oPriorityClasses, iPriorityDefault);
 											} // if priority classes
 											sTableCountId = this._gtRecordRead.getSysIdByQuery('sys_db_object', 'name=' + sTableCountName);
 											if (sTableCountId) {
@@ -352,7 +356,7 @@ JobController.prototype = {
 		return bSuccess;
 	}, // function initiateJob
 
-	addDeltaLoadQuery: function (sTableName, sQuery, grJobLog) {
+	addDeltaLoadQuery: function (sTableName, sQuery, iDeltaLoadOverlapSeconds, grJobLog) {
 		var dtStartTime = new GlideDateTime();
 		dtStartTime.setNumericValue(0);
 		var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
@@ -362,7 +366,7 @@ JobController.prototype = {
 		grJobLogLast.query();
 		if (grJobLogLast.next()) {
 			dtStartTime.setValue(grJobLogLast.start_time);
-			dtStartTime.addSeconds(-1);
+			dtStartTime.addSeconds(iDeltaLoadOverlapSeconds);
 		} // if last job log
 		var sDeltaQuery = '';
 		var dtEndTime = new GlideDateTime(grJobLog.getValue('start_time'));
@@ -371,8 +375,8 @@ JobController.prototype = {
 		return sQuery;
 	}, // function addDeltaLoadQuery
 
-	getTableHierarchyPriority: function (sTableName, oPriorityClasses) {
-		var iPriority = 100;
+	getTableHierarchyPriority: function (sTableName, oPriorityClasses, iPriorityDefault) {
+		var iPriority = iPriorityDefault;
 		var iTmpPriority = this.getTablePriority(sTableName, oPriorityClasses);
 		var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
 		if (this._gtArray.isValidArray(aHierarchy)) {
@@ -618,13 +622,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>110</sys_mod_count>
+        <sys_mod_count>114</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-04-04 07:39:46</sys_updated_on>
+        <sys_updated_on>2024-04-05 13:08:32</sys_updated_on>
     </sys_script_include>
 </record_update>

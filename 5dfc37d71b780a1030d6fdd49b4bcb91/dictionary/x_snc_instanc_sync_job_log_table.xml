@@ -1,7 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?><database>
     <element db_object_id="64fceb441b85ca1030d6fdd49b4bcb2a" label="Job Log Table" max_length="40" name="x_snc_instanc_sync_job_log_table" type="collection">
         <element label="Basetable" max_length="32" name="basetable" reference="sys_db_object" type="reference"/>
-        <element label="Condition" max_length="4000" name="condition" type="conditions"/>
+        <element label="Condition" max_length="4000" name="condition" read_only="true" type="conditions"/>
         <element label="End Time" max_length="40" name="end_time" type="glide_date_time"/>
         <element label="Job Log" max_length="32" name="job_log" reference="x_snc_instanc_sync_job_log" reference_cascade_rule="delete" type="reference"/>
         <element label="Mapped Class" max_length="255" name="mapped_class" type="string"/>
