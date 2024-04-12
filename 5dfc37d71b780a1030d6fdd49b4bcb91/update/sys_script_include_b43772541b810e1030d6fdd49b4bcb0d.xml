@@ -148,7 +148,7 @@ JobController.prototype = {
 			var sQuery = 'document=xJoblogx^document_key=' + sJobLogId;
 			var iTriggerCount = this._gtRecordRead.countRecords('sys_trigger', sQuery);
 			gs.warn('JobController.removeOpenTriggers query: ' + sQuery + ' will delete records: ' + iTriggerCount);
-			if (iTriggerCount < 35) {
+			if ((iTriggerCount) && (!isNaN(iTriggerCount)) && (iTriggerCount < 35)) {
 				return this._gtRecordWrite.deleteMultiple('sys_trigger', sQuery);
 			} // if less than 35
 		} // if job log
@@ -474,10 +474,9 @@ JobController.prototype = {
 				grJobLogTableChunk.setValue('offset', iChunkSize * iChunk);
 				var iExpectedRecordCount = ((iChunkSize * iChunk) < (iTableCount - iChunkSize)) ? iChunkSize : iTableCount - (iChunkSize * iChunk);
 				grJobLogTableChunk.setValue('expected_record_count', iExpectedRecordCount);
-				if (bCalculateOnly)
-					if (!grJobLogTableChunk.insert()) {
-						gs.error('JobController.insertTableChunks failed insert chunk with error: ' + grJobLogTableChunk.getLastErrorMessage());
-					} // if insert fails
+				if (!grJobLogTableChunk.insert()) {
+					gs.error('JobController.insertTableChunks failed insert chunk with error: ' + grJobLogTableChunk.getLastErrorMessage());
+				} // if insert fails
 			} // each chunk
 		} // if exists
 	}, // function insertTableChunks
@@ -627,13 +626,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>117</sys_mod_count>
+        <sys_mod_count>118</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-04-12 06:44:58</sys_updated_on>
+        <sys_updated_on>2024-04-12 08:11:35</sys_updated_on>
     </sys_script_include>
 </record_update>
