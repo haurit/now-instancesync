@@ -76,6 +76,7 @@ JobRunner.prototype = {
 						var bDeltaCompareAttachment = this._gtObject.getValue('bDeltaCompareAttachment', false, oJob);
 						var aDeltaCompareRemoveFields = this._gtObject.getValue('aDeltaCompareRemoveFields', [], oJob);
 						var bLogErrorDetails = this._gtObject.getValue('bLogErrorDetails', false, oJob);
+						var aLogErrorDetailTypes = this._gtObject.getValue('aLogErrorDetailTypes', ['all'], oJob);
 						if (bLogErrorDetails) {
 							this._gtObject.setValue('sErrorReturnType', 'full', oConfig);
 						} // if log error details
@@ -159,13 +160,13 @@ JobRunner.prototype = {
 													this._gtAttachment.writeAttachmentByTableId(sClassName, sSysId, 'sim_' + sSysId + '.json', JSON.stringify(oRecordCompare), '', false, true);
 												} // if compare attachment
 												if (this._gtObject.getValue('default/bError', false, oError)) {
-													this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, grJobLogTableChunk);
+													this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, aLogErrorDetailTypes, grJobLogTableChunk);
 												} // mapping error
 											} else {
 												iErrorCount++;
 												sName = (oRecord.hasOwnProperty('number')) ? oRecord['number'] : '';
 												sName = (!sName) && (oRecord.hasOwnProperty('name')) ? oRecord['name'] : '';
-												this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, grJobLogTableChunk);
+												this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, aLogErrorDetailTypes, grJobLogTableChunk);
 											} // if result
 										} else {
 											iNoOpRecordCount++;
@@ -173,12 +174,12 @@ JobRunner.prototype = {
 									} catch (oEx) {
 										iErrorCount++;
 										//gs.error('JobRunner.runTrigger sTableName: ' + sTableName + ' error writing record: ' + String(oEx));
-										this._writeRecordError(sTableId, sTableName, sSysId, '', { code: -97, message: String(oEx) }, grJobLogTableChunk);
+										this._writeRecordError(sTableId, sTableName, sSysId, '', { code: -97, message: String(oEx) }, aLogErrorDetailTypes, grJobLogTableChunk);
 									} // if catch
 								} else {
 									iErrorCount++;
 									//gs.error('JobRunner.runTrigger sTableName: ' + sTableName + ' sSysId: empty oRecord: ' + JSON.stringify(oRecord));
-									this._writeRecordError(sTableId, sTableName, '', '', { code: -98, message: 'No SysId in Payload' }, grJobLogTableChunk);
+									this._writeRecordError(sTableId, sTableName, '', '', { code: -98, message: 'No SysId in Payload' }, aLogErrorDetailTypes, grJobLogTableChunk);
 								} // if no sys id
 							}, this); // each record
 							grJobLogTableChunk.setValue('successful_record_count', iSuccessRecordCount);
@@ -222,7 +223,7 @@ JobRunner.prototype = {
 		if (this.bLog) { gs.info('JobRunner.runTrigger ended'); }
 	}, // function runTrigger
 
-	_writeRecordError: function (sTableId, sTableName, sRecordSysId, sRecordName, oError, grJobLogTableChunk) {
+	_writeRecordError: function (sTableId, sTableName, sRecordSysId, sRecordName, oError, aLogErrorDetailTypes, grJobLogTableChunk) {
 		//gs.info('tomtom sTableId: ' + sTableId + ' sRecordSysId: ' + sRecordSysId + ' sRecordName: ' + sRecordName + ' oError: ' + JSON.stringify(oError));
 		var aErrorMessages = this._gtObject.getValue('default/aErrorMessages', [], oError);
 		var aMappingErrors = [];
@@ -240,7 +241,7 @@ JobRunner.prototype = {
 		if (this._gtArray.isValidArray(aErrorMessages)) {
 			var aMessageDetailArgs = [], sErrorCode = '', sFieldId = '', sValue = '', sValidValues = '', aHierarchy = [], grDict, grMappingError, sMappingErrorId;
 			aErrorMessages.forEach(function (oErrorMsg) {
-				if (this._gtObject.getValue('sErrorType', '', oErrorMsg) == 'value') {
+				if ((!this._gtArray.isValidArray(aLogErrorDetailTypes)) || (aLogErrorDetailTypes[0] == 'all') || (aLogErrorDetailTypes.indexOf(this._gtObject.getValue('sErrorType', '', oErrorMsg)) != -1)) {
 					aMessageDetailArgs = this._gtObject.getValue('aMessageDetailArgs', '', oErrorMsg);
 					if (this._gtArray.isValidArray(aMessageDetailArgs)) {
 						sErrorCode = this._gtObject.getValue('sCode', '', oErrorMsg);
@@ -294,13 +295,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>67</sys_mod_count>
+        <sys_mod_count>68</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-04-04 07:49:51</sys_updated_on>
+        <sys_updated_on>2024-04-12 09:04:46</sys_updated_on>
     </sys_script_include>
 </record_update>
