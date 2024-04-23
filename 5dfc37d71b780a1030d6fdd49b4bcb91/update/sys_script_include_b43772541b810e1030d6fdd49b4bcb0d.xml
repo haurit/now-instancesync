@@ -83,16 +83,16 @@ JobController.prototype = {
 		} // if schedule exists
 	}, // function validateScheduler
 
-	checkScheduleAllowed: function (grJobConfig) {
+	checkScheduleAllowed: function () {
 		var grJobLog = new GlideRecord('x_snc_instanc_sync_job_log');
-		grJobLog.addEncodedQuery('job_config=' + grJobConfig.getUniqueValue() + '^status!=completed^status!=cancelled');
+		grJobLog.addEncodedQuery('job_config=' + this._sJobCfgId + '^status!=completed^status!=cancelled');
 		grJobLog.setLimit(1);
 		grJobLog.query();
 		if (!grJobLog.hasNext()) {
 			var dtStartTime = new GlideDateTime();
 			dtStartTime.setNumericValue(0);
 			var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
-			grJobLogLast.addEncodedQuery('job_config=' + grJobConfig.getUniqueValue() + '^status=completed');
+			grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^statusINcompleted,cancelled');
 			grJobLogLast.orderByDesc('sys_created_on');
 			grJobLogLast.setLimit(1);
 			grJobLogLast.query();
@@ -117,16 +117,16 @@ JobController.prototype = {
 				var gtEnd = new GlideTime();
 				gtEnd.setDisplayValue(sEndTime);
 				if ((gtToday > gtStart) && (gtToday < gtEnd)) {
-					if (this.bLog) {gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + grJobConfig.getDisplayValue() + ' (' + grJobConfig.getUniqueValue() + ') gtToday: ' + gtToday.getDisplayValueInternal() + ' sStartTime: ' + gtStart.getDisplayValueInternal() + ' sEndTime: ' + gtEnd.getDisplayValueInternal() + ' is inside blocked time');}
+					if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' gtToday: ' + gtToday.getDisplayValueInternal() + ' sStartTime: ' + gtStart.getDisplayValueInternal() + ' sEndTime: ' + gtEnd.getDisplayValueInternal() + ' is inside blocked time'); }
 					return true;
 				} // if inside blocked time		
 			}, this); // each blocked times
-			if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + grJobConfig.getDisplayValue() + ' (' + grJobConfig.getUniqueValue() + ') bIsSameDay: ' + bIsSameDay + ' iIntervalMinutes: ' + iIntervalMinutes + ' iPassedMinutes: ' + iPassedMinutes + ' bValidInterval: ' + bValidInterval + ' bBlockedTime: ' + bBlockedTime); }
+			if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' bIsSameDay: ' + bIsSameDay + ' iIntervalMinutes: ' + iIntervalMinutes + ' iPassedMinutes: ' + iPassedMinutes + ' bValidInterval: ' + bValidInterval + ' bBlockedTime: ' + bBlockedTime); }
 			if ((bValidInterval === true) && (bBlockedTime === false)) {
 				return true;
 			} // if interval valid and not blocked
 		} else {
-			if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + grJobConfig.getDisplayValue() + ' (' + grJobConfig.getUniqueValue() + ')'); }
+			if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId); }
 		} // if job not running
 		return false;
 	}, // function checkScheduleAllowed
@@ -674,13 +674,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>119</sys_mod_count>
+        <sys_mod_count>121</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-04-23 07:37:57</sys_updated_on>
+        <sys_updated_on>2024-04-23 09:17:45</sys_updated_on>
     </sys_script_include>
 </record_update>
