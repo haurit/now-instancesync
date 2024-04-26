@@ -247,7 +247,7 @@ JobController.prototype = {
 			iPriorityDefault = 100000;
 		} // if default priority not between 1 and 100000 set 100000 as default
 		var oPriorityClasses = this._getValue('job/oPriorityClasses', {});
-		var iChunkSize = this._getValue('job/iChunkSize', 2000);
+		var iChunkSize = 2000;
 		if ((!sTableQuery) && (this._gtArray.isValidArray(aTables))) {
 			sTableQuery = 'nameIN' + aTables.join(',');
 		} // if valid array
@@ -290,22 +290,24 @@ JobController.prototype = {
 						oClassMap = this._getValue(sTableName + '/oClassMap', {}, oTables);
 					} else {
 						var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
+						var oTableJobCfg = {};
 						if (this._gtArray.isValidArray(aHierarchy)) {
 							aHierarchy.some(function (sTableInHierarchy) {
 								if (sTableInHierarchy != 'cmdb') {
 									var _getTableCfg = new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + sTableInHierarchy);
 									if (_getTableCfg) {
 										if (_getTableCfg.getValue('job')) {
-											sQuery = _getTableCfg.getValue('config/sQuery', '');
-											iChunkSize = _getTableCfg.getValue('job/iChunkSize', iChunkSize);
-											oClassMap = _getTableCfg.getValue('job/oClassMap', {});
-											oPriorityClasses = _getTableCfg.getValue('job/oPriorityClasses', oPriorityClasses);
+											oTableJobCfg = _getTableCfg.getValue('job');
 											return true;
 										} // if valid obj
 									} // if config
 								} // if not cmdb root
 							}, this); // each table in hierarchy
 						} // if hierarchy
+						this.oConfig['job'] = this._gtObject.deepMerge(this.oConfig['job'], oTableJobCfg, false);
+						sQuery = this._getValue('job/sQuery', '');
+						iChunkSize = this._getValue('job/iChunkSize', iChunkSize);
+						oClassMap = this._getValue('job/oClassMap', {});
 					} // if config obj
 					if (this._getValue('job/bDeltaLoad', true) === true) {
 						sQuery = this.addDeltaLoadQuery(sTableName, sQuery, this._getValue('job/iDeltaLoadOverlapSeconds', -1), grJobLog);
@@ -674,13 +676,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>121</sys_mod_count>
+        <sys_mod_count>123</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-04-23 09:17:45</sys_updated_on>
+        <sys_updated_on>2024-04-26 09:24:48</sys_updated_on>
     </sys_script_include>
 </record_update>
