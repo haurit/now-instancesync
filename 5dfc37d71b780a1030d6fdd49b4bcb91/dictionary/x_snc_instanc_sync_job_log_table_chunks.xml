@@ -2,6 +2,7 @@
     <element db_object_id="5c4ea7c41b85ca1030d6fdd49b4bcb9a" label="Job Log Table Chunks" max_length="40" name="x_snc_instanc_sync_job_log_table_chunks" type="collection">
         <element label="Chunk" max_length="40" name="chunk" type="integer"/>
         <element label="ChunkSize" max_length="40" name="chunksize" type="integer"/>
+        <element label="Condition" max_length="4000" name="condition" type="conditions"/>
         <element label="End Time" max_length="40" name="end_time" type="glide_date_time"/>
         <element label="Error Code" max_length="40" name="error_code" type="integer"/>
         <element label="Expected Record Count" max_length="40" name="expected_record_count" type="integer"/>
