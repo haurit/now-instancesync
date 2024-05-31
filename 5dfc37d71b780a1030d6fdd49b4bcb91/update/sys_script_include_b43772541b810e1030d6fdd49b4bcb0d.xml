@@ -355,7 +355,7 @@ JobController.prototype = {
 												sTableCountId = this._gtRecordRead.getSysIdByQuery('sys_db_object', 'name=' + sTableCountName);
 												sClassQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sMappedClass);
 											} // if table found
-											if (sTableCountId) {
+											if ((sTableCountId) && (sTableCountId != 'undefined')) {
 												bSuccess = true;
 												this.initiateTable(sTableCountId, sTableCountName, sBaseTableId, sMappedClass, sClassQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
 											} else {
@@ -800,13 +800,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>161</sys_mod_count>
+        <sys_mod_count>162</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-05-31 07:28:12</sys_updated_on>
+        <sys_updated_on>2024-05-31 09:30:06</sys_updated_on>
     </sys_script_include>
 </record_update>
