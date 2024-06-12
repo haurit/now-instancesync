@@ -176,14 +176,18 @@ JobRunner.prototype = {
 							grJobLogTableChunk.setValue('status', 'pending_retry');
 							grJobLogTableChunk.setValue('error_code', -105); // error string size to big
 						} else {
-							var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
-							var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
 							if ((aRecords) && (typeof aRecords == 'object') && (aRecords.hasOwnProperty('error_code'))) {
 								iErrorCode = aRecords['error_code'];
 							} // if has error code
-							grJobLogTableChunk.setValue('status', sStatus);
-							grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
 							grJobLogTableChunk.setValue('error_code', iErrorCode); // error no records
+							if (iErrorCode == '204') {
+								grJobLogTableChunk.setValue('status', 'completed');
+							} else {
+								var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
+								var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
+								grJobLogTableChunk.setValue('status', sStatus);
+								grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
+							} // if no content
 						} // if records
 					} else {
 						grJobLogTableChunk.setValue('status', 'failed');
@@ -285,13 +289,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>73</sys_mod_count>
+        <sys_mod_count>74</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-06-11 14:33:05</sys_updated_on>
+        <sys_updated_on>2024-06-12 06:13:14</sys_updated_on>
     </sys_script_include>
 </record_update>

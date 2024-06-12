@@ -33,7 +33,7 @@
         <script><![CDATA[var _gt = new global.GlobalTools();
 _gt.scheduleScript('x_snc_instanc_sync.JobRunner', 'runTrigger', 1, [current], [], 'Job_' + current.getValue('chunk') + '_' + current.getDisplayValue('job_log_table'), 'xJoblogx', current.getValue('job_log'));
 current.setValue('error_code', 0);
-current.setValue('retry_count', 0);
+current.setValue('retry_count', -1);
 current.setValue('status', 'running');
 action.setRedirectURL(current);
 current.update();
@@ -50,7 +50,7 @@ if (! current.isActionAborted())
         <sys_domain>global</sys_domain>
         <sys_domain_path>/</sys_domain_path>
         <sys_id>2f81ba6c1bf5021030d6fdd49b4bcb58</sys_id>
-        <sys_mod_count>6</sys_mod_count>
+        <sys_mod_count>7</sys_mod_count>
         <sys_name>Restart Chunk</sys_name>
         <sys_overrides/>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
@@ -58,7 +58,7 @@ if (! current.isActionAborted())
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_ui_action_2f81ba6c1bf5021030d6fdd49b4bcb58</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-04-26 05:39:16</sys_updated_on>
+        <sys_updated_on>2024-06-12 05:32:16</sys_updated_on>
         <table>x_snc_instanc_sync_job_log_table_chunks</table>
         <ui11_compatible>true</ui11_compatible>
         <ui16_compatible>false</ui16_compatible>

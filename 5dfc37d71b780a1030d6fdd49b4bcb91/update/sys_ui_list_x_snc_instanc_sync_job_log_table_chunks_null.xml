@@ -3,257 +3,272 @@
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>name</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>0</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>0a9a382a1b5dc21030d6fdd49b4bcb3f</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>728d88781bf2c210e50ddc61ab4bcb0c</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>job_log</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>1</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>029a382a1b5dc21030d6fdd49b4bcb40</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>7a8d88781bf2c210e50ddc61ab4bcb0c</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>job_log_table</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>2</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>069a382a1b5dc21030d6fdd49b4bcb40</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>7e8d88781bf2c210e50ddc61ab4bcb0c</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>offset</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>3</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>0a9a382a1b5dc21030d6fdd49b4bcb40</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>728d88781bf2c210e50ddc61ab4bcb0d</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>chunk</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>4</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>0e9a382a1b5dc21030d6fdd49b4bcb40</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>768d88781bf2c210e50ddc61ab4bcb0d</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>chunksize</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>5</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>029a382a1b5dc21030d6fdd49b4bcb41</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>7a8d88781bf2c210e50ddc61ab4bcb0d</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>priority</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>6</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>069a382a1b5dc21030d6fdd49b4bcb41</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>7e8d88781bf2c210e50ddc61ab4bcb0d</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>status</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>7</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>0a9a382a1b5dc21030d6fdd49b4bcb41</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>728d88781bf2c210e50ddc61ab4bcb0e</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>start_time</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>8</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>0e9a382a1b5dc21030d6fdd49b4bcb41</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>768d88781bf2c210e50ddc61ab4bcb0e</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>end_time</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>9</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>029a382a1b5dc21030d6fdd49b4bcb42</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>7a8d88781bf2c210e50ddc61ab4bcb0e</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>rest_request_duration</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>10</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>069a382a1b5dc21030d6fdd49b4bcb42</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>7e8d88781bf2c210e50ddc61ab4bcb0e</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>expected_record_count</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>11</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>0a9a382a1b5dc21030d6fdd49b4bcb42</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>728d88781bf2c210e50ddc61ab4bcb0f</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>successful_record_count</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>12</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>0e9a382a1b5dc21030d6fdd49b4bcb42</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>768d88781bf2c210e50ddc61ab4bcb0f</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>no_operation_count</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>13</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>029a382a1b5dc21030d6fdd49b4bcb43</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>7a8d88781bf2c210e50ddc61ab4bcb0f</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
-            <element>error_code</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <element>error_count</element>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>14</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>069a382a1b5dc21030d6fdd49b4bcb43</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>7e8d88781bf2c210e50ddc61ab4bcb0f</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
-            <element>parent_chunk</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <element>error_code</element>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>15</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>0a9a382a1b5dc21030d6fdd49b4bcb43</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>728d88781bf2c210e50ddc61ab4bcb10</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
-            <element>retry_count</element>
-            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">869a382a1b5dc21030d6fdd49b4bcb3e</list_id>
+            <element>parent_chunk</element>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>16</position>
             <sum>false</sum>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
-            <sys_id>0e9a382a1b5dc21030d6fdd49b4bcb43</sys_id>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>768d88781bf2c210e50ddc61ab4bcb10</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
+        </sys_ui_list_element>
+        <sys_ui_list_element action="INSERT_OR_UPDATE">
+            <average_value>false</average_value>
+            <element>retry_count</element>
+            <list_id display_value="x_snc_instanc_sync_job_log_table_chunks" element="NULL" name="x_snc_instanc_sync_job_log_table_chunks" parent="NULL" relationship="NULL" sys_domain="global" view="Default view">b68d88781bf2c210e50ddc61ab4bcb0a</list_id>
+            <max_value>false</max_value>
+            <min_value>false</min_value>
+            <position>17</position>
+            <sum>false</sum>
+            <sys_created_by>tom.hauri</sys_created_by>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
+            <sys_id>7a8d88781bf2c210e50ddc61ab4bcb10</sys_id>
+            <sys_mod_count>0</sys_mod_count>
+            <sys_updated_by>tom.hauri</sys_updated_by>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
         </sys_ui_list_element>
         <sys_ui_list action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
@@ -267,10 +282,10 @@
             <sum>false</sum>
             <sys_class_name>sys_ui_list</sys_class_name>
             <sys_created_by>tom.hauri</sys_created_by>
-            <sys_created_on>2024-04-04 06:26:58</sys_created_on>
+            <sys_created_on>2024-06-12 06:14:57</sys_created_on>
             <sys_domain>global</sys_domain>
             <sys_domain_path>/</sys_domain_path>
-            <sys_id>869a382a1b5dc21030d6fdd49b4bcb3e</sys_id>
+            <sys_id>b68d88781bf2c210e50ddc61ab4bcb0a</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_name>x_snc_instanc_sync_job_log_table_chunks</sys_name>
             <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
@@ -278,7 +293,7 @@
             <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
             <sys_update_name>sys_ui_list_x_snc_instanc_sync_job_log_table_chunks_null</sys_update_name>
             <sys_updated_by>tom.hauri</sys_updated_by>
-            <sys_updated_on>2024-04-04 06:26:58</sys_updated_on>
+            <sys_updated_on>2024-06-12 06:14:57</sys_updated_on>
             <sys_user/>
             <view display_value="Default view" name="NULL">Default view</view>
             <view_name/>

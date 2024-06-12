@@ -37,6 +37,13 @@ JobScheduler.prototype = {
 		if (grJobLog.hasNext()) {
 			return true;
 		} // if job
+		var grJobLogTableChunksManual = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
+		grJobLogTableChunksManual.addEncodedQuery('retry_count=-1');
+		grJobLogTableChunksManual.setLimit(1);
+		grJobLogTableChunksManual.query();
+		if (grJobLogTableChunksManual.hasNext()) {
+			return true;
+		} // if manual chunk
 	}, // function checkScheduler
 
 	runScheduler: function () {
@@ -97,6 +104,15 @@ JobScheduler.prototype = {
 				gs.error('JobScheduler.runScheduler failed to find config for job: ' + grJobLog.getUniqueValue());
 			} // if copy job config
 		} // while copy job
+		if (!bHasOpenJobs) {
+			var grJobLogTableChunksManual = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
+			grJobLogTableChunksManual.addEncodedQuery('retry_count=-1');
+			grJobLogTableChunksManual.setLimit(1);
+			grJobLogTableChunksManual.query();
+			if (grJobLogTableChunksManual.hasNext()) {
+				bHasOpenJobs = true;
+			} // if manual chunk
+		} // if no job running, check manual chunks
 		if (bHasOpenJobs) {
 			if (this.bLog) { gs.info('JobScheduler.runScheduler bHasOpenJobs: ' + bHasOpenJobs + ' iAvailableTriggers: ' + this.iAvailableTriggers); }
 			this.manageTriggers();
@@ -195,6 +211,17 @@ JobScheduler.prototype = {
 				} // if triggers
 			} // if prio same or lower
 		} // if available trigger
+		var grJobLogTableChunksManual = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
+		grJobLogTableChunksManual.addEncodedQuery('retry_count=-1');
+		grJobLogTableChunksManual.query();
+		while (grJobLogTableChunksManual.next()) {
+			grJobLogTableChunksManual.setValue('status', 'running');
+			if (grJobLogTableChunksManual.update()) {
+				this._gt.scheduleScript('x_snc_instanc_sync.JobRunner', 'runTrigger', 1, [grJobLogTableChunksManual], [], 'Job_' + grJobLogTableChunksManual.getValue('chunk') + '_' + grJobLogTableChunksManual.getDisplayValue('job_log_table'), 'xJoblogx', grJobLogTableChunksManual.getValue('job_log'));
+			} else {
+				gs.error('JobScheduler.manageTriggers failed update chunk with error: ' + grJobLogTableChunksManual.getLastErrorMessage());
+			} // if no update
+		} // if manual chunk
 	}, // function manageTriggers
 
 	createSplitChunk: function (sJobId, sJobTableId, sJobChunkId, iPriority, iChunk, iChunkSize, iOffset) {
@@ -222,13 +249,13 @@ JobScheduler.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 06:32:06</sys_created_on>
         <sys_id>06f40bd01bc10e1030d6fdd49b4bcbcd</sys_id>
-        <sys_mod_count>53</sys_mod_count>
+        <sys_mod_count>54</sys_mod_count>
         <sys_name>JobScheduler</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_06f40bd01bc10e1030d6fdd49b4bcbcd</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-05-31 07:54:33</sys_updated_on>
+        <sys_updated_on>2024-06-12 05:41:29</sys_updated_on>
     </sys_script_include>
 </record_update>

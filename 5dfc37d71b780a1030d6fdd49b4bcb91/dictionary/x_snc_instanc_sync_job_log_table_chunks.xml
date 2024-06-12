@@ -1,33 +1,34 @@
 <?xml version="1.0" encoding="UTF-8"?><database>
     <element db_object_id="5c4ea7c41b85ca1030d6fdd49b4bcb9a" label="Job Log Table Chunks" max_length="40" name="x_snc_instanc_sync_job_log_table_chunks" type="collection">
-        <element label="Chunk" max_length="40" name="chunk" type="integer"/>
-        <element label="ChunkSize" max_length="40" name="chunksize" type="integer"/>
-        <element label="Condition" max_length="4000" name="condition" type="conditions"/>
-        <element label="End Time" max_length="40" name="end_time" type="glide_date_time"/>
-        <element label="Error Code" max_length="40" name="error_code" type="integer"/>
-        <element label="Expected Record Count" max_length="40" name="expected_record_count" type="integer"/>
-        <element label="Job Log" max_length="32" name="job_log" read_only="true" reference="x_snc_instanc_sync_job_log" type="reference"/>
         <element label="Job Log Table" max_length="32" name="job_log_table" reference="x_snc_instanc_sync_job_log_table" reference_cascade_rule="delete" type="reference"/>
-        <element calculation="(function calculatedFieldValue(current) {&#10;&#10;&#9;return current.getDisplayValue('job_log_table') + '_' + current.getValue('chunk');&#10;&#10;})(current);" display="true" label="Name" max_length="255" name="name" type="string" virtual="true"/>
-        <element label="No Operation Count" max_length="40" name="no_operation_count" type="integer"/>
-        <element label="Offset" max_length="40" name="offset" type="integer"/>
-        <element label="Parent Chunk" max_length="32" name="parent_chunk" reference="x_snc_instanc_sync_job_log_table_chunks" type="reference"/>
-        <element label="Priority" max_length="40" name="priority" type="integer"/>
-        <element label="REST Request Duration" max_length="40" name="rest_request_duration" type="glide_duration"/>
         <element label="Retry Count" max_length="40" name="retry_count" type="integer"/>
+        <element label="Expected Record Count" max_length="40" name="expected_record_count" type="integer"/>
+        <element label="Chunk" max_length="40" name="chunk" type="integer"/>
+        <element label="Offset" max_length="40" name="offset" type="integer"/>
+        <element label="No Operation Count" max_length="40" name="no_operation_count" type="integer"/>
+        <element label="Priority" max_length="40" name="priority" type="integer"/>
+        <element default="0" label="Error Count" max_length="40" name="error_count" type="integer"/>
+        <element label="REST Request Duration" max_length="40" name="rest_request_duration" type="glide_duration"/>
+        <element label="Parent Chunk" max_length="32" name="parent_chunk" reference="x_snc_instanc_sync_job_log_table_chunks" type="reference"/>
+        <element label="ChunkSize" max_length="40" name="chunksize" type="integer"/>
         <element label="Start Time" max_length="40" name="start_time" type="glide_date_time"/>
+        <element label="Successful Record Count" max_length="40" name="successful_record_count" type="integer"/>
         <element choice="3" default="not_started" label="Status" max_length="40" name="status" type="choice">
             <choice>
-                <element inactive_on_update="false" label="Not started" sequence="100" value="not_started"/>
-                <element inactive_on_update="false" label="Running" sequence="200" value="running"/>
-                <element inactive_on_update="false" label="Completed" sequence="300" value="completed"/>
-                <element inactive_on_update="false" label="Pending retry" sequence="400" value="pending_retry"/>
-                <element inactive_on_update="false" label="Failed" sequence="500" value="failed"/>
-                <element inactive_on_update="false" label="Cancelled" sequence="600" value="cancelled"/>
                 <element inactive_on_update="false" label="Pending children" sequence="700" value="pending_children"/>
+                <element inactive_on_update="false" label="Failed" sequence="500" value="failed"/>
+                <element inactive_on_update="false" label="Completed" sequence="300" value="completed"/>
+                <element inactive_on_update="false" label="Not started" sequence="100" value="not_started"/>
+                <element inactive_on_update="false" label="Cancelled" sequence="600" value="cancelled"/>
+                <element inactive_on_update="false" label="Pending retry" sequence="400" value="pending_retry"/>
+                <element inactive_on_update="false" label="Running" sequence="200" value="running"/>
             </choice>
         </element>
-        <element label="Successful Record Count" max_length="40" name="successful_record_count" type="integer"/>
+        <element label="Error Code" max_length="40" name="error_code" type="integer"/>
+        <element calculation="(function calculatedFieldValue(current) {&#10;&#10;&#9;return current.getDisplayValue('job_log_table') + '_' + current.getValue('chunk');&#10;&#10;})(current);" display="true" label="Name" max_length="255" name="name" type="string" virtual="true"/>
+        <element label="Condition" max_length="4000" name="condition" type="conditions"/>
+        <element label="End Time" max_length="40" name="end_time" type="glide_date_time"/>
+        <element label="Job Log" max_length="32" name="job_log" read_only="true" reference="x_snc_instanc_sync_job_log" type="reference"/>
         <index name="index">
             <element name="job_log"/>
         </index>
