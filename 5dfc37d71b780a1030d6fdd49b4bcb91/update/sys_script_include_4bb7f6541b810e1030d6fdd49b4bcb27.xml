@@ -11,6 +11,7 @@
 JobRunner.prototype = {
 	initialize: function () {
 		this.bLog = false;
+		this.sLogLevel = 'basic'; // basic, elevated, all
 		this.iMaxRetryCount = Number(gs.getProperty('x_snc_instanc_sync.max.retry', 5));
 		if (isNaN(this.iMaxRetryCount)) {
 			this.iMaxRetryCount = 5;
@@ -39,7 +40,7 @@ JobRunner.prototype = {
 				var sMappedClass = grJobLogTable.getValue('mapped_class');
 				var grJobConfig = new GlideRecord('x_snc_instanc_sync_job_config');
 				if ((grJobConfig.get(grJobLog.getValue('job_config'))) && (sTableName)) {
-					var _gtRESTAPI = new global.GlobalToolsRESTAPI(grJobConfig.getValue('connection_credential_alias'));
+					var _gtRESTAPI = new global.GlobalToolsRESTAPI(grJobConfig.getValue('connection_credential_alias', this.bLog, false, this.sLogLevel));
 					var _getJobCfg = new x_snc_json_cfg_mgr.getCfg(grJobConfig.getValue('json_configuration'));
 					var bValidConfig = false;
 					var oJobCfg = _getJobCfg.getConfig();
@@ -175,14 +176,18 @@ JobRunner.prototype = {
 							grJobLogTableChunk.setValue('status', 'pending_retry');
 							grJobLogTableChunk.setValue('error_code', -105); // error string size to big
 						} else {
-							var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
-							var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
 							if ((aRecords) && (typeof aRecords == 'object') && (aRecords.hasOwnProperty('error_code'))) {
 								iErrorCode = aRecords['error_code'];
 							} // if has error code
-							grJobLogTableChunk.setValue('status', sStatus);
-							grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
-							grJobLogTableChunk.setValue('error_code', iErrorCode); // error no records
+							if ((iErrorCode == -103) && (this._gt.getType(aRecords) == 'array') && (aRecords.length == 0)) {
+								grJobLogTableChunk.setValue('status', 'completed');
+							} else {
+								var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
+								var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
+								grJobLogTableChunk.setValue('status', sStatus);
+								grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
+								grJobLogTableChunk.setValue('error_code', iErrorCode); // error no records
+							} // if no content returned
 						} // if records
 					} else {
 						grJobLogTableChunk.setValue('status', 'failed');
@@ -198,6 +203,9 @@ JobRunner.prototype = {
 			} // if job table
 			dtNow = new GlideDateTime();
 			grJobLogTableChunk.setValue('end_time', dtNow);
+			if (grJobLogTableChunk.getValue('retry_count') == '-1') {
+				grJobLogTableChunk.setValue('retry_count', 0);
+			} // if manual chunk
 			if (!grJobLogTableChunk.update()) {
 				gs.error('JobRunner.runTrigger error writing chunk record: ' + sChunkId + ' Error: ' + grJobLogTableChunk.getLastErrorMessage());
 			} // if error
@@ -268,6 +276,8 @@ JobRunner.prototype = {
 					} // if error detail args
 				} // if value error
 			}, this); // each error message
+		} else if (oError.hasOwnProperty('code')) {
+			grRecordError.setValue('error_messages', JSON.stringify(oError));
 		} // if error messages
 		grRecordError.setValue('mapping_errors', aMappingErrors.join(','));
 		if (!grRecordError.insert()) {
@@ -284,13 +294,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>71</sys_mod_count>
+        <sys_mod_count>77</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-05-06 18:20:23</sys_updated_on>
+        <sys_updated_on>2024-06-12 08:31:31</sys_updated_on>
     </sys_script_include>
 </record_update>
