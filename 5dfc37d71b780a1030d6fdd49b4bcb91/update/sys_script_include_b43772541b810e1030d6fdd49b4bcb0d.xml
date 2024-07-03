@@ -322,13 +322,19 @@ JobController.prototype = {
 						this.oConfig = JSON.parse(this.sConfig); // reset JSON
 						this.oConfig['job'] = this._gtObject.deepMerge(this.oConfig['job'], oTableJobCfg, false);
 						sQuery = this._getValue('job/sQuery', '');
+						bUseDeltaLoadQuery = this._getValue('job/bUseDeltaLoadQuery', '');
+						sDeltaLoadQuery = this._getValue('job/sDeltaLoadQuery', '');
 						aDynamicQuery = this._getValue('job/aDynamicQuery', []);
 						aQuerySysIds = this._getValue('job/aQuerySysIds', []);
 						iChunkSize = this._getValue('job/iChunkSize', iChunkSize);
 						oClassMap = this._getValue('job/oClassMap', {});
 					} // if config obj
 					if (this._getValue('job/bDeltaLoad', true) === true) {
-						if (!bInitialJob) {
+						if (bInitialJob) {
+							if (this._getValue('job/sDeltaLoadStartTime', '')) {
+								dtStartTime.setDisplayValueInternal(this._getValue('job/sDeltaLoadStartTime'));
+							} // if intial delta time set in config
+						} else {
 							var iDeltaLoadOverlapSeconds = this._getValue('job/iDeltaLoadOverlapSeconds', -1);
 							iDeltaLoadOverlapSeconds = (isNaN(iDeltaLoadOverlapSeconds)) ? -1 : iDeltaLoadOverlapSeconds;
 							dtStartTime.addSeconds(iDeltaLoadOverlapSeconds);
@@ -336,7 +342,11 @@ JobController.prototype = {
 						var sDeltaQuery = '';
 						var dtEndTime = new GlideDateTime(grJobLog.getValue('start_time'));
 						sDeltaQuery = 'sys_updated_onBETWEEN' + dtStartTime + '@' + dtEndTime;
-						sQuery = this._gtRecordRead.combineQueries(sQuery, sDeltaQuery);
+						if ((bUseDeltaLoadQuery) && (sDeltaLoadQuery)) {
+							sQuery = this._gtRecordRead.combineQueries(sDeltaLoadQuery, sDeltaQuery);
+						} else {
+							sQuery = this._gtRecordRead.combineQueries(sQuery, sDeltaQuery);
+						} // if specific delta load query
 					} // if delta load query
 					if (this._gtObject.isObject(oPriorityClasses)) {
 						iPriority = this.getTableHierarchyPriority(sTableName, oPriorityClasses, iPriorityDefault);
@@ -815,13 +825,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>169</sys_mod_count>
+        <sys_mod_count>170</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-07-02 06:38:26</sys_updated_on>
+        <sys_updated_on>2024-07-03 07:09:52</sys_updated_on>
     </sys_script_include>
 </record_update>
