@@ -20,6 +20,7 @@ JobController.prototype = {
 		this._gtTable = new global.GlobalToolsTable();
 		this._gtRecordRead = new global.GlobalToolsRecordRead();
 		this._gtRecordWrite = new global.GlobalToolsRecordWrite();
+		this._gtAttachment = new global.GlobalToolsAttachment();
 		this._gtRESTAPI = new global.GlobalToolsRESTAPI(grJobConfig.getValue('connection_credential_alias'));
 		var _getCfg = new x_snc_json_cfg_mgr.getCfg(grJobConfig.getValue('json_configuration'));
 		this.oConfig = _getCfg.getConfig();
@@ -280,6 +281,18 @@ JobController.prototype = {
 				var gdtStart = new GlideDateTime();
 				var gdtEnd = new GlideDateTime();
 				var iRESTRequestDuration = -1;
+				var bInitialJob = true;
+				var dtStartTime = new GlideDateTime();
+				dtStartTime.setNumericValue(0);
+				var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
+				grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^status=completed');
+				grJobLogLast.orderByDesc('sys_created_on');
+				grJobLogLast.setLimit(1);
+				grJobLogLast.query();
+				if (grJobLogLast.next()) {
+					dtStartTime.setValue(grJobLogLast.start_time);
+					bInitialJob = false;
+				} // if last job log
 				while (grTable.next()) {
 					sTableId = grTable.getUniqueValue();
 					sBaseTableId = sTableId;
@@ -315,7 +328,15 @@ JobController.prototype = {
 						oClassMap = this._getValue('job/oClassMap', {});
 					} // if config obj
 					if (this._getValue('job/bDeltaLoad', true) === true) {
-						sQuery = this.addDeltaLoadQuery(sTableName, sQuery, this._getValue('job/iDeltaLoadOverlapSeconds', -1), grJobLog);
+						if (!bInitialJob) {
+							var iDeltaLoadOverlapSeconds = this._getValue('job/iDeltaLoadOverlapSeconds', -1);
+							iDeltaLoadOverlapSeconds = (isNaN(iDeltaLoadOverlapSeconds)) ? -1 : iDeltaLoadOverlapSeconds;
+							dtStartTime.addSeconds(iDeltaLoadOverlapSeconds);
+						} // if last job log
+						var sDeltaQuery = '';
+						var dtEndTime = new GlideDateTime(grJobLog.getValue('start_time'));
+						sDeltaQuery = 'sys_updated_onBETWEEN' + dtStartTime + '@' + dtEndTime;
+						sQuery = this._gtRecordRead.combineQueries(sQuery, sDeltaQuery);
 					} // if delta load query
 					if (this._gtObject.isObject(oPriorityClasses)) {
 						iPriority = this.getTableHierarchyPriority(sTableName, oPriorityClasses, iPriorityDefault);
@@ -413,25 +434,6 @@ JobController.prototype = {
 		if (this.bLog) { gs.info('JobController.initiateJob end grJobLog: ' + grJobLog.getUniqueValue() + ' bSuccess: ' + bSuccess); }
 		return bSuccess;
 	}, // function initiateJob
-
-	addDeltaLoadQuery: function (sTableName, sQuery, iDeltaLoadOverlapSeconds, grJobLog) {
-		var dtStartTime = new GlideDateTime();
-		dtStartTime.setNumericValue(0);
-		var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
-		grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^status=completed');
-		grJobLogLast.orderByDesc('sys_created_on');
-		grJobLogLast.setLimit(1);
-		grJobLogLast.query();
-		if (grJobLogLast.next()) {
-			dtStartTime.setValue(grJobLogLast.start_time);
-			dtStartTime.addSeconds(iDeltaLoadOverlapSeconds);
-		} // if last job log
-		var sDeltaQuery = '';
-		var dtEndTime = new GlideDateTime(grJobLog.getValue('start_time'));
-		sDeltaQuery = 'sys_updated_onBETWEEN' + dtStartTime + '@' + dtEndTime;
-		sQuery = this._gtRecordRead.combineQueries(sQuery, sDeltaQuery);
-		return sQuery;
-	}, // function addDeltaLoadQuery
 
 	getTableHierarchyPriority: function (sTableName, oPriorityClasses, iPriorityDefault) {
 		var iPriority = iPriorityDefault;
@@ -556,6 +558,9 @@ JobController.prototype = {
 			dtNow = new GlideDateTime();
 			grJobLogTable.setValue('start_time', dtNow);
 			if (grJobLogTable.insert()) {
+				if (this._getValue('job/bAttachTableJSONConfig', false) === true) {
+					this._gtAttachment.writeAttachmentByTableId(grJobLogTable.getTableName(), grJobLogTable.getUniqueValue(), 'cfg_job_' + grJobLogTable.getTableName() + '.json', JSON.stringify(this.oConfig['job']), '', false, false);
+				} // if attach JSON config to job log table
 				if (this._gtRecordRead.checkRecordByQuery('x_snc_instanc_sync_job_log_table_chunks', 'job_log_table=' + grJobLogTable.getUniqueValue())) {
 					gs.error('JobController.initiateDynamicQueryJob failed insert chunks because values exist for: ' + grJobLogTable.getUniqueValue());
 					return;
@@ -623,6 +628,9 @@ JobController.prototype = {
 		var dtNow = new GlideDateTime();
 		grJobLogTable.setValue('start_time', dtNow);
 		if (grJobLogTable.insert()) {
+			if (this._getValue('job/bAttachTableJSONConfig', false) === true) {
+				this._gtAttachment.writeAttachmentByTableId(grJobLogTable.getTableName(), grJobLogTable.getUniqueValue(), 'cfg_job_' + grJobLogTable.getTableName() + '.json', JSON.stringify(this.oConfig['job']), '', false, false);
+			} // if attach JSON config to job log table
 			this.insertTableChunks(sTableId, sTableName, sQuery, iTableCount, iChunkSize, iChunks, iPriority, grJobLog, grJobLogTable);
 		} else {
 			gs.error('JobController.initiateTable failed to insert table job for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
@@ -807,13 +815,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>165</sys_mod_count>
+        <sys_mod_count>169</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-06-20 13:37:57</sys_updated_on>
+        <sys_updated_on>2024-07-02 06:38:26</sys_updated_on>
     </sys_script_include>
 </record_update>

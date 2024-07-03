@@ -76,6 +76,7 @@ JobRunner.prototype = {
 						//gs.info('tomtom oJob: ' + JSON.stringify(oJob) + ' oConfig: ' + JSON.stringify(oConfig));
 						var bDeltaCompareAttachment = this._gtObject.getValue('bDeltaCompareAttachment', false, oJob);
 						var aDeltaCompareRemoveFields = this._gtObject.getValue('aDeltaCompareRemoveFields', [], oJob);
+						var sDeltaCompareFileNamePrefix = this._gtObject.getValue('sDeltaCompareFileNamePrefix', 'instsync', oJob);
 						var bLogErrorDetails = this._gtObject.getValue('bLogErrorDetails', false, oJob);
 						var aLogErrorDetailTypes = this._gtObject.getValue('aLogErrorDetailTypes', ['all'], oJob);
 						if (bLogErrorDetails) {
@@ -126,13 +127,13 @@ JobRunner.prototype = {
 										} // if delta compare remove field
 										var bChangeDetected = (bDeltaCompareAttachment) ? false : true;
 										if (bDeltaCompareAttachment) {
-											var sCIBOOSTHash = '';
-											var grSIMCIAttachment = this._gtRecordRead.getRecord('sys_attachment', 'table_name=ZZ_YY' + sClassName + '^table_sys_id=' + sSysId + '^file_name=sim_' + sSysId + '.json');
-											if (grSIMCIAttachment) {
-												sCIBOOSTHash = grSIMCIAttachment.getValue('hash');
+											var sRecordTargetHash = '';
+											var grSourceRecordAttachment = this._gtRecordRead.getRecord('sys_attachment', 'table_name=ZZ_YY' + sClassName + '^table_sys_id=' + sSysId + '^file_name=' + sDeltaCompareFileNamePrefix + '_' + sSysId + '.json');
+											if (grSourceRecordAttachment) {
+												sRecordTargetHash = grSourceRecordAttachment.getValue('hash');
 											} // if attachment
-											var sCISIMHash = String(this._gdDigest.getSHA256Hex(JSON.stringify(oRecordCompare))).toLocaleLowerCase();
-											if (sCISIMHash != sCIBOOSTHash) {
+											var sRecordSourceHash = String(this._gdDigest.getSHA256Hex(JSON.stringify(oRecordCompare))).toLocaleLowerCase();
+											if (sRecordSourceHash != sRecordTargetHash) {
 												bChangeDetected = true;
 											} // if hash is not same
 										} // if compare attachment
@@ -141,8 +142,8 @@ JobRunner.prototype = {
 											if ((sResultId) && (sResultId != -1)) {
 												iSuccessRecordCount++;
 												if (bDeltaCompareAttachment) {
-													this._gtAttachment.deleteAttachment(sClassName, sSysId, 'sim_' + sSysId + '.json', true);
-													this._gtAttachment.writeAttachmentByTableId(sClassName, sSysId, 'sim_' + sSysId + '.json', JSON.stringify(oRecordCompare), '', false, true);
+													this._gtAttachment.deleteAttachment(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
+													this._gtAttachment.writeAttachmentByTableId(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', JSON.stringify(oRecordCompare), '', false, true);
 												} // if compare attachment
 												if (this._gtObject.getValue('default/bError', false, oError)) {
 													this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, aLogErrorDetailTypes, grJobLogTableChunk);
@@ -294,13 +295,13 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>78</sys_mod_count>
+        <sys_mod_count>79</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-06-20 13:38:28</sys_updated_on>
+        <sys_updated_on>2024-07-02 07:46:03</sys_updated_on>
     </sys_script_include>
 </record_update>
