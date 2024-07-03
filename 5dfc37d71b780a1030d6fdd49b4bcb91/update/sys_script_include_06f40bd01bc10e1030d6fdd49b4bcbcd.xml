@@ -5,7 +5,7 @@
         <api_name>x_snc_instanc_sync.JobScheduler</api_name>
         <caller_access/>
         <client_callable>false</client_callable>
-        <description/>
+        <description>Prepares the jobs and coordinates the number of runners</description>
         <name>JobScheduler</name>
         <script><![CDATA[var JobScheduler = Class.create();
 JobScheduler.prototype = {
@@ -38,7 +38,7 @@ JobScheduler.prototype = {
 			return true;
 		} // if job
 		var grJobLogTableChunksManual = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
-		grJobLogTableChunksManual.addEncodedQuery('retry_count=-1');
+		grJobLogTableChunksManual.addEncodedQuery('statusINpending_retry,not_started^retry_count=-1');
 		grJobLogTableChunksManual.setLimit(1);
 		grJobLogTableChunksManual.query();
 		if (grJobLogTableChunksManual.hasNext()) {
@@ -106,7 +106,7 @@ JobScheduler.prototype = {
 		} // while copy job
 		if (!bHasOpenJobs) {
 			var grJobLogTableChunksManual = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
-			grJobLogTableChunksManual.addEncodedQuery('retry_count=-1');
+			grJobLogTableChunksManual.addEncodedQuery('statusINpending_retry,not_started^retry_count=-1');
 			grJobLogTableChunksManual.setLimit(1);
 			grJobLogTableChunksManual.query();
 			if (grJobLogTableChunksManual.hasNext()) {
@@ -197,7 +197,7 @@ JobScheduler.prototype = {
 			} // while errors
 			if (iPriority <= iCurrentJobPriority) {
 				var grJobLogTableChunk = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
-				grJobLogTableChunk.addEncodedQuery('job_log.statusNOT INcompleted,cancelled^statusINpending_retry,not_started^priority=' + String(iPriority));
+				grJobLogTableChunk.addEncodedQuery('job_log.statusNOT INcompleted,cancelled^statusINpending_retry,not_started^retry_count!=-1^priority=' + String(iPriority));
 				grJobLogTableChunk.setLimit(iAvailableTriggers);
 				grJobLogTableChunk.orderBy('sys_created_on');
 				grJobLogTableChunk.query();
@@ -249,13 +249,13 @@ JobScheduler.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 06:32:06</sys_created_on>
         <sys_id>06f40bd01bc10e1030d6fdd49b4bcbcd</sys_id>
-        <sys_mod_count>55</sys_mod_count>
+        <sys_mod_count>57</sys_mod_count>
         <sys_name>JobScheduler</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_06f40bd01bc10e1030d6fdd49b4bcbcd</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-06-12 09:27:52</sys_updated_on>
+        <sys_updated_on>2024-06-20 13:39:17</sys_updated_on>
     </sys_script_include>
 </record_update>

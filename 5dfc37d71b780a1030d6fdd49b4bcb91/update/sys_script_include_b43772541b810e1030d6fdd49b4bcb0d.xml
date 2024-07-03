@@ -5,7 +5,7 @@
         <api_name>x_snc_instanc_sync.JobController</api_name>
         <caller_access/>
         <client_callable>false</client_callable>
-        <description/>
+        <description>Main controller of the application</description>
         <name>JobController</name>
         <script><![CDATA[var JobController = Class.create();
 JobController.prototype = {
@@ -20,6 +20,7 @@ JobController.prototype = {
 		this._gtTable = new global.GlobalToolsTable();
 		this._gtRecordRead = new global.GlobalToolsRecordRead();
 		this._gtRecordWrite = new global.GlobalToolsRecordWrite();
+		this._gtAttachment = new global.GlobalToolsAttachment();
 		this._gtRESTAPI = new global.GlobalToolsRESTAPI(grJobConfig.getValue('connection_credential_alias'));
 		var _getCfg = new x_snc_json_cfg_mgr.getCfg(grJobConfig.getValue('json_configuration'));
 		this.oConfig = _getCfg.getConfig();
@@ -280,6 +281,18 @@ JobController.prototype = {
 				var gdtStart = new GlideDateTime();
 				var gdtEnd = new GlideDateTime();
 				var iRESTRequestDuration = -1;
+				var bInitialJob = true;
+				var dtStartTime = new GlideDateTime();
+				dtStartTime.setNumericValue(0);
+				var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
+				grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^status=completed');
+				grJobLogLast.orderByDesc('sys_created_on');
+				grJobLogLast.setLimit(1);
+				grJobLogLast.query();
+				if (grJobLogLast.next()) {
+					dtStartTime.setValue(grJobLogLast.start_time);
+					bInitialJob = false;
+				} // if last job log
 				while (grTable.next()) {
 					sTableId = grTable.getUniqueValue();
 					sBaseTableId = sTableId;
@@ -309,13 +322,31 @@ JobController.prototype = {
 						this.oConfig = JSON.parse(this.sConfig); // reset JSON
 						this.oConfig['job'] = this._gtObject.deepMerge(this.oConfig['job'], oTableJobCfg, false);
 						sQuery = this._getValue('job/sQuery', '');
+						bUseDeltaLoadQuery = this._getValue('job/bUseDeltaLoadQuery', '');
+						sDeltaLoadQuery = this._getValue('job/sDeltaLoadQuery', '');
 						aDynamicQuery = this._getValue('job/aDynamicQuery', []);
 						aQuerySysIds = this._getValue('job/aQuerySysIds', []);
 						iChunkSize = this._getValue('job/iChunkSize', iChunkSize);
 						oClassMap = this._getValue('job/oClassMap', {});
 					} // if config obj
 					if (this._getValue('job/bDeltaLoad', true) === true) {
-						sQuery = this.addDeltaLoadQuery(sTableName, sQuery, this._getValue('job/iDeltaLoadOverlapSeconds', -1), grJobLog);
+						if (bInitialJob) {
+							if (this._getValue('job/sDeltaLoadStartTime', '')) {
+								dtStartTime.setDisplayValueInternal(this._getValue('job/sDeltaLoadStartTime'));
+							} // if intial delta time set in config
+						} else {
+							var iDeltaLoadOverlapSeconds = this._getValue('job/iDeltaLoadOverlapSeconds', -1);
+							iDeltaLoadOverlapSeconds = (isNaN(iDeltaLoadOverlapSeconds)) ? -1 : iDeltaLoadOverlapSeconds;
+							dtStartTime.addSeconds(iDeltaLoadOverlapSeconds);
+						} // if last job log
+						var sDeltaQuery = '';
+						var dtEndTime = new GlideDateTime(grJobLog.getValue('start_time'));
+						sDeltaQuery = 'sys_updated_onBETWEEN' + dtStartTime + '@' + dtEndTime;
+						if ((bUseDeltaLoadQuery) && (sDeltaLoadQuery)) {
+							sQuery = this._gtRecordRead.combineQueries(sDeltaLoadQuery, sDeltaQuery);
+						} else {
+							sQuery = this._gtRecordRead.combineQueries(sQuery, sDeltaQuery);
+						} // if specific delta load query
 					} // if delta load query
 					if (this._gtObject.isObject(oPriorityClasses)) {
 						iPriority = this.getTableHierarchyPriority(sTableName, oPriorityClasses, iPriorityDefault);
@@ -370,7 +401,9 @@ JobController.prototype = {
 								sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableName);
 							} // if table calc extend tables
 						} // if has class field
-					} // if extentions
+					} else if (this._getValue('job/bForceClassQuery', false) === true) {
+						sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableName);
+					} // if target or source (bForceClassQuery) extentions
 					if (!bSplitTables) {
 						gdtStart = new GlideDateTime();
 						iTableCount = this._gtRESTAPI.doNOWRESTCount(sTableName, sQuery);
@@ -411,25 +444,6 @@ JobController.prototype = {
 		if (this.bLog) { gs.info('JobController.initiateJob end grJobLog: ' + grJobLog.getUniqueValue() + ' bSuccess: ' + bSuccess); }
 		return bSuccess;
 	}, // function initiateJob
-
-	addDeltaLoadQuery: function (sTableName, sQuery, iDeltaLoadOverlapSeconds, grJobLog) {
-		var dtStartTime = new GlideDateTime();
-		dtStartTime.setNumericValue(0);
-		var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
-		grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^status=completed');
-		grJobLogLast.orderByDesc('sys_created_on');
-		grJobLogLast.setLimit(1);
-		grJobLogLast.query();
-		if (grJobLogLast.next()) {
-			dtStartTime.setValue(grJobLogLast.start_time);
-			dtStartTime.addSeconds(iDeltaLoadOverlapSeconds);
-		} // if last job log
-		var sDeltaQuery = '';
-		var dtEndTime = new GlideDateTime(grJobLog.getValue('start_time'));
-		sDeltaQuery = 'sys_updated_onBETWEEN' + dtStartTime + '@' + dtEndTime;
-		sQuery = this._gtRecordRead.combineQueries(sQuery, sDeltaQuery);
-		return sQuery;
-	}, // function addDeltaLoadQuery
 
 	getTableHierarchyPriority: function (sTableName, oPriorityClasses, iPriorityDefault) {
 		var iPriority = iPriorityDefault;
@@ -554,6 +568,9 @@ JobController.prototype = {
 			dtNow = new GlideDateTime();
 			grJobLogTable.setValue('start_time', dtNow);
 			if (grJobLogTable.insert()) {
+				if (this._getValue('job/bAttachTableJSONConfig', false) === true) {
+					this._gtAttachment.writeAttachmentByTableId(grJobLogTable.getTableName(), grJobLogTable.getUniqueValue(), 'cfg_job_' + grJobLogTable.getTableName() + '.json', JSON.stringify(this.oConfig['job']), '', false, false);
+				} // if attach JSON config to job log table
 				if (this._gtRecordRead.checkRecordByQuery('x_snc_instanc_sync_job_log_table_chunks', 'job_log_table=' + grJobLogTable.getUniqueValue())) {
 					gs.error('JobController.initiateDynamicQueryJob failed insert chunks because values exist for: ' + grJobLogTable.getUniqueValue());
 					return;
@@ -621,6 +638,9 @@ JobController.prototype = {
 		var dtNow = new GlideDateTime();
 		grJobLogTable.setValue('start_time', dtNow);
 		if (grJobLogTable.insert()) {
+			if (this._getValue('job/bAttachTableJSONConfig', false) === true) {
+				this._gtAttachment.writeAttachmentByTableId(grJobLogTable.getTableName(), grJobLogTable.getUniqueValue(), 'cfg_job_' + grJobLogTable.getTableName() + '.json', JSON.stringify(this.oConfig['job']), '', false, false);
+			} // if attach JSON config to job log table
 			this.insertTableChunks(sTableId, sTableName, sQuery, iTableCount, iChunkSize, iChunks, iPriority, grJobLog, grJobLogTable);
 		} else {
 			gs.error('JobController.initiateTable failed to insert table job for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
@@ -737,6 +757,7 @@ JobController.prototype = {
 			gaJobLogTableChunkByParent.addAggregate('COUNT', 'status');
 			gaJobLogTableChunkByParent.addAggregate('SUM', 'successful_record_count');
 			gaJobLogTableChunkByParent.addAggregate('SUM', 'no_operation_count');
+			gaJobLogTableChunkByParent.addAggregate('SUM', 'error_count');
 			gaJobLogTableChunkByParent.query();
 			while (gaJobLogTableChunkByParent.next()) {
 				var sStatus = gaJobLogTableChunkByParent.getValue('status');
@@ -745,18 +766,22 @@ JobController.prototype = {
 				if (sStatus == 'completed') {
 					oChunkByParentStatus[sStatus]['iSuccessRecordCount'] = Number(gaJobLogTableChunkByParent.getAggregate('SUM', 'successful_record_count'));
 					oChunkByParentStatus[sStatus]['iNoOpRecordCount'] = Number(gaJobLogTableChunkByParent.getAggregate('SUM', 'no_operation_count'));
+					oChunkByParentStatus[sStatus]['iErrorRecordCount'] = Number(gaJobLogTableChunkByParent.getAggregate('SUM', 'error_count'));
 					oChunkByParentStatus[sStatus]['iTotalSuccessRecordCount'] = oChunkByParentStatus[sStatus]['iSuccessRecordCount'] + oChunkByParentStatus[sStatus]['iNoOpRecordCount'];
 				} // if completed
 			} // while child chunks
 			if ((oChunkByParentStatus.hasOwnProperty('pending_children')) || (oChunkByParentStatus.hasOwnProperty('pending_retry'))) {
 				this.updateChunks(grJobLog, 'parent_chunk=' + grJobLogTableChunk.getUniqueValue());
 			} else {
-				if (oChunkByParentStatus.hasOwnProperty('completed')) {
+				if ((['not_started', 'running', 'pending_children', 'pending_retry'].indexOf(Object(oChunkByParentStatus).keys()) == -1) && (oChunkByParentStatus.hasOwnProperty('completed'))) {
 					grJobLogTableChunk.setValue('successful_record_count', oChunkByParentStatus['completed']['iSuccessRecordCount']);
 					grJobLogTableChunk.setValue('no_operation_count', oChunkByParentStatus['completed']['iNoOpRecordCount']);
+					grJobLogTableChunk.setValue('error_count', oChunkByParentStatus['completed']['iErrorRecordCount']);
 					grJobLogTableChunk.setValue('status', 'completed');
 				} else if (oChunkByParentStatus.hasOwnProperty('failed')) {
 					grJobLogTableChunk.setValue('status', 'failed');
+				} else if (oChunkByParentStatus.hasOwnProperty('cancelled')) {
+					grJobLogTableChunk.setValue('status', 'cancelled');
 				} // if completed
 				if (!grJobLogTableChunk.update()) {
 					gs.error('JobController.updateChunks failed update chunk with error: ' + grJobLogTableChunk.getLastErrorMessage());
@@ -800,13 +825,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>162</sys_mod_count>
+        <sys_mod_count>170</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-05-31 09:30:06</sys_updated_on>
+        <sys_updated_on>2024-07-03 07:09:52</sys_updated_on>
     </sys_script_include>
 </record_update>
