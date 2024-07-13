@@ -773,7 +773,7 @@ JobController.prototype = {
 			if ((oChunkByParentStatus.hasOwnProperty('pending_children')) || (oChunkByParentStatus.hasOwnProperty('pending_retry'))) {
 				this.updateChunks(grJobLog, 'parent_chunk=' + grJobLogTableChunk.getUniqueValue());
 			} else {
-				if ((['not_started', 'running', 'pending_children', 'pending_retry'].indexOf(Object(oChunkByParentStatus).keys()) == -1) && (oChunkByParentStatus.hasOwnProperty('completed'))) {
+				if ((!oChunkByParentStatus.hasOwnProperty('not_started')) && (!oChunkByParentStatus.hasOwnProperty('running')) && (oChunkByParentStatus.hasOwnProperty('completed'))) {
 					grJobLogTableChunk.setValue('successful_record_count', oChunkByParentStatus['completed']['iSuccessRecordCount']);
 					grJobLogTableChunk.setValue('no_operation_count', oChunkByParentStatus['completed']['iNoOpRecordCount']);
 					grJobLogTableChunk.setValue('error_count', oChunkByParentStatus['completed']['iErrorRecordCount']);
@@ -825,13 +825,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>173</sys_mod_count>
+        <sys_mod_count>174</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-07-04 16:19:24</sys_updated_on>
+        <sys_updated_on>2024-07-13 07:05:26</sys_updated_on>
     </sys_script_include>
 </record_update>
