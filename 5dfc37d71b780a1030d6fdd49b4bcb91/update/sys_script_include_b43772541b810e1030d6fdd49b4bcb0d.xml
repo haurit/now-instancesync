@@ -271,6 +271,10 @@ JobController.prototype = {
 				var sMappedClass = '';
 				var sQuery = '';
 				var aDynamicQuery = [];
+				var bDeltaLoad = false;
+				var sDeltaLoadQuery = false;
+				var bUseDeltaLoadQuery = false;
+				var aQuerySysIds = [];
 				var bSplitTables = false;
 				var iAutoExtendedTables = -1;
 				var iTableCount = 0;
@@ -322,6 +326,7 @@ JobController.prototype = {
 						this.oConfig = JSON.parse(this.sConfig); // reset JSON
 						this.oConfig['job'] = this._gtObject.deepMerge(this.oConfig['job'], oTableJobCfg, false);
 						sQuery = this._getValue('job/sQuery', '');
+						bDeltaLoad = this._getValue('job/bDeltaLoad', false);
 						bUseDeltaLoadQuery = this._getValue('job/bUseDeltaLoadQuery', '');
 						sDeltaLoadQuery = this._getValue('job/sDeltaLoadQuery', '');
 						aDynamicQuery = this._getValue('job/aDynamicQuery', []);
@@ -329,7 +334,7 @@ JobController.prototype = {
 						iChunkSize = this._getValue('job/iChunkSize', iChunkSize);
 						oClassMap = this._getValue('job/oClassMap', {});
 					} // if config obj
-					if (this._getValue('job/bDeltaLoad', true) === true) {
+					if (bDeltaLoad === true) {
 						if (bInitialJob) {
 							if (this._getValue('job/sDeltaLoadStartTime', '')) {
 								dtStartTime.setDisplayValueInternal(this._getValue('job/sDeltaLoadStartTime'));
@@ -394,7 +399,7 @@ JobController.prototype = {
 											} // if table exists
 										} // if table count
 									}, this); // each count
-								} else {
+								} else if ((bInitialJob) || (!bDeltaLoad)) {
 									gs.error('JobController.initiateJob count failed for split table ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
 								} // if table count
 							} else {
@@ -411,7 +416,9 @@ JobController.prototype = {
 						iRESTRequestDuration = gdtEnd.getNumericValue() - gdtStart.getNumericValue();
 						//gs.info('tomtom no split table: ' + sTableName + ' (' + sTableId + ') with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
 						if ((!iTableCount) || (isNaN(iTableCount))) {
-							gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
+							if ((bInitialJob) || (!bDeltaLoad)) {
+								gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
+							} // if initial job or not delta load
 						} else if (iTableCount > 0) {
 							bSuccess = true;
 							this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
@@ -427,7 +434,9 @@ JobController.prototype = {
 								iRESTRequestDuration = gdtEnd.getNumericValue() - gdtStart.getNumericValue();
 								//gs.info('tomtom no split table: ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
 								if ((!iTableCount) || (isNaN(iTableCount))) {
-									gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' for job: ' + grJobLog.getUniqueValue());
+									if ((bInitialJob) || (!bDeltaLoad)) {
+										gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' for job: ' + grJobLog.getUniqueValue());
+									} // if initial job or not delta load
 								} else if (iTableCount > 0) {
 									bSuccess = true;
 									this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
@@ -825,13 +834,13 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>174</sys_mod_count>
+        <sys_mod_count>176</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-07-13 07:05:26</sys_updated_on>
+        <sys_updated_on>2024-07-16 19:56:51</sys_updated_on>
     </sys_script_include>
 </record_update>
