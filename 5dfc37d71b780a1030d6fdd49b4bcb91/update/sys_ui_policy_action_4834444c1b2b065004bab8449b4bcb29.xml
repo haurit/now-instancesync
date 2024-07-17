@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_ui_policy_action">
+    <sys_ui_policy_action action="INSERT_OR_UPDATE">
+        <cleared>true</cleared>
+        <disabled>ignore</disabled>
+        <field>run_after_this_job</field>
+        <field_message/>
+        <field_message_type>none</field_message_type>
+        <mandatory>ignore</mandatory>
+        <sys_class_name>sys_ui_policy_action</sys_class_name>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-07-17 04:25:57</sys_created_on>
+        <sys_id>4834444c1b2b065004bab8449b4bcb29</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>run_after_this_job</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_ui_policy_action_4834444c1b2b065004bab8449b4bcb29</sys_update_name>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-07-17 04:25:57</sys_updated_on>
+        <table>x_snc_instanc_sync_job_config</table>
+        <ui_policy display_value="Hide and cleanup Run after this Job when scheduled is true">f7f3cc0c1b2b065004bab8449b4bcbe0</ui_policy>
+        <value/>
+        <value_action>ignore</value_action>
+        <visible>false</visible>
+    </sys_ui_policy_action>
+    <sys_translated_text action="delete_multiple" query="documentkey=4834444c1b2b065004bab8449b4bcb29"/>
+</record_update>
