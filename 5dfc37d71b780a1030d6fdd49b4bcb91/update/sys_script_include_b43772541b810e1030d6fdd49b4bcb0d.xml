@@ -6,7 +6,9 @@
         <caller_access/>
         <client_callable>false</client_callable>
         <description>Main controller of the application</description>
+        <mobile_callable>false</mobile_callable>
         <name>JobController</name>
+        <sandbox_callable>false</sandbox_callable>
         <script><![CDATA[var JobController = Class.create();
 JobController.prototype = {
 	initialize: function (grJobConfig) {
@@ -272,8 +274,9 @@ JobController.prototype = {
 				var sQuery = '';
 				var aDynamicQuery = [];
 				var bDeltaLoad = false;
-				var sDeltaLoadQuery = false;
+				var sDeltaLoadQuery = '';
 				var bUseDeltaLoadQuery = false;
+				var sDeltaQuery = '';
 				var aQuerySysIds = [];
 				var bSplitTables = false;
 				var iAutoExtendedTables = -1;
@@ -302,6 +305,7 @@ JobController.prototype = {
 					sBaseTableId = sTableId;
 					sTableName = grTable.getValue('name');
 					sMappedClass = '';
+					sDeltaQuery = '';
 					iPriority = iPriorityDefault;
 					if (bConfigIsObject) {
 						sQuery = this._getValue(sTableName + '/sQuery', '', oTables);
@@ -344,7 +348,6 @@ JobController.prototype = {
 							iDeltaLoadOverlapSeconds = (isNaN(iDeltaLoadOverlapSeconds)) ? -1 : iDeltaLoadOverlapSeconds;
 							dtStartTime.addSeconds(iDeltaLoadOverlapSeconds);
 						} // if last job log
-						var sDeltaQuery = '';
 						var dtEndTime = new GlideDateTime(grJobLog.getValue('start_time'));
 						sDeltaQuery = 'sys_updated_onBETWEEN' + dtStartTime + '@' + dtEndTime;
 						if ((bUseDeltaLoadQuery) && (sDeltaLoadQuery)) {
@@ -426,8 +429,28 @@ JobController.prototype = {
 						Object.keys(oClassMap).forEach(function (sMappedClass) {
 							//gs.info('tomtom sMappedClass: ' +  sMappedClass + ' sTableName: ' + sTableName + ' oClassMap[sMappedClass] ' + oClassMap[sMappedClass]);
 							if (oClassMap[sMappedClass] == sTableName) {
-								var reTableName = new RegExp(sTableName, 'gi');
-								sQuery = sQuery.replace(reTableName, sMappedClass);
+								var oMappedTableCfg = {};
+								var _getMappedTableCfg = new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + sMappedClass);
+								if (_getMappedTableCfg) {
+									oMappedTableCfg = _getMappedTableCfg.getConfig();
+								} // if mapped table cfg
+								var sMappedQuery = this._gtObject.getValue('job/sQuery', '', oMappedTableCfg);
+								var sMappedDeltaLoadQuery = this._gtObject.getValue('job/sDeltaLoadQuery', '', oMappedTableCfg);
+								var bMappedForceClassQuery = false;
+								if ((bUseDeltaLoadQuery) && (sMappedDeltaLoadQuery)) {
+									sQuery = this._gtRecordRead.combineQueries(sMappedDeltaLoadQuery, sDeltaQuery);
+									bMappedForceClassQuery = this._gtObject.getValue('job/bForceClassQuery', '', oMappedTableCfg);
+								} else if (sMappedQuery) {
+									sQuery = this._gtRecordRead.combineQueries(sMappedQuery, sDeltaQuery);
+									bMappedForceClassQuery = this._gtObject.getValue('job/bForceClassQuery', '', oMappedTableCfg);
+								} // if delta load query
+								if (bMappedForceClassQuery === true) {
+									sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sMappedClass);
+								} else {
+									var reTableName = new RegExp(sTableName, 'gi');
+									sQuery = sQuery.replace(reTableName, sMappedClass);
+								} // if mapped force query
+								iChunkSize = this._getValue('job/iChunkSize', iChunkSize, oMappedTableCfg);
 								gdtStart = new GlideDateTime();
 								iTableCount = this._gtRESTAPI.doNOWRESTCount(sMappedClass, sQuery);
 								gdtEnd = new GlideDateTime();
@@ -834,13 +857,24 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>176</sys_mod_count>
+        <sys_mod_count>182</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-07-16 19:56:51</sys_updated_on>
+        <sys_updated_on>2024-07-31 14:01:12</sys_updated_on>
     </sys_script_include>
+    <sys_es_latest_script action="INSERT_OR_UPDATE">
+        <id>b43772541b810e1030d6fdd49b4bcb0d</id>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-07-31 13:41:38</sys_created_on>
+        <sys_id>2ba9c2281bf30610e50ddc61ab4bcb68</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-07-31 13:41:38</sys_updated_on>
+        <table>sys_script_include</table>
+        <use_es_latest>true</use_es_latest>
+    </sys_es_latest_script>
 </record_update>
