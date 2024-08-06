@@ -107,7 +107,8 @@ JobController.prototype = {
 			var bIsSameDay = (dtStartTime.getLocalDate() == dtToday.getLocalDate());
 			var iWeekday = dtToday.getDayOfWeekLocalTime();
 			var sWeekCfg = (iWeekday == 6 || iWeekday == 7) ? 'oWeekendDays' : 'oWeekDays';
-			var iIntervalMinutes = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/iRunInterval', 60);
+			var iIntervalMinutes = this._getValue('job/oScheduleCfg/iRunInterval', 60);
+			iIntervalMinutes = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/iRunInterval', iIntervalMinutes);
 			var iPassedMinutes = Math.floor((dtToday.getNumericValue() - dtStartTime.getNumericValue()) / 60000);
 			var bValidInterval = iIntervalMinutes < iPassedMinutes;
 			var gtToday = new GlideTime();
@@ -318,6 +319,7 @@ JobController.prototype = {
 							aHierarchy.some(function (sTableInHierarchy) {
 								if (sTableInHierarchy != 'cmdb') {
 									var _getTableCfg = new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + sTableInHierarchy);
+									_getTableCfg = (_getTableCfg) ? _getTableCfg : new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + + '_' + sTableInHierarchy);
 									if (_getTableCfg) {
 										if (_getTableCfg.getValue('job')) {
 											oTableJobCfg = _getTableCfg.getValue('job');
@@ -431,6 +433,7 @@ JobController.prototype = {
 							if (oClassMap[sMappedClass] == sTableName) {
 								var oMappedTableCfg = {};
 								var _getMappedTableCfg = new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + sMappedClass);
+								_getMappedTableCfg = (_getMappedTableCfg) ? _getMappedTableCfg : new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + '_' + sMappedClass);
 								if (_getMappedTableCfg) {
 									oMappedTableCfg = _getMappedTableCfg.getConfig();
 								} // if mapped table cfg
@@ -860,14 +863,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>183</sys_mod_count>
+        <sys_mod_count>185</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-08-01 13:04:54</sys_updated_on>
+        <sys_updated_on>2024-08-06 10:54:53</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>
