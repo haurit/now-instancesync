@@ -8,11 +8,10 @@
         <description>Main controller of the application</description>
         <mobile_callable>false</mobile_callable>
         <name>JobController</name>
-        <sandbox_callable>false</sandbox_callable>
         <script><![CDATA[var JobController = Class.create();
 JobController.prototype = {
 	initialize: function (grJobConfig) {
-		this.bLog = false;
+		this.bLog = true;
 		if (!grJobConfig) {
 			return;
 		} // if no job config
@@ -93,43 +92,62 @@ JobController.prototype = {
 		grJobLog.setLimit(1);
 		grJobLog.query();
 		if (!grJobLog.hasNext()) {
+			var bIsSameDay = false;
+			var gtToday = new GlideTime();
+			gtToday.setDisplayValue(new GlideTime().getDisplayValueInternal()); // use this trick to get same date for comparision
+			var dtToday = new GlideDateTime();
+			var iWeekday = dtToday.getDayOfWeekLocalTime();
+			var sWeekCfg = (iWeekday == 6 || iWeekday == 7) ? 'oWeekendDays' : 'oWeekDays';
 			var dtStartTime = new GlideDateTime();
 			dtStartTime.setNumericValue(0);
+			var sRunStartTime = String(this._getValue('job/oScheduleCfg/sRunStartTime', ''));
+			if (sRunStartTime) {
+				sRunStartTime = (sRunStartTime.length == 8) ? sRunStartTime : sRunStartTime + ':00';
+			} // if run start time
+			var iIntervalMinutes = this._getValue('job/oScheduleCfg/iRunInterval', 1440);
+			iIntervalMinutes = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/iRunInterval', iIntervalMinutes);
 			var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
-			grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^statusINcompleted,cancelled');
+			grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^status=completed');
 			grJobLogLast.orderByDesc('sys_created_on');
 			grJobLogLast.setLimit(1);
 			grJobLogLast.query();
 			if (grJobLogLast.next()) {
 				dtStartTime.setValue(grJobLogLast.start_time);
-			} // if last job log
-			var dtToday = new GlideDateTime();
-			var bIsSameDay = (dtStartTime.getLocalDate() == dtToday.getLocalDate());
-			var iWeekday = dtToday.getDayOfWeekLocalTime();
-			var sWeekCfg = (iWeekday == 6 || iWeekday == 7) ? 'oWeekendDays' : 'oWeekDays';
-			var iIntervalMinutes = this._getValue('job/oScheduleCfg/iRunInterval', 60);
-			iIntervalMinutes = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/iRunInterval', iIntervalMinutes);
-			var iPassedMinutes = Math.floor((dtToday.getNumericValue() - dtStartTime.getNumericValue()) / 60000);
-			var bValidInterval = iIntervalMinutes < iPassedMinutes;
-			var gtToday = new GlideTime();
-			gtToday.setDisplayValue(new GlideTime().getDisplayValueInternal()); // use this trick to get same date for comparision
-			var aBlockedHours = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/aBlockedHours', []);
-			var bBlockedTime = aBlockedHours.some(function (oBlockedHours) {
-				var sStartTime = String(oBlockedHours['sStartTime']) + ':00';
-				var sEndTime = String(oBlockedHours['sEndTime']) + ':00';
+				bIsSameDay = (dtStartTime.getLocalDate() == dtToday.getLocalDate());
+			} else if ((!this._getValue('job/oScheduleCfg/' + sWeekCfg)) && (iIntervalMinutes == 1440)) {
+				sRunStartTime = (sRunStartTime) ? sRunStartTime : '02:00:00';
+				bIsSameDay = false;
+			} // if last job log or simple daily config
+			if ((!bIsSameDay) && (sRunStartTime) && (iIntervalMinutes == 1440)) {
 				var gtStart = new GlideTime();
-				gtStart.setDisplayValue(sStartTime);
-				var gtEnd = new GlideTime();
-				gtEnd.setDisplayValue(sEndTime);
-				if ((gtToday > gtStart) && (gtToday < gtEnd)) {
-					if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' gtToday: ' + gtToday.getDisplayValueInternal() + ' sStartTime: ' + gtStart.getDisplayValueInternal() + ' sEndTime: ' + gtEnd.getDisplayValueInternal() + ' is inside blocked time'); }
+				gtStart.setDisplayValue(sRunStartTime);
+				if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' bIsSameDay: ' + bIsSameDay + ' iIntervalMinutes: ' + iIntervalMinutes + ' sRunStartTime: ' + sRunStartTime); }
+				if (gtToday > gtStart) {
 					return true;
-				} // if inside blocked time		
-			}, this); // each blocked times
-			if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' bIsSameDay: ' + bIsSameDay + ' iIntervalMinutes: ' + iIntervalMinutes + ' iPassedMinutes: ' + iPassedMinutes + ' bValidInterval: ' + bValidInterval + ' bBlockedTime: ' + bBlockedTime); }
-			if ((bValidInterval === true) && (bBlockedTime === false)) {
-				return true;
-			} // if interval valid and not blocked
+				} // if start time has passed
+			} else {
+				var iPassedMinutes = Math.floor((dtToday.getNumericValue() - dtStartTime.getNumericValue()) / 60000);
+				var bValidInterval = iIntervalMinutes < iPassedMinutes;
+				var aBlockedHours = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/aBlockedHours', []);
+				var bBlockedTime = aBlockedHours.some(function (oBlockedHours) {
+					var sStartTime = String(oBlockedHours['sStartTime']);
+					sStartTime = (sStartTime.length == 8) ? sStartTime : sStartTime + ':00';
+					var sEndTime = String(oBlockedHours['sEndTime']);
+					sEndTime = (sEndTime.length == 8) ? sEndTime : sEndTime + ':00';
+					var gtStart = new GlideTime();
+					gtStart.setDisplayValue(sStartTime);
+					var gtEnd = new GlideTime();
+					gtEnd.setDisplayValue(sEndTime);
+					if ((gtToday > gtStart) && (gtToday < gtEnd)) {
+						if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' gtToday: ' + gtToday.getDisplayValueInternal() + ' sStartTime: ' + gtStart.getDisplayValueInternal() + ' sEndTime: ' + gtEnd.getDisplayValueInternal() + ' is inside blocked time'); }
+						return true;
+					} // if inside blocked time	
+				}, this); // each blocked times
+				if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' bIsSameDay: ' + bIsSameDay + ' iIntervalMinutes: ' + iIntervalMinutes + ' iPassedMinutes: ' + iPassedMinutes + ' bValidInterval: ' + bValidInterval + ' bBlockedTime: ' + bBlockedTime); }
+				if ((bValidInterval === true) && (bBlockedTime === false)) {
+					return true;
+				} // if interval valid and not blocked
+			} // if not same day and start time is defined and interval is daily
 		} else {
 			if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId); }
 		} // if job not running
@@ -863,14 +881,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>185</sys_mod_count>
+        <sys_mod_count>196</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-08-06 10:54:53</sys_updated_on>
+        <sys_updated_on>2024-08-07 16:17:19</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>
