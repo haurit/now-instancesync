@@ -11,7 +11,7 @@
         <script><![CDATA[var JobController = Class.create();
 JobController.prototype = {
 	initialize: function (grJobConfig) {
-		this.bLog = true;
+		this.bLog = false;
 		if (!grJobConfig) {
 			return;
 		} // if no job config
@@ -87,67 +87,64 @@ JobController.prototype = {
 	}, // function validateScheduler
 
 	checkScheduleAllowed: function () {
-		var grJobLog = new GlideRecord('x_snc_instanc_sync_job_log');
-		grJobLog.addEncodedQuery('job_config=' + this._sJobCfgId + '^status!=completed^status!=cancelled');
-		grJobLog.setLimit(1);
-		grJobLog.query();
-		if (!grJobLog.hasNext()) {
-			var bIsSameDay = false;
+		if (!this.isJobRunning()) {
+			var dtLastJobStartTime = this.getLastJobStartTime();
+			var gtLastJobStartTime = new GlideTime();
+			gtLastJobStartTime.setDisplayValueInternal(dtLastJobStartTime.getInternalFormattedLocalTime());
 			var gtToday = new GlideTime();
 			gtToday.setDisplayValue(new GlideTime().getDisplayValueInternal()); // use this trick to get same date for comparision
 			var dtToday = new GlideDateTime();
 			var iWeekday = dtToday.getDayOfWeekLocalTime();
 			var sWeekCfg = (iWeekday == 6 || iWeekday == 7) ? 'oWeekendDays' : 'oWeekDays';
-			var dtStartTime = new GlideDateTime();
-			dtStartTime.setNumericValue(0);
-			var sRunStartTime = String(this._getValue('job/oScheduleCfg/sRunStartTime', ''));
-			if (sRunStartTime) {
-				sRunStartTime = (sRunStartTime.length == 8) ? sRunStartTime : sRunStartTime + ':00';
-			} // if run start time
-			var iIntervalMinutes = this._getValue('job/oScheduleCfg/iRunInterval', 1440);
+			var iIntervalMinutes = this._getValue('job/oScheduleCfg/iRunInterval', this._getValue('job/iRunInterval', -1));
 			iIntervalMinutes = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/iRunInterval', iIntervalMinutes);
-			var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
-			grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^status=completed');
-			grJobLogLast.orderByDesc('sys_created_on');
-			grJobLogLast.setLimit(1);
-			grJobLogLast.query();
-			if (grJobLogLast.next()) {
-				dtStartTime.setValue(grJobLogLast.start_time);
-				bIsSameDay = (dtStartTime.getLocalDate() == dtToday.getLocalDate());
-			} else if ((!this._getValue('job/oScheduleCfg/' + sWeekCfg)) && (iIntervalMinutes == 1440)) {
-				sRunStartTime = (sRunStartTime) ? sRunStartTime : '02:00:00';
-				bIsSameDay = false;
-			} // if last job log or simple daily config
-			if ((!bIsSameDay) && (sRunStartTime) && (iIntervalMinutes == 1440)) {
-				var gtStart = new GlideTime();
-				gtStart.setDisplayValue(sRunStartTime);
-				if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' bIsSameDay: ' + bIsSameDay + ' iIntervalMinutes: ' + iIntervalMinutes + ' sRunStartTime: ' + sRunStartTime); }
-				if (gtToday > gtStart) {
-					return true;
-				} // if start time has passed
-			} else {
-				var iPassedMinutes = Math.floor((dtToday.getNumericValue() - dtStartTime.getNumericValue()) / 60000);
-				var bValidInterval = iIntervalMinutes < iPassedMinutes;
-				var aBlockedHours = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/aBlockedHours', []);
-				var bBlockedTime = aBlockedHours.some(function (oBlockedHours) {
-					var sStartTime = String(oBlockedHours['sStartTime']);
-					sStartTime = (sStartTime.length == 8) ? sStartTime : sStartTime + ':00';
-					var sEndTime = String(oBlockedHours['sEndTime']);
-					sEndTime = (sEndTime.length == 8) ? sEndTime : sEndTime + ':00';
-					var gtStart = new GlideTime();
-					gtStart.setDisplayValue(sStartTime);
-					var gtEnd = new GlideTime();
-					gtEnd.setDisplayValue(sEndTime);
-					if ((gtToday > gtStart) && (gtToday < gtEnd)) {
-						if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' gtToday: ' + gtToday.getDisplayValueInternal() + ' sStartTime: ' + gtStart.getDisplayValueInternal() + ' sEndTime: ' + gtEnd.getDisplayValueInternal() + ' is inside blocked time'); }
+			if (iIntervalMinutes == -1) {
+				var aRunStartTimes = this._getValue('job/oScheduleCfg/aRunStartTimes', this._getValue('job/oScheduleCfg/aRunStartTimes', ''));
+				var sRunStartTime = String(this._getValue('job/oScheduleCfg/sRunStartTime', this._getValue('job/sRunStartTime', '02:00:00')));
+				aRunStartTimes = (this._gtArray.isValidArray(aRunStartTimes)) ? aRunStartTimes : [sRunStartTime];
+				if (this._gtArray.isValidArray(aRunStartTimes)) {
+					var gtRunStartTime = new GlideTime();
+					var aDtPastStartTimes = [];
+					aRunStartTimes.forEach(function (sRunStartTimeTmp) {
+						sRunStartTimeTmp = (sRunStartTimeTmp.length == 8) ? sRunStartTimeTmp : sRunStartTimeTmp + ':00';
+						gtRunStartTime.setDisplayValue(sRunStartTimeTmp);
+						if ((gtLastJobStartTime < gtRunStartTime) && (gtToday > gtRunStartTime)) {
+							aDtPastStartTimes.push(gtRunStartTime);
+						} // if time is past
+					}, this); // each start times
+					aDtPastStartTimes.sort(function (a, b) { return b.localeCompare(a); });
+					gtRunStartTime = (aDtPastStartTimes.length > 0) ? aDtPastStartTimes[0] : null;
+					if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' gtLastJobStartTime: ' + String(gtLastJobStartTime) + ' gtRunStartTime: ' + String(gtRunStartTime)); }
+					if (gtRunStartTime) {
 						return true;
-					} // if inside blocked time	
-				}, this); // each blocked times
-				if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' bIsSameDay: ' + bIsSameDay + ' iIntervalMinutes: ' + iIntervalMinutes + ' iPassedMinutes: ' + iPassedMinutes + ' bValidInterval: ' + bValidInterval + ' bBlockedTime: ' + bBlockedTime); }
+					} // if start time
+				} // if run start times
+			} else {
+				var iPassedMinutes = Math.floor((dtToday.getNumericValue() - dtLastJobStartTime.getNumericValue()) / 60000);
+				var bValidInterval = iIntervalMinutes < iPassedMinutes;
+				var bBlockedTime = false;
+				var aBlockedHours = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/aBlockedHours', []);
+				if (this._gtArray.isValidArray(aBlockedHours)) {
+					bBlockedTime = aBlockedHours.some(function (oBlockedHours) {
+						var sBlockStartTime = String(oBlockedHours['sStartTime']);
+						sBlockStartTime = (sBlockStartTime.length == 8) ? sBlockStartTime : sBlockStartTime + ':00';
+						var gtBlockStart = new GlideTime();
+						gtBlockStart.setDisplayValue(sBlockStartTime);
+						var sBlockEndTime = String(oBlockedHours['sEndTime']);
+						sBlockEndTime = (sBlockEndTime.length == 8) ? sBlockEndTime : sBlockEndTime + ':00';
+						var gtBlockEnd = new GlideTime();
+						gtBlockEnd.setDisplayValue(sBlockEndTime);
+						if ((gtToday > gtBlockStart) && (gtToday < gtBlockEnd)) {
+							if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' gtToday: ' + gtToday.getDisplayValueInternal() + ' sStartTime: ' + gtBlockStart.getDisplayValueInternal() + ' sEndTime: ' + gtBlockEnd.getDisplayValueInternal() + ' is inside blocked time'); }
+							return true;
+						} // if inside blocked time	
+					}, this); // each blocked times
+				} // if blocked array
+				if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' iIntervalMinutes: ' + iIntervalMinutes + ' iPassedMinutes: ' + iPassedMinutes + ' bValidInterval: ' + bValidInterval + ' bBlockedTime: ' + bBlockedTime); }
 				if ((bValidInterval === true) && (bBlockedTime === false)) {
 					return true;
 				} // if interval valid and not blocked
-			} // if not same day and start time is defined and interval is daily
+			} // if interval minutes
 		} else {
 			if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId); }
 		} // if job not running
@@ -195,6 +192,20 @@ JobController.prototype = {
 			return false;
 		} // if job found
 	}, // function isJobRunning
+
+	getLastJobStartTime: function () {
+		var dtStartTime = new GlideDateTime();
+		dtStartTime.setNumericValue(0);
+		var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
+		grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^status=completed');
+		grJobLogLast.orderByDesc('sys_created_on');
+		grJobLogLast.setLimit(1);
+		grJobLogLast.query();
+		if (grJobLogLast.next()) {
+			dtStartTime.setValue(grJobLogLast.start_time);
+		} // if last job
+		return dtStartTime;
+	}, // function getLastJobStartTime
 
 	hasOpenTriggers: function (grJobLog) {
 		var sQuery = 'document=xJoblogx^document_key=' + grJobLog.getUniqueValue();
@@ -307,17 +318,10 @@ JobController.prototype = {
 				var gdtStart = new GlideDateTime();
 				var gdtEnd = new GlideDateTime();
 				var iRESTRequestDuration = -1;
-				var bInitialJob = true;
-				var dtStartTime = new GlideDateTime();
-				dtStartTime.setNumericValue(0);
-				var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
-				grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^status=completed');
-				grJobLogLast.orderByDesc('sys_created_on');
-				grJobLogLast.setLimit(1);
-				grJobLogLast.query();
-				if (grJobLogLast.next()) {
-					dtStartTime.setValue(grJobLogLast.start_time);
-					bInitialJob = false;
+				var bInitialJob = false;
+				var dtStartTime = this.getLastJobStartTime();
+				if (dtStartTime.getNumericValue() == 0) {
+					bInitialJob = true;
 				} // if last job log
 				while (grTable.next()) {
 					sTableId = grTable.getUniqueValue();
@@ -873,7 +877,7 @@ JobController.prototype = {
 	*/
 
 	type: 'JobController',
-	version: '1.0.0',
+	version: '1.0.1',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -881,14 +885,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>196</sys_mod_count>
+        <sys_mod_count>225</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-08-07 16:17:19</sys_updated_on>
+        <sys_updated_on>2024-08-13 19:50:35</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>

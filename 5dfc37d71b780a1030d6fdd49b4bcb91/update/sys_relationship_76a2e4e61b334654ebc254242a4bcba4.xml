@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_relationship">
+    <sys_relationship action="INSERT_OR_UPDATE">
+        <advanced>false</advanced>
+        <apply_to/>
+        <basic_apply_to>x_snc_instanc_sync_job_config</basic_apply_to>
+        <basic_query_from>x_snc_json_cfg_mgr_json_configuration</basic_query_from>
+        <insert_callback/>
+        <name>JSON Configuration</name>
+        <query_from/>
+        <query_with><![CDATA[(function refineQuery(current, parent) {
+
+	var sQuery = 'sys_id=-1';
+	var sJSONCfgId = parent.getValue('json_configuration');
+	if (sJSONCfgId) {
+		sQuery = 'sys_id=' + sJSONCfgId;
+		var _getCfg = new x_snc_json_cfg_mgr.getCfg(sJSONCfgId);
+		var sTableJSONPrefix = _getCfg.getValue('job/sTableJSONPrefix', '');
+		if (!sTableJSONPrefix) {
+			var grJSONCfg = parent.json_configuration.getRefRecord();
+			if (grJSONCfg.isValidRecord()) {
+				sTableJSONPrefix = grJSONCfg.getValue('name');
+			} // if json cfg
+		} // if no json prefix
+		if (sTableJSONPrefix) {
+			sQuery += '^ORnameSTARTSWITH' + sTableJSONPrefix;
+		} // if prefix or id	
+	} // if json id
+	current.addQuery(sQuery);
+	current.orderByDesc('sys_updated_on');
+
+})(current, parent);]]></query_with>
+        <reference_field/>
+        <related_list/>
+        <simple_reference>false</simple_reference>
+        <sys_class_name>sys_relationship</sys_class_name>
+        <sys_created_by>admin</sys_created_by>
+        <sys_created_on>2024-08-06 11:20:08</sys_created_on>
+        <sys_id>76a2e4e61b334654ebc254242a4bcba4</sys_id>
+        <sys_mod_count>6</sys_mod_count>
+        <sys_name>JSON Configuration</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_relationship_76a2e4e61b334654ebc254242a4bcba4</sys_update_name>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-08-13 16:26:46</sys_updated_on>
+    </sys_relationship>
+    <sys_translated_text action="delete_multiple" query="documentkey=76a2e4e61b334654ebc254242a4bcba4"/>
+    <sys_es_latest_script action="INSERT_OR_UPDATE">
+        <id>76a2e4e61b334654ebc254242a4bcba4</id>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-08-13 15:14:50</sys_created_on>
+        <sys_id>67abddf81b841610e50ddc61ab4bcb46</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-08-13 15:14:50</sys_updated_on>
+        <table>sys_relationship</table>
+        <use_es_latest>true</use_es_latest>
+    </sys_es_latest_script>
+</record_update>
