@@ -53,7 +53,7 @@ JobRunner.prototype = {
 					if (this._gtObject.getValue('job/oTables/' + sTableName, '', oJobCfg)) {
 						bValidConfig = true;
 					} else if (sMappedClass) {
-						oTableCfg = this._JobCommon.getTableConfig(sJSONName, this._getValue('job/sTableJSONPrefix', '', oJobCfg), sMappedClass);
+						oTableCfg = this._JobCommon.getTableConfig(sJSONName, this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg), sMappedClass);
 						if (oTableCfg.hasOwnProperty('config')) {
 							bValidConfig = true;
 						} // if valid config
@@ -61,7 +61,7 @@ JobRunner.prototype = {
 						if (this._gtArray.isValidArray(aHierarchy)) {
 							aHierarchy.some(function (sTableInHierarchy) {
 								if (sTableInHierarchy != 'cmdb') {
-									oTableCfg = this._JobCommon.getTableConfig(sJSONName, this._getValue('job/sTableJSONPrefix', '', oJobCfg), sTableInHierarchy);
+									oTableCfg = this._JobCommon.getTableConfig(sJSONName, this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg), sTableInHierarchy);
 									if (oTableCfg.hasOwnProperty('config')) {
 										bValidConfig = true;
 										return true;
@@ -309,7 +309,7 @@ JobRunner.prototype = {
 	}, // function _writeRecordError
 
 	type: 'JobRunner',
-	version: '1.0.0',
+	version: '1.0.1',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -317,14 +317,14 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>92</sys_mod_count>
+        <sys_mod_count>94</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-08-14 15:41:31</sys_updated_on>
+        <sys_updated_on>2024-08-15 08:57:42</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
