@@ -23,10 +23,13 @@ JobController.prototype = {
 		this._gtRecordWrite = new global.GlobalToolsRecordWrite();
 		this._gtAttachment = new global.GlobalToolsAttachment();
 		this._gtRESTAPI = new global.GlobalToolsRESTAPI(grJobConfig.getValue('connection_credential_alias'));
-		var _getCfg = new x_snc_json_cfg_mgr.getCfg(grJobConfig.getValue('json_configuration'));
+		this._JobCommon = new JobCommon();
+		var sJSONId = grJobConfig.getValue('json_configuration');
+		var _getCfg = new x_snc_json_cfg_mgr.getCfg(sJSONId);
 		this.oConfig = _getCfg.getConfig();
 		this.sConfig = JSON.stringify(this.oConfig);
 		this._getValue = _getCfg.getValue;
+		this._sJSONName = (sJSONId) ? grJobConfig.json_configuration.name : 'NA';
 		this._sJobCfgId = grJobConfig.getUniqueValue();
 	}, // function initialize
 
@@ -327,6 +330,7 @@ JobController.prototype = {
 					sTableId = grTable.getUniqueValue();
 					sBaseTableId = sTableId;
 					sTableName = grTable.getValue('name');
+					var grTarget = new GlideRecord(sTableName);
 					sMappedClass = '';
 					sDeltaQuery = '';
 					iPriority = iPriorityDefault;
@@ -340,14 +344,10 @@ JobController.prototype = {
 						if (this._gtArray.isValidArray(aHierarchy)) {
 							aHierarchy.some(function (sTableInHierarchy) {
 								if (sTableInHierarchy != 'cmdb') {
-									var _getTableCfg = new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + sTableInHierarchy);
-									_getTableCfg = (_getTableCfg) ? _getTableCfg : new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + + '_' + sTableInHierarchy);
-									if (_getTableCfg) {
-										if (_getTableCfg.getValue('job')) {
-											oTableJobCfg = _getTableCfg.getValue('job');
-											return true;
-										} // if valid obj
-									} // if config
+									oTableJobCfg = this._JobCommon.getTableConfig(this._sJSONName, this._getValue('job/sTableJSONPrefix', ''), sTableInHierarchy, 'job');
+									if (Object.keys(oTableJobCfg).length > 0) {
+										return true;
+									} // if valid obj
 								} // if not cmdb root
 							}, this); // each table in hierarchy
 						} // if hierarchy
@@ -390,7 +390,6 @@ JobController.prototype = {
 						bSplitTables = true;
 						bSuccess = this.initiateDynamicQueryJob(sTableName, aDynamicQuery, aQuerySysIds, aTableExtensions, sBaseTableId, iPriority, grJobLog);
 					} else if (this._gtArray.isValidArray(aTableExtensions)) {
-						var grTarget = new GlideRecord(sTableName);
 						if (grTarget.isValidField('sys_class_name')) {
 							if (this._getValue('job/bTableAutoExtend', true) === true) {
 								gdtStart = new GlideDateTime();
@@ -433,7 +432,7 @@ JobController.prototype = {
 								sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableName);
 							} // if table calc extend tables
 						} // if has class field
-					} else if (this._getValue('job/bForceClassQuery', false) === true) {
+					} else if ((this._getValue('job/bForceClassQuery', false) === true) && (grTarget.isValidField('sys_class_name'))) {
 						sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableName);
 					} // if target or source (bForceClassQuery) extentions
 					if (!bSplitTables) {
@@ -453,12 +452,7 @@ JobController.prototype = {
 						Object.keys(oClassMap).forEach(function (sMappedClass) {
 							//gs.info('tomtom sMappedClass: ' +  sMappedClass + ' sTableName: ' + sTableName + ' oClassMap[sMappedClass] ' + oClassMap[sMappedClass]);
 							if (oClassMap[sMappedClass] == sTableName) {
-								var oMappedTableCfg = {};
-								var _getMappedTableCfg = new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + sMappedClass);
-								_getMappedTableCfg = (_getMappedTableCfg) ? _getMappedTableCfg : new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + '_' + sMappedClass);
-								if (_getMappedTableCfg) {
-									oMappedTableCfg = _getMappedTableCfg.getConfig();
-								} // if mapped table cfg
+								var oMappedTableCfg = this._JobCommon.getTableConfig(this._sJSONName, this._getValue('job/sTableJSONPrefix', ''), sMappedClass);
 								var sMappedQuery = this._gtObject.getValue('job/sQuery', '', oMappedTableCfg);
 								var sMappedDeltaLoadQuery = this._gtObject.getValue('job/sDeltaLoadQuery', '', oMappedTableCfg);
 								var bMappedForceClassQuery = false;
@@ -885,14 +879,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>225</sys_mod_count>
+        <sys_mod_count>229</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-08-13 19:50:35</sys_updated_on>
+        <sys_updated_on>2024-08-15 05:58:42</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>

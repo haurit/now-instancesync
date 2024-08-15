@@ -1,0 +1,72 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>package_private</access>
+        <active>true</active>
+        <api_name>x_snc_instanc_sync.JobCommon</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description/>
+        <mobile_callable>false</mobile_callable>
+        <name>JobCommon</name>
+        <script><![CDATA[var JobCommon = Class.create();
+JobCommon.prototype = {
+	initialize: function () {
+	}, // function initialize
+
+	getTableConfig: function (sJSONName, sTableJSONPrefix, sTableName, sReturnProperty, sDelimiter) {
+		sDelimiter = (sDelimiter) ? sDelimiter : '_';
+		var oReturnObj = {};
+		var aNames = [];
+		aNames.push(sJSONName + sDelimiter + sTableName);
+		aNames.push(sJSONName + sTableName);
+		if ((sTableJSONPrefix) && (sJSONName != sTableJSONPrefix)) {
+			aNames.push(sTableJSONPrefix + sTableName);
+			aNames.push(sTableJSONPrefix + sDelimiter + sTableName);
+		} // if diff name and prefix
+		aNames.some(function (sName) {
+			var _getTableCfg = new x_snc_json_cfg_mgr.getCfg(sName);
+			if (_getTableCfg) {
+				if (sReturnProperty) {
+					if (_getTableCfg.getValue(sReturnProperty)) {
+						oReturnObj = _getTableCfg.getValue(sReturnProperty);
+						return true;
+					} // if value for return prop
+				} else {
+					oReturnObj = _getTableCfg.getConfig();
+				} // if return prop
+				return true;
+			} // if found
+		}, this); // each name
+		return oReturnObj;
+	}, // function getTableConfig
+
+	type: 'JobCommon',
+	version: '1.0.1',
+	author: 'ServiceNow Customer Outcomes, Tom Hauri',
+	email: 'tom@hauri.biz',
+};]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-08-14 14:55:26</sys_created_on>
+        <sys_id>b1b02a891b089610e50ddc61ab4bcbc6</sys_id>
+        <sys_mod_count>8</sys_mod_count>
+        <sys_name>JobCommon</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_script_include_b1b02a891b089610e50ddc61ab4bcbc6</sys_update_name>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-08-15 06:02:03</sys_updated_on>
+    </sys_script_include>
+    <sys_es_latest_script action="INSERT_OR_UPDATE">
+        <id>b1b02a891b089610e50ddc61ab4bcbc6</id>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-08-14 14:55:26</sys_created_on>
+        <sys_id>45d0aa891b089610e50ddc61ab4bcbec</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-08-14 14:55:26</sys_updated_on>
+        <table>sys_script_include</table>
+        <use_es_latest>true</use_es_latest>
+    </sys_es_latest_script>
+</record_update>

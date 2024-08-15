@@ -24,6 +24,7 @@ JobRunner.prototype = {
 		this._gtRecordRead = new global.GlobalToolsRecordRead();
 		this._gtRecordWriteValidate = new global.GlobalToolsRecordWriteValidate();
 		this._gtAttachment = new global.GlobalToolsAttachment();
+		this._JobCommon = new JobCommon();
 		this._gdDigest = new GlideDigest();
 	}, // function initialize
 
@@ -42,7 +43,9 @@ JobRunner.prototype = {
 				var grJobConfig = new GlideRecord('x_snc_instanc_sync_job_config');
 				if ((grJobConfig.get(grJobLog.getValue('job_config'))) && (sTableName)) {
 					var _gtRESTAPI = new global.GlobalToolsRESTAPI(grJobConfig.getValue('connection_credential_alias', this.bLog, false, this.sLogLevel));
-					var _getJobCfg = new x_snc_json_cfg_mgr.getCfg(grJobConfig.getValue('json_configuration'));
+					var sJSONId = grJobConfig.getValue('json_configuration');
+					var _getJobCfg = new x_snc_json_cfg_mgr.getCfg(sJSONId);
+					var sJSONName = (sJSONId) ? grJobConfig.json_configuration.name : 'NA';
 					var bValidConfig = false;
 					var oJobCfg = _getJobCfg.getConfig();
 					var oTableCfg = {};
@@ -50,27 +53,19 @@ JobRunner.prototype = {
 					if (this._gtObject.getValue('job/oTables/' + sTableName, '', oJobCfg)) {
 						bValidConfig = true;
 					} else if (sMappedClass) {
-						var _getTableCfg = new x_snc_json_cfg_mgr.getCfg(this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg) + sMappedClass);
-						_getTableCfg = (_getTableCfg) ? _getTableCfg : new x_snc_json_cfg_mgr.getCfg(this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg) + '_' + sMappedClass);
-						if (_getTableCfg) {
-							oTableCfg = _getTableCfg.getConfig();
-							if (oTableCfg.hasOwnProperty('config')) {
-								bValidConfig = true;
-							} // if valid config
-						} // if config found
+						oTableCfg = this._JobCommon.getTableConfig(sJSONName, this._getValue('job/sTableJSONPrefix', '', oJobCfg), sMappedClass);
+						if (oTableCfg.hasOwnProperty('config')) {
+							bValidConfig = true;
+						} // if valid config
 					} else {
 						if (this._gtArray.isValidArray(aHierarchy)) {
 							aHierarchy.some(function (sTableInHierarchy) {
 								if (sTableInHierarchy != 'cmdb') {
-									var _getTableCfg = new x_snc_json_cfg_mgr.getCfg(this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg) + sTableInHierarchy);
-									_getTableCfg = (_getTableCfg) ? _getTableCfg : new x_snc_json_cfg_mgr.getCfg(this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg) + '_' + sTableInHierarchy);
-									if (_getTableCfg) {
-										oTableCfg = _getTableCfg.getConfig();
-										if (oTableCfg.hasOwnProperty('config')) {
-											bValidConfig = true;
-											return true;
-										} // if valid obj
-									} // if config
+									oTableCfg = this._JobCommon.getTableConfig(sJSONName, this._getValue('job/sTableJSONPrefix', '', oJobCfg), sTableInHierarchy);
+									if (oTableCfg.hasOwnProperty('config')) {
+										bValidConfig = true;
+										return true;
+									} // if valid obj
 								} // if not cmdb root
 							}, this); // each table in hierarchy
 						} // if hierarchy
@@ -322,14 +317,14 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>91</sys_mod_count>
+        <sys_mod_count>92</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-08-07 08:32:46</sys_updated_on>
+        <sys_updated_on>2024-08-14 15:41:31</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
