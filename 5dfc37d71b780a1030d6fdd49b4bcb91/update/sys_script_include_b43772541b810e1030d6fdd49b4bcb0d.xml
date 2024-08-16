@@ -567,37 +567,26 @@ JobController.prototype = {
 		} // if sysid array
 		if (this._gtArray.isValidArray(aTmpIds)) {
 			if ((this._gtArray.isValidArray(aTableExtensions)) && (bHasClassName)) {
-				if (sTargetType == 'local') {
-					grSourceRecord = this._gtRecordRead.getRecords(sTableName, 'sys_idIN' + aTmpIds.join(','));
-					while (grSourceRecord.next()) {
-						sTmpClass = grSourceRecord.getValue('sys_class_name');
-						if (!oDynamicResult.hasOwnProperty(sTmpClass)) {
-							oDynamicResult[sTmpClass] = [];
-						} // if new class
-						oDynamicResult[sTmpClass].push(grSourceRecord.getUniqueValue());
-					} // while new records
-				} else if (sTargetType == 'remote') {
-					var i = 0;
-					iMaxURLSize = 2000 - String(this._gtRESTAPI.sRemoteUrl).length - String(sTableName).length - 250; // add some buffer to avoid url length error
-					iMaxSysIds = Math.floor(iMaxURLSize / 33);
-					for (i = 0; i < aTmpIds.length; i++) {
-						aTmpQueryIds.push(aTmpIds[i]);
-						if (((i % iMaxSysIds == 0) && (i > 0)) || (i == aTmpIds.length - 1)) {
-							sTmpQuery = 'sys_idIN' + aTmpQueryIds.join(',');
-							var aRecords = this._gtRESTAPI.doNOWRESTQuery(sTableName, sTmpQuery, '', '', ['sys_id', 'sys_class_name']);
-							aRecords.forEach(function (oRecord) {
-								if ((oRecord.hasOwnProperty('sys_id')) && (oRecord.hasOwnProperty('sys_class_name'))) {
-									sTmpClass = oRecord['sys_class_name'];
-									if (!oDynamicResult.hasOwnProperty(sTmpClass)) {
-										oDynamicResult[sTmpClass] = [];
-									} // if new class
-									oDynamicResult[sTmpClass].push(oRecord['sys_id']);
-								} // if has field
-							}, this); // each record
-							aTmpQueryIds = [];
-						} // workaround to limit URL length per call
-					} // each model id
-				} // if target type
+				var i = 0;
+				iMaxURLSize = 2000 - String(this._gtRESTAPI.sRemoteUrl).length - String(sTableName).length - 250; // add some buffer to avoid url length error
+				iMaxSysIds = Math.floor(iMaxURLSize / 33);
+				for (i = 0; i < aTmpIds.length; i++) {
+					aTmpQueryIds.push(aTmpIds[i]);
+					if (((i % iMaxSysIds == 0) && (i > 0)) || (i == aTmpIds.length - 1)) {
+						sTmpQuery = 'sys_idIN' + aTmpQueryIds.join(',');
+						var aRecords = this._gtRESTAPI.doNOWRESTQuery(sTableName, sTmpQuery, '', '', ['sys_id', 'sys_class_name']);
+						aRecords.forEach(function (oRecord) {
+							if ((oRecord.hasOwnProperty('sys_id')) && (oRecord.hasOwnProperty('sys_class_name'))) {
+								sTmpClass = oRecord['sys_class_name'];
+								if (!oDynamicResult.hasOwnProperty(sTmpClass)) {
+									oDynamicResult[sTmpClass] = [];
+								} // if new class
+								oDynamicResult[sTmpClass].push(oRecord['sys_id']);
+							} // if has field
+						}, this); // each record
+						aTmpQueryIds = [];
+					} // workaround to limit URL length per call
+				} // each model id
 			} else {
 				oDynamicResult[sTableName] = aTmpIds;
 			} // if table has extensions
@@ -881,14 +870,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>230</sys_mod_count>
+        <sys_mod_count>231</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-08-16 13:08:37</sys_updated_on>
+        <sys_updated_on>2024-08-16 16:30:16</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>
