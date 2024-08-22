@@ -6,6 +6,7 @@
         <caller_access/>
         <client_callable>false</client_callable>
         <description>Main controller of the application</description>
+        <mobile_callable>false</mobile_callable>
         <name>JobController</name>
         <script><![CDATA[var JobController = Class.create();
 JobController.prototype = {
@@ -22,10 +23,13 @@ JobController.prototype = {
 		this._gtRecordWrite = new global.GlobalToolsRecordWrite();
 		this._gtAttachment = new global.GlobalToolsAttachment();
 		this._gtRESTAPI = new global.GlobalToolsRESTAPI(grJobConfig.getValue('connection_credential_alias'));
-		var _getCfg = new x_snc_json_cfg_mgr.getCfg(grJobConfig.getValue('json_configuration'));
+		this._JobCommon = new JobCommon();
+		var sJSONId = grJobConfig.getValue('json_configuration');
+		var _getCfg = new x_snc_json_cfg_mgr.getCfg(sJSONId);
 		this.oConfig = _getCfg.getConfig();
 		this.sConfig = JSON.stringify(this.oConfig);
 		this._getValue = _getCfg.getValue;
+		this._sJSONName = (sJSONId) ? grJobConfig.json_configuration.name : 'NA';
 		this._sJobCfgId = grJobConfig.getUniqueValue();
 	}, // function initialize
 
@@ -86,47 +90,64 @@ JobController.prototype = {
 	}, // function validateScheduler
 
 	checkScheduleAllowed: function () {
-		var grJobLog = new GlideRecord('x_snc_instanc_sync_job_log');
-		grJobLog.addEncodedQuery('job_config=' + this._sJobCfgId + '^status!=completed^status!=cancelled');
-		grJobLog.setLimit(1);
-		grJobLog.query();
-		if (!grJobLog.hasNext()) {
-			var dtStartTime = new GlideDateTime();
-			dtStartTime.setNumericValue(0);
-			var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
-			grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^statusINcompleted,cancelled');
-			grJobLogLast.orderByDesc('sys_created_on');
-			grJobLogLast.setLimit(1);
-			grJobLogLast.query();
-			if (grJobLogLast.next()) {
-				dtStartTime.setValue(grJobLogLast.start_time);
-			} // if last job log
-			var dtToday = new GlideDateTime();
-			var bIsSameDay = (dtStartTime.getLocalDate() == dtToday.getLocalDate());
-			var iWeekday = dtToday.getDayOfWeekLocalTime();
-			var sWeekCfg = (iWeekday == 6 || iWeekday == 7) ? 'oWeekendDays' : 'oWeekDays';
-			var iIntervalMinutes = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/iRunInterval', 60);
-			var iPassedMinutes = Math.floor((dtToday.getNumericValue() - dtStartTime.getNumericValue()) / 60000);
-			var bValidInterval = iIntervalMinutes < iPassedMinutes;
+		if (!this.isJobRunning()) {
+			var dtLastJobStartTime = this.getLastJobStartTime();
+			var gtLastJobStartTime = new GlideTime();
+			gtLastJobStartTime.setDisplayValueInternal(dtLastJobStartTime.getInternalFormattedLocalTime());
 			var gtToday = new GlideTime();
 			gtToday.setDisplayValue(new GlideTime().getDisplayValueInternal()); // use this trick to get same date for comparision
-			var aBlockedHours = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/aBlockedHours', []);
-			var bBlockedTime = aBlockedHours.some(function (oBlockedHours) {
-				var sStartTime = String(oBlockedHours['sStartTime']) + ':00';
-				var sEndTime = String(oBlockedHours['sEndTime']) + ':00';
-				var gtStart = new GlideTime();
-				gtStart.setDisplayValue(sStartTime);
-				var gtEnd = new GlideTime();
-				gtEnd.setDisplayValue(sEndTime);
-				if ((gtToday > gtStart) && (gtToday < gtEnd)) {
-					if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' gtToday: ' + gtToday.getDisplayValueInternal() + ' sStartTime: ' + gtStart.getDisplayValueInternal() + ' sEndTime: ' + gtEnd.getDisplayValueInternal() + ' is inside blocked time'); }
+			var dtToday = new GlideDateTime();
+			var iWeekday = dtToday.getDayOfWeekLocalTime();
+			var sWeekCfg = (iWeekday == 6 || iWeekday == 7) ? 'oWeekendDays' : 'oWeekDays';
+			var iIntervalMinutes = this._getValue('job/oScheduleCfg/iRunInterval', this._getValue('job/iRunInterval', -1));
+			iIntervalMinutes = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/iRunInterval', iIntervalMinutes);
+			if (iIntervalMinutes == -1) {
+				var aRunStartTimes = this._getValue('job/oScheduleCfg/aRunStartTimes', this._getValue('job/oScheduleCfg/aRunStartTimes', ''));
+				var sRunStartTime = String(this._getValue('job/oScheduleCfg/sRunStartTime', this._getValue('job/sRunStartTime', '02:00:00')));
+				aRunStartTimes = (this._gtArray.isValidArray(aRunStartTimes)) ? aRunStartTimes : [sRunStartTime];
+				if (this._gtArray.isValidArray(aRunStartTimes)) {
+					var gtRunStartTime = new GlideTime();
+					var aDtPastStartTimes = [];
+					aRunStartTimes.forEach(function (sRunStartTimeTmp) {
+						sRunStartTimeTmp = (sRunStartTimeTmp.length == 8) ? sRunStartTimeTmp : sRunStartTimeTmp + ':00';
+						gtRunStartTime.setDisplayValue(sRunStartTimeTmp);
+						if ((gtLastJobStartTime < gtRunStartTime) && (gtToday > gtRunStartTime)) {
+							aDtPastStartTimes.push(gtRunStartTime);
+						} // if time is past
+					}, this); // each start times
+					aDtPastStartTimes.sort(function (a, b) { return b.localeCompare(a); });
+					gtRunStartTime = (aDtPastStartTimes.length > 0) ? aDtPastStartTimes[0] : null;
+					if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' gtLastJobStartTime: ' + String(gtLastJobStartTime) + ' gtRunStartTime: ' + String(gtRunStartTime)); }
+					if (gtRunStartTime) {
+						return true;
+					} // if start time
+				} // if run start times
+			} else {
+				var iPassedMinutes = Math.floor((dtToday.getNumericValue() - dtLastJobStartTime.getNumericValue()) / 60000);
+				var bValidInterval = iIntervalMinutes < iPassedMinutes;
+				var bBlockedTime = false;
+				var aBlockedHours = this._getValue('job/oScheduleCfg/' + sWeekCfg + '/aBlockedHours', []);
+				if (this._gtArray.isValidArray(aBlockedHours)) {
+					bBlockedTime = aBlockedHours.some(function (oBlockedHours) {
+						var sBlockStartTime = String(oBlockedHours['sStartTime']);
+						sBlockStartTime = (sBlockStartTime.length == 8) ? sBlockStartTime : sBlockStartTime + ':00';
+						var gtBlockStart = new GlideTime();
+						gtBlockStart.setDisplayValue(sBlockStartTime);
+						var sBlockEndTime = String(oBlockedHours['sEndTime']);
+						sBlockEndTime = (sBlockEndTime.length == 8) ? sBlockEndTime : sBlockEndTime + ':00';
+						var gtBlockEnd = new GlideTime();
+						gtBlockEnd.setDisplayValue(sBlockEndTime);
+						if ((gtToday > gtBlockStart) && (gtToday < gtBlockEnd)) {
+							if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' gtToday: ' + gtToday.getDisplayValueInternal() + ' sStartTime: ' + gtBlockStart.getDisplayValueInternal() + ' sEndTime: ' + gtBlockEnd.getDisplayValueInternal() + ' is inside blocked time'); }
+							return true;
+						} // if inside blocked time	
+					}, this); // each blocked times
+				} // if blocked array
+				if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' iIntervalMinutes: ' + iIntervalMinutes + ' iPassedMinutes: ' + iPassedMinutes + ' bValidInterval: ' + bValidInterval + ' bBlockedTime: ' + bBlockedTime); }
+				if ((bValidInterval === true) && (bBlockedTime === false)) {
 					return true;
-				} // if inside blocked time		
-			}, this); // each blocked times
-			if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId + ' bIsSameDay: ' + bIsSameDay + ' iIntervalMinutes: ' + iIntervalMinutes + ' iPassedMinutes: ' + iPassedMinutes + ' bValidInterval: ' + bValidInterval + ' bBlockedTime: ' + bBlockedTime); }
-			if ((bValidInterval === true) && (bBlockedTime === false)) {
-				return true;
-			} // if interval valid and not blocked
+				} // if interval valid and not blocked
+			} // if interval minutes
 		} else {
 			if (this.bLog) { gs.info('JobController.checkScheduleAllowed jobs running for job config: ' + this._sJobCfgId); }
 		} // if job not running
@@ -174,6 +195,20 @@ JobController.prototype = {
 			return false;
 		} // if job found
 	}, // function isJobRunning
+
+	getLastJobStartTime: function () {
+		var dtStartTime = new GlideDateTime();
+		dtStartTime.setNumericValue(0);
+		var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
+		grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^status=completed');
+		grJobLogLast.orderByDesc('sys_created_on');
+		grJobLogLast.setLimit(1);
+		grJobLogLast.query();
+		if (grJobLogLast.next()) {
+			dtStartTime.setValue(grJobLogLast.start_time);
+		} // if last job
+		return dtStartTime;
+	}, // function getLastJobStartTime
 
 	hasOpenTriggers: function (grJobLog) {
 		var sQuery = 'document=xJoblogx^document_key=' + grJobLog.getUniqueValue();
@@ -272,8 +307,9 @@ JobController.prototype = {
 				var sQuery = '';
 				var aDynamicQuery = [];
 				var bDeltaLoad = false;
-				var sDeltaLoadQuery = false;
+				var sDeltaLoadQuery = '';
 				var bUseDeltaLoadQuery = false;
+				var sDeltaQuery = '';
 				var aQuerySysIds = [];
 				var bSplitTables = false;
 				var iAutoExtendedTables = -1;
@@ -285,23 +321,18 @@ JobController.prototype = {
 				var gdtStart = new GlideDateTime();
 				var gdtEnd = new GlideDateTime();
 				var iRESTRequestDuration = -1;
-				var bInitialJob = true;
-				var dtStartTime = new GlideDateTime();
-				dtStartTime.setNumericValue(0);
-				var grJobLogLast = new GlideRecord('x_snc_instanc_sync_job_log');
-				grJobLogLast.addEncodedQuery('job_config=' + this._sJobCfgId + '^status=completed');
-				grJobLogLast.orderByDesc('sys_created_on');
-				grJobLogLast.setLimit(1);
-				grJobLogLast.query();
-				if (grJobLogLast.next()) {
-					dtStartTime.setValue(grJobLogLast.start_time);
-					bInitialJob = false;
+				var bInitialJob = false;
+				var dtStartTime = this.getLastJobStartTime();
+				if (dtStartTime.getNumericValue() == 0) {
+					bInitialJob = true;
 				} // if last job log
 				while (grTable.next()) {
 					sTableId = grTable.getUniqueValue();
 					sBaseTableId = sTableId;
 					sTableName = grTable.getValue('name');
+					var grTarget = new GlideRecord(sTableName);
 					sMappedClass = '';
+					sDeltaQuery = '';
 					iPriority = iPriorityDefault;
 					if (bConfigIsObject) {
 						sQuery = this._getValue(sTableName + '/sQuery', '', oTables);
@@ -313,13 +344,10 @@ JobController.prototype = {
 						if (this._gtArray.isValidArray(aHierarchy)) {
 							aHierarchy.some(function (sTableInHierarchy) {
 								if (sTableInHierarchy != 'cmdb') {
-									var _getTableCfg = new x_snc_json_cfg_mgr.getCfg(this._getValue('job/sTableJSONPrefix', '') + sTableInHierarchy);
-									if (_getTableCfg) {
-										if (_getTableCfg.getValue('job')) {
-											oTableJobCfg = _getTableCfg.getValue('job');
-											return true;
-										} // if valid obj
-									} // if config
+									oTableJobCfg = this._JobCommon.getTableConfig(this._sJSONName, this._getValue('job/sTableJSONPrefix', ''), sTableInHierarchy, 'job');
+									if (Object.keys(oTableJobCfg).length > 0) {
+										return true;
+									} // if valid obj
 								} // if not cmdb root
 							}, this); // each table in hierarchy
 						} // if hierarchy
@@ -344,7 +372,6 @@ JobController.prototype = {
 							iDeltaLoadOverlapSeconds = (isNaN(iDeltaLoadOverlapSeconds)) ? -1 : iDeltaLoadOverlapSeconds;
 							dtStartTime.addSeconds(iDeltaLoadOverlapSeconds);
 						} // if last job log
-						var sDeltaQuery = '';
 						var dtEndTime = new GlideDateTime(grJobLog.getValue('start_time'));
 						sDeltaQuery = 'sys_updated_onBETWEEN' + dtStartTime + '@' + dtEndTime;
 						if ((bUseDeltaLoadQuery) && (sDeltaLoadQuery)) {
@@ -363,7 +390,6 @@ JobController.prototype = {
 						bSplitTables = true;
 						bSuccess = this.initiateDynamicQueryJob(sTableName, aDynamicQuery, aQuerySysIds, aTableExtensions, sBaseTableId, iPriority, grJobLog);
 					} else if (this._gtArray.isValidArray(aTableExtensions)) {
-						var grTarget = new GlideRecord(sTableName);
 						if (grTarget.isValidField('sys_class_name')) {
 							if (this._getValue('job/bTableAutoExtend', true) === true) {
 								gdtStart = new GlideDateTime();
@@ -382,13 +408,13 @@ JobController.prototype = {
 											if (this._gtObject.isObject(oPriorityClasses)) {
 												iPriority = this.getTableHierarchyPriority(sTableCountName, oPriorityClasses, iPriorityDefault);
 											} // if priority classes
-											sTableCountId = this._gtRecordRead.getSysIdByQuery('sys_db_object', 'name=' + sTableCountName);
+											sTableCountId = this._gtTable.getTableId(sTableCountName);
 											if (sTableCountId) {
 												sClassQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableCountName);
 											} else if (oClassMap.hasOwnProperty(sTableCountName)) {
 												sMappedClass = sTableCountName;
 												sTableCountName = oClassMap[sMappedClass];
-												sTableCountId = this._gtRecordRead.getSysIdByQuery('sys_db_object', 'name=' + sTableCountName);
+												sTableCountId = this._gtTable.getTableId(sTableCountName);
 												sClassQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sMappedClass);
 											} // if table found
 											if ((sTableCountId) && (sTableCountId != 'undefined')) {
@@ -406,7 +432,7 @@ JobController.prototype = {
 								sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableName);
 							} // if table calc extend tables
 						} // if has class field
-					} else if (this._getValue('job/bForceClassQuery', false) === true) {
+					} else if ((this._getValue('job/bForceClassQuery', false) === true) && (grTarget.isValidField('sys_class_name'))) {
 						sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableName);
 					} // if target or source (bForceClassQuery) extentions
 					if (!bSplitTables) {
@@ -426,8 +452,27 @@ JobController.prototype = {
 						Object.keys(oClassMap).forEach(function (sMappedClass) {
 							//gs.info('tomtom sMappedClass: ' +  sMappedClass + ' sTableName: ' + sTableName + ' oClassMap[sMappedClass] ' + oClassMap[sMappedClass]);
 							if (oClassMap[sMappedClass] == sTableName) {
-								var reTableName = new RegExp(sTableName, 'gi');
-								sQuery = sQuery.replace(reTableName, sMappedClass);
+								var oMappedTableCfg = this._JobCommon.getTableConfig(this._sJSONName, this._getValue('job/sTableJSONPrefix', ''), sMappedClass);
+								var sMappedQuery = this._gtObject.getValue('job/sQuery', '', oMappedTableCfg);
+								var sMappedDeltaLoadQuery = this._gtObject.getValue('job/sDeltaLoadQuery', '', oMappedTableCfg);
+								var bMappedForceClassQuery = false;
+								if ((bUseDeltaLoadQuery) && (sMappedDeltaLoadQuery)) {
+									sQuery = this._gtRecordRead.combineQueries(sMappedDeltaLoadQuery, sDeltaQuery);
+									bMappedForceClassQuery = this._gtObject.getValue('job/bForceClassQuery', '', oMappedTableCfg);
+								} else if (sMappedQuery) {
+									sQuery = this._gtRecordRead.combineQueries(sMappedQuery, sDeltaQuery);
+									bMappedForceClassQuery = this._gtObject.getValue('job/bForceClassQuery', '', oMappedTableCfg);
+								} // if delta load query
+								if (bMappedForceClassQuery === true) {
+									sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sMappedClass);
+								} else {
+									var reTableName = new RegExp(sTableName, 'gi');
+									sQuery = sQuery.replace(reTableName, sMappedClass);
+								} // if mapped force query
+								if (this._gtObject.isObject(oPriorityClasses)) {
+									iPriority = this.getTableHierarchyPriority(sMappedClass, oPriorityClasses, iPriority);
+								} // if priority classes
+								iChunkSize = this._getValue('job/iChunkSize', iChunkSize, oMappedTableCfg);
 								gdtStart = new GlideDateTime();
 								iTableCount = this._gtRESTAPI.doNOWRESTCount(sMappedClass, sQuery);
 								gdtEnd = new GlideDateTime();
@@ -511,7 +556,9 @@ JobController.prototype = {
 					}, this); // each count
 				} else if (sTargetType == 'remote') {
 					oRecordCount = this._gtRESTAPI.doNOWRESTCount(sTargetTableName, sTargetQuery, sSourceIdField);
-					aTmpIds = this._gtArray.mergeArray(aTmpIds, Object.keys(oRecordCount), true);
+					if (oRecordCount) {
+						aTmpIds = this._gtArray.mergeArray(aTmpIds, Object.keys(oRecordCount), true);
+					} // if record count
 				} // if target type
 			} // if valid table
 		}, this); // each dynamic query
@@ -520,37 +567,26 @@ JobController.prototype = {
 		} // if sysid array
 		if (this._gtArray.isValidArray(aTmpIds)) {
 			if ((this._gtArray.isValidArray(aTableExtensions)) && (bHasClassName)) {
-				if (sTargetType == 'local') {
-					grSourceRecord = this._gtRecordRead.getRecords(sTableName, 'sys_idIN' + aTmpIds.join(','));
-					while (grSourceRecord.next()) {
-						sTmpClass = grSourceRecord.getValue('sys_class_name');
-						if (!oDynamicResult.hasOwnProperty(sTmpClass)) {
-							oDynamicResult[sTmpClass] = [];
-						} // if new class
-						oDynamicResult[sTmpClass].push(grSourceRecord.getUniqueValue());
-					} // while new records
-				} else if (sTargetType == 'remote') {
-					var i = 0;
-					iMaxURLSize = 2000 - String(this._gtRESTAPI.sRemoteUrl).length - String(sTableName).length - 250; // add some buffer to avoid url length error
-					iMaxSysIds = Math.floor(iMaxURLSize / 33);
-					for (i = 0; i < aTmpIds.length; i++) {
-						aTmpQueryIds.push(aTmpIds[i]);
-						if (((i % iMaxSysIds == 0) && (i > 0)) || (i == aTmpIds.length - 1)) {
-							sTmpQuery = 'sys_idIN' + aTmpQueryIds.join(',');
-							var aRecords = this._gtRESTAPI.doNOWRESTQuery(sTableName, sTmpQuery, '', '', ['sys_id', 'sys_class_name']);
-							aRecords.forEach(function (oRecord) {
-								if ((oRecord.hasOwnProperty('sys_id')) && (oRecord.hasOwnProperty('sys_class_name'))) {
-									sTmpClass = oRecord['sys_class_name'];
-									if (!oDynamicResult.hasOwnProperty(sTmpClass)) {
-										oDynamicResult[sTmpClass] = [];
-									} // if new class
-									oDynamicResult[sTmpClass].push(oRecord['sys_id']);
-								} // if has field
-							}, this); // each record
-							aTmpQueryIds = [];
-						} // workaround to limit URL length per call
-					} // each model id
-				} // if target type
+				var i = 0;
+				iMaxURLSize = 2000 - String(this._gtRESTAPI.sRemoteUrl).length - String(sTableName).length - 250; // add some buffer to avoid url length error
+				iMaxSysIds = Math.floor(iMaxURLSize / 33);
+				for (i = 0; i < aTmpIds.length; i++) {
+					aTmpQueryIds.push(aTmpIds[i]);
+					if (((i % iMaxSysIds == 0) && (i > 0)) || (i == aTmpIds.length - 1)) {
+						sTmpQuery = 'sys_idIN' + aTmpQueryIds.join(',');
+						var aRecords = this._gtRESTAPI.doNOWRESTQuery(sTableName, sTmpQuery, '', '', ['sys_id', 'sys_class_name']);
+						aRecords.forEach(function (oRecord) {
+							if ((oRecord.hasOwnProperty('sys_id')) && (oRecord.hasOwnProperty('sys_class_name'))) {
+								sTmpClass = oRecord['sys_class_name'];
+								if (!oDynamicResult.hasOwnProperty(sTmpClass)) {
+									oDynamicResult[sTmpClass] = [];
+								} // if new class
+								oDynamicResult[sTmpClass].push(oRecord['sys_id']);
+							} // if has field
+						}, this); // each record
+						aTmpQueryIds = [];
+					} // workaround to limit URL length per call
+				} // each model id
 			} else {
 				oDynamicResult[sTableName] = aTmpIds;
 			} // if table has extensions
@@ -560,54 +596,58 @@ JobController.prototype = {
 		var grJobLogTable, dtNow, grJobLogTableChunk;
 		//gs.error('tomtom sTableName: ' + sTableName + ' oDynamicResult: ' + JSON.stringify(oDynamicResult));
 		Object.keys(oDynamicResult).forEach(function (sTargetTableName) {
-			sTargetTableId = this._gtRecordRead.getSysIdByQuery('sys_db_object', 'name=' + sTargetTableName);
-			aTmpIds = oDynamicResult[sTargetTableName];
-			if (this._gtRecordRead.checkRecordByQuery('x_snc_instanc_sync_job_log_table', 'job_log=' + grJobLog.getUniqueValue() + '^table=' + sTargetTableId)) {
-				gs.error('JobController.initiateDynamicQueryJob table exists for ' + sTargetTableName + ' (' + sTargetTableId + ') for job: ' + grJobLog.getUniqueValue());
-				return;
-			} // if table exists
-			grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
-			grJobLogTable.initialize();
-			grJobLogTable.setValue('job_log', grJobLog.getUniqueValue());
-			if (iRESTRequestDuration > 0) {
-				grJobLogTable.rest_request_duration.setDateNumericValue(iRESTRequestDuration);
-			} // if duration
-			grJobLogTable.setValue('basetable', sBaseTableId);
-			grJobLogTable.setValue('table', sTargetTableId);
-			dtNow = new GlideDateTime();
-			grJobLogTable.setValue('start_time', dtNow);
-			if (grJobLogTable.insert()) {
-				if (this._getValue('job/bAttachTableJobJSONConfig', false) === true) {
-					this._gtAttachment.writeAttachmentByTableId(grJobLogTable.getTableName(), grJobLogTable.getUniqueValue(), 'table_cfg_job_' + sTargetTableName + '.json', JSON.stringify(this.oConfig['job']), '', false, false);
-				} // if attach JSON config to job log table
-				if (this._gtRecordRead.checkRecordByQuery('x_snc_instanc_sync_job_log_table_chunks', 'job_log_table=' + grJobLogTable.getUniqueValue())) {
-					gs.error('JobController.initiateDynamicQueryJob failed insert chunks because values exist for: ' + grJobLogTable.getUniqueValue());
+			sTargetTableId = this._gtTable.getTableId(sTargetTableName);
+			if ((sTargetTableId) && (sTargetTableId != 'undefined')) {
+				aTmpIds = oDynamicResult[sTargetTableName];
+				if (this._gtRecordRead.checkRecordByQuery('x_snc_instanc_sync_job_log_table', 'job_log=' + grJobLog.getUniqueValue() + '^table=' + sTargetTableId)) {
+					gs.error('JobController.initiateDynamicQueryJob table exists for ' + sTargetTableName + ' (' + sTargetTableId + ') for job: ' + grJobLog.getUniqueValue());
 					return;
-				} // if chunk exists
-				iMaxURLSize = 4000 - String(this._gtRESTAPI.sRemoteUrl).length - String(sTableName).length - 250; // add some buffer to avoid url length error
-				iMaxSysIds = Math.floor(iMaxURLSize / 33);
-				grJobLogTableChunk = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
-				grJobLogTableChunk.setValue('job_log', grJobLog.getUniqueValue());
-				grJobLogTableChunk.setValue('job_log_table', grJobLogTable.getUniqueValue());
-				grJobLogTableChunk.setValue('priority', iPriority);
-				var bCalculateOnly = this._getValue('job/bCalculateOnly', false);
-				if (bCalculateOnly) {
-					grJobLogTableChunk.setValue('status', 'cancelled');
-				} // if calc only
-				var iChunks = Math.ceil(aTmpIds.length / iMaxSysIds);
-				for (var iChunk = 0; iChunk < iChunks; iChunk++) {
-					bSuccess = true;
-					aTmpQueryIds = aTmpIds.splice(0, iMaxSysIds);
-					sTmpQuery = 'sys_idIN' + aTmpQueryIds.join(',');
-					grJobLogTableChunk.setValue('chunk', iChunk);
-					grJobLogTableChunk.setValue('chunksize', aTmpQueryIds.length);
-					grJobLogTableChunk.setValue('condition', sTmpQuery);
-					grJobLogTableChunk.setValue('expected_record_count', aTmpQueryIds.length);
-					if (!grJobLogTableChunk.insert()) {
-						gs.error('JobController.initiateDynamicQueryJob failed insert chunk with error: ' + grJobLogTableChunk.getLastErrorMessage());
-					} // if insert fails
-				} // each chunk
-			} // if insert table
+				} // if table exists
+				grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
+				grJobLogTable.initialize();
+				grJobLogTable.setValue('job_log', grJobLog.getUniqueValue());
+				if (iRESTRequestDuration > 0) {
+					grJobLogTable.rest_request_duration.setDateNumericValue(iRESTRequestDuration);
+				} // if duration
+				grJobLogTable.setValue('basetable', sBaseTableId);
+				grJobLogTable.setValue('table', sTargetTableId);
+				dtNow = new GlideDateTime();
+				grJobLogTable.setValue('start_time', dtNow);
+				if (grJobLogTable.insert()) {
+					if (this._getValue('job/bAttachTableJobJSONConfig', false) === true) {
+						this._gtAttachment.writeAttachmentByTableId(grJobLogTable.getTableName(), grJobLogTable.getUniqueValue(), 'table_cfg_job_' + sTargetTableName + '.json', JSON.stringify(this.oConfig['job']), '', false, false);
+					} // if attach JSON config to job log table
+					if (this._gtRecordRead.checkRecordByQuery('x_snc_instanc_sync_job_log_table_chunks', 'job_log_table=' + grJobLogTable.getUniqueValue())) {
+						gs.error('JobController.initiateDynamicQueryJob failed insert chunks because values exist for: ' + grJobLogTable.getUniqueValue());
+						return;
+					} // if chunk exists
+					iMaxURLSize = 4000 - String(this._gtRESTAPI.sRemoteUrl).length - String(sTableName).length - 250; // add some buffer to avoid url length error
+					iMaxSysIds = Math.floor(iMaxURLSize / 33);
+					grJobLogTableChunk = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
+					grJobLogTableChunk.setValue('job_log', grJobLog.getUniqueValue());
+					grJobLogTableChunk.setValue('job_log_table', grJobLogTable.getUniqueValue());
+					grJobLogTableChunk.setValue('priority', iPriority);
+					var bCalculateOnly = this._getValue('job/bCalculateOnly', false);
+					if (bCalculateOnly) {
+						grJobLogTableChunk.setValue('status', 'cancelled');
+					} // if calc only
+					var iChunks = Math.ceil(aTmpIds.length / iMaxSysIds);
+					for (var iChunk = 0; iChunk < iChunks; iChunk++) {
+						bSuccess = true;
+						aTmpQueryIds = aTmpIds.splice(0, iMaxSysIds);
+						sTmpQuery = 'sys_idIN' + aTmpQueryIds.join(',');
+						grJobLogTableChunk.setValue('chunk', iChunk);
+						grJobLogTableChunk.setValue('chunksize', aTmpQueryIds.length);
+						grJobLogTableChunk.setValue('condition', sTmpQuery);
+						grJobLogTableChunk.setValue('expected_record_count', aTmpQueryIds.length);
+						if (!grJobLogTableChunk.insert()) {
+							gs.error('JobController.initiateDynamicQueryJob failed insert chunk with error: ' + grJobLogTableChunk.getLastErrorMessage());
+						} // if insert fails
+					} // each chunk
+				} // if insert table
+			} else {
+				gs.error('JobController.initiateDynamicQueryJob table not found for ' + sTargetTableName + ' for job: ' + grJobLog.getUniqueValue());
+			} // if target table exists
 		}, this); // each result table
 		return bSuccess;
 	}, // function initiateDynamicQueryJob
@@ -826,7 +866,7 @@ JobController.prototype = {
 	*/
 
 	type: 'JobController',
-	version: '1.0.0',
+	version: '1.0.1',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -834,13 +874,24 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>176</sys_mod_count>
+        <sys_mod_count>232</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-07-16 19:56:51</sys_updated_on>
+        <sys_updated_on>2024-08-17 06:13:09</sys_updated_on>
     </sys_script_include>
+    <sys_es_latest_script action="INSERT_OR_UPDATE">
+        <id>b43772541b810e1030d6fdd49b4bcb0d</id>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-07-31 13:41:38</sys_created_on>
+        <sys_id>2ba9c2281bf30610e50ddc61ab4bcb68</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-07-31 13:41:38</sys_updated_on>
+        <table>sys_script_include</table>
+        <use_es_latest>true</use_es_latest>
+    </sys_es_latest_script>
 </record_update>

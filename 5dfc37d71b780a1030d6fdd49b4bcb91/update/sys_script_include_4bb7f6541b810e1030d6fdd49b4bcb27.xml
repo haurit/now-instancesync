@@ -6,6 +6,7 @@
         <caller_access/>
         <client_callable>false</client_callable>
         <description>Runs the job for a single chunk</description>
+        <mobile_callable>false</mobile_callable>
         <name>JobRunner</name>
         <script><![CDATA[var JobRunner = Class.create();
 JobRunner.prototype = {
@@ -23,6 +24,7 @@ JobRunner.prototype = {
 		this._gtRecordRead = new global.GlobalToolsRecordRead();
 		this._gtRecordWriteValidate = new global.GlobalToolsRecordWriteValidate();
 		this._gtAttachment = new global.GlobalToolsAttachment();
+		this._JobCommon = new JobCommon();
 		this._gdDigest = new GlideDigest();
 	}, // function initialize
 
@@ -41,31 +43,29 @@ JobRunner.prototype = {
 				var grJobConfig = new GlideRecord('x_snc_instanc_sync_job_config');
 				if ((grJobConfig.get(grJobLog.getValue('job_config'))) && (sTableName)) {
 					var _gtRESTAPI = new global.GlobalToolsRESTAPI(grJobConfig.getValue('connection_credential_alias', this.bLog, false, this.sLogLevel));
-					var _getJobCfg = new x_snc_json_cfg_mgr.getCfg(grJobConfig.getValue('json_configuration'));
+					var sJSONId = grJobConfig.getValue('json_configuration');
+					var _getJobCfg = new x_snc_json_cfg_mgr.getCfg(sJSONId);
+					var sJSONName = (sJSONId) ? grJobConfig.json_configuration.name : 'NA';
 					var bValidConfig = false;
 					var oJobCfg = _getJobCfg.getConfig();
 					var oTableCfg = {};
 					var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
-					if (sMappedClass) {
-						var _getTableCfg = new x_snc_json_cfg_mgr.getCfg(this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg) + sMappedClass);
-						if (_getTableCfg) {
-							oTableCfg = _getTableCfg.getConfig();
-							if (oTableCfg.hasOwnProperty('config')) {
-								bValidConfig = true;
-							} // if valid config
-						} // if config found
+					if (this._gtObject.getValue('job/oTables/' + sTableName, '', oJobCfg)) {
+						bValidConfig = true;
+					} else if (sMappedClass) {
+						oTableCfg = this._JobCommon.getTableConfig(sJSONName, this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg), sMappedClass);
+						if (oTableCfg.hasOwnProperty('config')) {
+							bValidConfig = true;
+						} // if valid config
 					} else {
 						if (this._gtArray.isValidArray(aHierarchy)) {
 							aHierarchy.some(function (sTableInHierarchy) {
 								if (sTableInHierarchy != 'cmdb') {
-									var _getTableCfg = new x_snc_json_cfg_mgr.getCfg(this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg) + sTableInHierarchy);
-									if (_getTableCfg) {
-										oTableCfg = _getTableCfg.getConfig();
-										if (oTableCfg.hasOwnProperty('config')) {
-											bValidConfig = true;
-											return true;
-										} // if valid obj
-									} // if config
+									oTableCfg = this._JobCommon.getTableConfig(sJSONName, this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg), sTableInHierarchy);
+									if (oTableCfg.hasOwnProperty('config')) {
+										bValidConfig = true;
+										return true;
+									} // if valid obj
 								} // if not cmdb root
 							}, this); // each table in hierarchy
 						} // if hierarchy
@@ -126,13 +126,13 @@ JobRunner.prototype = {
 											this._gtObject.setValue('sys_class_name', sClassName, oRecord);
 										} // if mapped class
 										this._gtObject.setValue('sTargetTable', sClassName, oConfig);
-										if (this._gtArray.isValidArray(aDeltaCompareRemoveFields)) {
-											aDeltaCompareRemoveFields.forEach(function (sDeltaCompareRemoveField) {
-												delete oRecordCompare[sDeltaCompareRemoveField];
-											}); // each remove delta field
-										} // if delta compare remove field
 										var bChangeDetected = (bDeltaCompareAttachment) ? false : true;
 										if (bDeltaCompareAttachment) {
+											if (this._gtArray.isValidArray(aDeltaCompareRemoveFields)) {
+												aDeltaCompareRemoveFields.forEach(function (sDeltaCompareRemoveField) {
+													delete oRecordCompare[sDeltaCompareRemoveField];
+												}); // each remove delta field
+											} // if delta compare remove field
 											var sRecordTargetHash = '';
 											var grSourceRecordAttachment = this._gtRecordRead.getRecord('sys_attachment', 'table_name=ZZ_YY' + sClassName + '^table_sys_id=' + sSysId + '^file_name=' + sDeltaCompareFileNamePrefix + '_' + sSysId + '.json');
 											if (grSourceRecordAttachment) {
@@ -309,7 +309,7 @@ JobRunner.prototype = {
 	}, // function _writeRecordError
 
 	type: 'JobRunner',
-	version: '1.0.0',
+	version: '1.0.1',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -317,13 +317,24 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>88</sys_mod_count>
+        <sys_mod_count>94</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-07-18 15:00:59</sys_updated_on>
+        <sys_updated_on>2024-08-15 08:57:42</sys_updated_on>
     </sys_script_include>
+    <sys_es_latest_script action="INSERT_OR_UPDATE">
+        <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-08-06 10:56:36</sys_created_on>
+        <sys_id>687ddce61bb74250e50ddc61ab4bcbe3</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-08-06 10:56:36</sys_updated_on>
+        <table>sys_script_include</table>
+        <use_es_latest>true</use_es_latest>
+    </sys_es_latest_script>
 </record_update>
