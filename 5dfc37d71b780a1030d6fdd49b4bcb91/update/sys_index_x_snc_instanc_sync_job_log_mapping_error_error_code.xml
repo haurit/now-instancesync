@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_index">
+    <sys_index action="INSERT_OR_UPDATE">
+        <access_method>btree</access_method>
+        <col_name_string>error_code</col_name_string>
+        <index_col_name element="error_code" name="x_snc_instanc_sync_job_log_mapping_error">3d00ef8c1bbb0210e50ddc61ab4bcb13</index_col_name>
+        <logical_table_name>x_snc_instanc_sync_job_log_mapping_error</logical_table_name>
+        <sys_class_name>sys_index</sys_class_name>
+        <sys_created_by>system</sys_created_by>
+        <sys_created_on>2024-09-09 05:57:30</sys_created_on>
+        <sys_id>f60f52111b2cda90e50ddc61ab4bcb9c</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_snc_instanc_sync_job_log_mapping_error</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_index_x_snc_instanc_sync_job_log_mapping_error_error_code</sys_update_name>
+        <sys_updated_by>system</sys_updated_by>
+        <sys_updated_on>2024-09-09 05:57:30</sys_updated_on>
+        <table display_value="Job Log Mapping Error" name="x_snc_instanc_sync_job_log_mapping_error">374186c71b4d061030d6fdd49b4bcb12</table>
+        <unique_index>false</unique_index>
+    </sys_index>
+</record_update>

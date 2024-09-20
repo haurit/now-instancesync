@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_index">
+    <sys_index action="INSERT_OR_UPDATE">
+        <access_method>btree</access_method>
+        <col_name_string>status</col_name_string>
+        <index_col_name element="status" name="x_snc_instanc_sync_job_log_table_chunks">6500af8c1bbb0210e50ddc61ab4bcbcd</index_col_name>
+        <logical_table_name>x_snc_instanc_sync_job_log_table_chunks</logical_table_name>
+        <sys_class_name>sys_index</sys_class_name>
+        <sys_created_by>system</sys_created_by>
+        <sys_created_on>2024-09-09 05:59:38</sys_created_on>
+        <sys_id>c28fda111b2cda90e50ddc61ab4bcb99</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_snc_instanc_sync_job_log_table_chunks</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_index_x_snc_instanc_sync_job_log_table_chunks_status</sys_update_name>
+        <sys_updated_by>system</sys_updated_by>
+        <sys_updated_on>2024-09-09 05:59:38</sys_updated_on>
+        <table display_value="Job Log Table Chunks" name="x_snc_instanc_sync_job_log_table_chunks">5c4ea7c41b85ca1030d6fdd49b4bcb9a</table>
+        <unique_index>false</unique_index>
+    </sys_index>
+</record_update>

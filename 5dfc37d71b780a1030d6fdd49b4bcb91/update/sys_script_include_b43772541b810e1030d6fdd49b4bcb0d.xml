@@ -8,6 +8,7 @@
         <description>Main controller of the application</description>
         <mobile_callable>false</mobile_callable>
         <name>JobController</name>
+        <sandbox_callable>false</sandbox_callable>
         <script><![CDATA[var JobController = Class.create();
 JobController.prototype = {
 	initialize: function (grJobConfig) {
@@ -111,9 +112,9 @@ JobController.prototype = {
 					aRunStartTimes.forEach(function (sRunStartTimeTmp) {
 						sRunStartTimeTmp = (sRunStartTimeTmp.length == 8) ? sRunStartTimeTmp : sRunStartTimeTmp + ':00';
 						gtRunStartTime.setDisplayValue(sRunStartTimeTmp);
-						if ((gtLastJobStartTime < gtRunStartTime) && (gtToday > gtRunStartTime)) {
+						if (((gtLastJobStartTime < gtRunStartTime) || (dtLastJobStartTime.getDate() < dtToday.getDate())) && (gtToday > gtRunStartTime)) {
 							aDtPastStartTimes.push(gtRunStartTime);
-						} // if time is past
+						} // if last job time is in the past or yesterday and the current time bigger
 					}, this); // each start times
 					aDtPastStartTimes.sort(function (a, b) { return b.localeCompare(a); });
 					gtRunStartTime = (aDtPastStartTimes.length > 0) ? aDtPastStartTimes[0] : null;
@@ -443,7 +444,7 @@ JobController.prototype = {
 						//gs.info('tomtom no split table: ' + sTableName + ' (' + sTableId + ') with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
 						if ((!iTableCount) || (isNaN(iTableCount))) {
 							if ((bInitialJob) || (!bDeltaLoad)) {
-								gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
+								gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') with query "' + sQuery + '" for job: ' + grJobLog.getUniqueValue());
 							} // if initial job or not delta load
 						} else if (iTableCount > 0) {
 							bSuccess = true;
@@ -480,7 +481,7 @@ JobController.prototype = {
 								//gs.info('tomtom no split table: ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
 								if ((!iTableCount) || (isNaN(iTableCount))) {
 									if ((bInitialJob) || (!bDeltaLoad)) {
-										gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' for job: ' + grJobLog.getUniqueValue());
+										gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' with query "' + sQuery + '" for job: ' + grJobLog.getUniqueValue());
 									} // if initial job or not delta load
 								} else if (iTableCount > 0) {
 									bSuccess = true;
@@ -874,14 +875,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>232</sys_mod_count>
+        <sys_mod_count>234</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-08-17 06:13:09</sys_updated_on>
+        <sys_updated_on>2024-09-18 13:41:23</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>
