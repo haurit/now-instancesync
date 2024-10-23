@@ -266,8 +266,8 @@ JobRunner.prototype = {
 					if (this._gtArray.isValidArray(aMessageDetailArgs)) {
 						sErrorCode = this._gtObject.getValue('sCode', '', oErrorMsg);
 						sFieldId = aMessageDetailArgs[0];
-						sValue = aMessageDetailArgs[1];
-						sValidValues = aMessageDetailArgs[2];
+						sValue = (aMessageDetailArgs[1]) ? aMessageDetailArgs[1] : '';
+						sValidValues = (aMessageDetailArgs[2]) ? aMessageDetailArgs[2] : '';
 						if ((sFieldId) && (sValue)) {
 							aHierarchy = this._gtTable.getTableHierarchy(sTableName);
 							aHierarchy.reverse();
@@ -330,7 +330,7 @@ JobRunner.prototype = {
 	}, // function _writeRecordError
 
 	type: 'JobRunner',
-	version: '1.0.1',
+	version: '1.0.3',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -338,14 +338,14 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>98</sys_mod_count>
+        <sys_mod_count>103</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-10-01 14:02:33</sys_updated_on>
+        <sys_updated_on>2024-10-23 06:42:28</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
