@@ -53,13 +53,14 @@ JobRunner.prototype = {
 					var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
 					if (this._gtObject.getValue('job/oTables/' + sTableName, '', oJobCfg)) {
 						bValidConfig = true;
-					} else if (sMappedClass) {
-						oTableCfg = this._JobCommon.getTableConfig(sJSONName, this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg), sMappedClass);
-						if (oTableCfg.hasOwnProperty('config')) {
-							bValidConfig = true;
-						} // if valid config
 					} else {
-						if (this._gtArray.isValidArray(aHierarchy)) {
+						if (sMappedClass) {
+							oTableCfg = this._JobCommon.getTableConfig(sJSONName, this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg), sMappedClass);
+							if (oTableCfg.hasOwnProperty('config')) {
+								bValidConfig = true;
+							} // if valid config
+						} // if mapped class
+						if ((!bValidConfig) && (this._gtArray.isValidArray(aHierarchy))) {
 							aHierarchy.some(function (sTableInHierarchy) {
 								if (sTableInHierarchy != 'cmdb') {
 									oTableCfg = this._JobCommon.getTableConfig(sJSONName, this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg), sTableInHierarchy);
@@ -82,6 +83,8 @@ JobRunner.prototype = {
 						} // if attach JSON config to job log table chunk
 						//gs.info('tomtom oJob: ' + JSON.stringify(oJob) + ' oConfig: ' + JSON.stringify(oConfig));
 						var bDeltaCompareAttachment = this._gtObject.getValue('bDeltaCompareAttachment', false, oJob);
+						var bUpdateCompareAttachment = this._gtObject.getValue('bUpdateCompareAttachment', false, oJob);
+						var bDeleteCompareAttachment = this._gtObject.getValue('bDeleteCompareAttachment', false, oJob);
 						var aDeltaCompareRemoveFields = this._gtObject.getValue('aDeltaCompareRemoveFields', [], oJob);
 						var sDeltaCompareFileNamePrefix = this._gtObject.getValue('sDeltaCompareFileNamePrefix', 'instsync', oJob);
 						var bLogErrorDetails = this._gtObject.getValue('bLogErrorDetails', false, oJob);
@@ -159,9 +162,11 @@ JobRunner.prototype = {
 												this._gtRecordWriteValidate.validateAndWrite(oConfig, oRecord, oErrorDummy);
 											} // run same again to insert IRE
 											if ((sResultId) && (sResultId != -1)) {
-												if (bDeltaCompareAttachment) {
+												if ((bDeltaCompareAttachment) || (bUpdateCompareAttachment)) {
 													this._gtAttachment.deleteAttachment(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
 													this._gtAttachment.writeAttachmentByTableId(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', JSON.stringify(oRecordCompare), '', false, true);
+												} else if (bDeleteCompareAttachment) {
+													this._gtAttachment.deleteAttachment(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
 												} // if compare attachment
 												if (this._gtObject.getValue('default/bError', false, oError)) {
 													if (this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk)) {
@@ -330,7 +335,7 @@ JobRunner.prototype = {
 	}, // function _writeRecordError
 
 	type: 'JobRunner',
-	version: '1.0.3',
+	version: '1.0.4',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -338,14 +343,14 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>103</sys_mod_count>
+        <sys_mod_count>105</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-10-23 06:42:28</sys_updated_on>
+        <sys_updated_on>2024-11-15 14:15:45</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
