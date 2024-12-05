@@ -275,6 +275,7 @@ JobController.prototype = {
 
 	initiateJob: function (grJobLog) {
 		if (this.bLog) { gs.info('JobController.initiateJob start grJobLog: ' + grJobLog.getUniqueValue()); }
+		var sStatus = 'running';
 		var bSuccess = false;
 		try {
 			var bConfigIsObject = false;
@@ -394,10 +395,10 @@ JobController.prototype = {
 						aTableExtensions = this._gtTable.getTableExtensions(sTableName);
 						if ((bUseDeltaLoadQuery) && ((this._gtArray.isValidArray(aDynamicDeltaLoadQuery)) || (this._gtArray.isValidArray(aDeltaLoadQuerySysIds)))) {
 							bSplitTables = true;
-							bSuccess = this.initiateDynamicQueryJob(sTableName, aDynamicDeltaLoadQuery, aDeltaLoadQuerySysIds, aTableExtensions, sBaseTableId, iPriority, grJobLog);
+							bSuccess = this.initiateDynamicQueryJob(sTableName, aDynamicDeltaLoadQuery, aDeltaLoadQuerySysIds, aTableExtensions, sBaseTableId, iPriority, grJobLog, bSuccess);
 						} else if ((!bUseDeltaLoadQuery) && ((this._gtArray.isValidArray(aDynamicQuery)) || (this._gtArray.isValidArray(aQuerySysIds)))) {
 							bSplitTables = true;
-							bSuccess = this.initiateDynamicQueryJob(sTableName, aDynamicQuery, aQuerySysIds, aTableExtensions, sBaseTableId, iPriority, grJobLog);
+							bSuccess = this.initiateDynamicQueryJob(sTableName, aDynamicQuery, aQuerySysIds, aTableExtensions, sBaseTableId, iPriority, grJobLog, bSuccess);
 						} else if (this._gtArray.isValidArray(aTableExtensions)) {
 							if (grTarget.isValidField('sys_class_name')) {
 								if (this._getValue('job/bTableAutoExtend', true) === true) {
@@ -503,12 +504,14 @@ JobController.prototype = {
 			} // if table query
 		} catch (oEx) {
 			gs.error('JobController.initiateJob failed with exception for ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ') Exception: ' + String(oEx));
+			sStatus = 'cancelled';
 		} // catch
 		if (!bSuccess) {
 			gs.error('JobController.initiateJob failed to initiate tables because no valid table is found for job log ' + grJobLog.getDisplayValue() + ' (' + grJobLog.getUniqueValue() + ')');
+			sStatus = 'completed';
 		} // if not success
-		if (this.bLog) { gs.info('JobController.initiateJob end grJobLog: ' + grJobLog.getUniqueValue() + ' bSuccess: ' + bSuccess); }
-		return bSuccess;
+		if (this.bLog) { gs.info('JobController.initiateJob end grJobLog: ' + grJobLog.getUniqueValue() + ' bSuccess: ' + bSuccess + ' sStatus: ' + sStatus); }
+		return sStatus;
 	}, // function initiateJob
 
 	getTableHierarchyPriority: function (sTableName, oPriorityClasses, iPriorityDefault) {
@@ -546,8 +549,7 @@ JobController.prototype = {
 		return iTmpPriority;
 	}, // function getTablePriority
 
-	initiateDynamicQueryJob: function (sTableName, aDynamicQuery, aQuerySysIds, aTableExtensions, sBaseTableId, iPriority, grJobLog) {
-		var bSuccess = false;
+	initiateDynamicQueryJob: function (sTableName, aDynamicQuery, aQuerySysIds, aTableExtensions, sBaseTableId, iPriority, grJobLog, bSuccess) {
 		var oDynamicResult = {}, aRecordCount = [], oRecordCount = {}, aTmpIds = [], sTmpClass = '', aTmpQueryIds = [], sTmpQuery = '', sTargetType = '', sTargetTableName = '', sTargetQuery = '', sSourceIdField = '', grTargetRecord, sTmpId = '', sTargetTableId = '', iMaxURLSize = 0, iMaxSysIds = 0;
 		var grSourceRecord = new GlideRecord(sTableName);
 		var bHasClassName = grSourceRecord.isValidField('sys_class_name');
@@ -878,7 +880,7 @@ JobController.prototype = {
 	*/
 
 	type: 'JobController',
-	version: '1.0.4',
+	version: '1.0.4.1',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -886,14 +888,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>238</sys_mod_count>
+        <sys_mod_count>240</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-11-15 14:29:33</sys_updated_on>
+        <sys_updated_on>2024-12-05 09:14:01</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>
