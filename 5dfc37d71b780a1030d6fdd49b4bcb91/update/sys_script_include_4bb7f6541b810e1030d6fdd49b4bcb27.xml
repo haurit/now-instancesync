@@ -14,6 +14,15 @@ JobRunner.prototype = {
 	initialize: function () {
 		this.bLog = false;
 		this.sLogLevel = 'basic'; // basic, elevated, all
+		this.bTimer = (gs.getProperty('x_snc_instanc_sync.timer') == 'true');
+		if (this.bTimer) {
+			this._gtCache = new global.GlobalToolsCache();
+			this._gtDateTime = new global.GlobalToolsDateTime('isjr', this._gtCache);
+			this._gtRecordWriteValidate = new global.GlobalToolsRecordWriteValidate(this._gtCache, this._gtDateTime);
+			this._gtDateTime.startTimer('initialize');
+		} else {
+			this._gtRecordWriteValidate = new global.GlobalToolsRecordWriteValidate();
+		} // if timer
 		this.iMaxRetryCount = Number(gs.getProperty('x_snc_instanc_sync.max.retry', 5));
 		if (isNaN(this.iMaxRetryCount)) {
 			this.iMaxRetryCount = 5;
@@ -23,13 +32,14 @@ JobRunner.prototype = {
 		this._gtObject = new global.GlobalToolsObject();
 		this._gtTable = new global.GlobalToolsTable();
 		this._gtRecordRead = new global.GlobalToolsRecordRead();
-		this._gtRecordWriteValidate = new global.GlobalToolsRecordWriteValidate();
 		this._gtAttachment = new global.GlobalToolsAttachment();
 		this._JobCommon = new JobCommon();
 		this._gdDigest = new GlideDigest();
+		if (this.bTimer) { this._gtDateTime.stopTimer('initialize'); }
 	}, // function initialize
 
 	runTrigger: function (grJobLogTableChunk) {
+		if (this.bTimer) { this._gtDateTime.startTimer('runTrigger'); }
 		if (this.bLog) { gs.info('JobRunner.runTrigger started'); }
 		try {
 			var dtNow = new GlideDateTime();
@@ -107,11 +117,13 @@ JobRunner.prototype = {
 						var iErrorCount = 0;
 						var iErrorCode = -103; // undefined error
 						try {
+							if (this.bTimer) { this._gtDateTime.startTimer('runTrigger/RESTCall'); }
 							var gdtStart = new GlideDateTime();
 							var aRecords = (sMappedClass) ? _gtRESTAPI.doNOWRESTQuery(sMappedClass, sQuery, iOffset, iChunkSize) : _gtRESTAPI.doNOWRESTQuery(sTableName, sQuery, iOffset, iChunkSize);
 							var gdtEnd = new GlideDateTime();
 							var iDuration = gdtEnd.getNumericValue() - gdtStart.getNumericValue();
 							grJobLogTableChunk.rest_request_duration.setDateNumericValue(iDuration);
+							if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/RESTCall'); }
 						} catch (oEx) {
 							aRecords = '';
 							if (String(oEx).indexOf('33554432') != -1) {
@@ -139,6 +151,7 @@ JobRunner.prototype = {
 										this._gtObject.setValue('sTargetTable', sClassName, oConfig);
 										var bChangeDetected = (bDeltaCompareAttachment) ? false : true;
 										if (bDeltaCompareAttachment) {
+											if (this.bTimer) { this._gtDateTime.startTimer('runTrigger/CompareAttach'); }
 											if (this._gtArray.isValidArray(aDeltaCompareRemoveFields)) {
 												aDeltaCompareRemoveFields.forEach(function (sDeltaCompareRemoveField) {
 													delete oRecordCompare[sDeltaCompareRemoveField];
@@ -157,12 +170,15 @@ JobRunner.prototype = {
 												var grRecordClassOld = new GlideRecord(sBaseTable);
 												if (grRecordClassOld.get('sys_id', sSysId)) {
 													var sClassNameOld = this._gtTable.getRecordClass(grRecordClassOld);
-													if (sClassName != sClassNameOld) {
+													if ((sClassName) && (sClassNameOld) && (sClassName != sClassNameOld)) {
 														this._gtAttachment.deleteAttachment(sClassNameOld, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
 														bChangeDetected = true;
 													} // if class switch
+												} else if (!bChangeDetected) {
+													bChangeDetected = true;
 												} // if record found
 											} // if base table
+											if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/CompareAttach'); }
 										} // if compare attachment
 										if (bChangeDetected === true) {
 											var bRunIREAgainAfterInsert = false;
@@ -179,8 +195,10 @@ JobRunner.prototype = {
 											} // run same again to insert IRE
 											if ((sResultId) && (sResultId != -1)) {
 												if ((bDeltaCompareAttachment) || (bUpdateCompareAttachment)) {
+													if (this.bTimer) { this._gtDateTime.startTimer('runTrigger/CompareAttach'); }
 													this._gtAttachment.deleteAttachment(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
 													this._gtAttachment.writeAttachmentByTableId(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', JSON.stringify(oRecordCompare), '', false, true);
+													if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/CompareAttach'); }
 												} else if (bDeleteCompareAttachment) {
 													this._gtAttachment.deleteAttachment(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
 												} // if compare attachment
@@ -259,9 +277,15 @@ JobRunner.prototype = {
 			gs.error('JobRunner.runTrigger error with message: ' + String(oEx));
 		} // initiate job
 		if (this.bLog) { gs.info('JobRunner.runTrigger ended'); }
+		if (this.bTimer) {
+			this._gtDateTime.stopTimer('runTrigger');
+			var sTimerResult = this._gtDateTime.getTimer();
+			this._gtAttachment.writeAttachmentByTableId(grJobLogTableChunk.getTableName(), grJobLogTableChunk.getUniqueValue(), 'chunk_timer_' + sTableName + '.json', sTimerResult, '', false, false);
+		} // if timer
 	}, // function runTrigger
 
 	_writeRecordError: function (sTableId, sTableName, sRecordSysId, sRecordName, oError, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk) {
+		if (this.bTimer) { this._gtDateTime.startTimer('_writeRecordError'); }
 		//gs.info('tomtom sTableId: ' + sTableId + ' sRecordSysId: ' + sRecordSysId + ' sRecordName: ' + sRecordName + ' oError: ' + JSON.stringify(oError));
 		var bReturnError = true;
 		var bInsertError = true;
@@ -348,6 +372,7 @@ JobRunner.prototype = {
 				gs.error('JobRunner._writeRecordError error writing error record for chunk ' + grJobLogTableChunk.getUniqueValue() + ' record ' + sRecordSysId + '. Error: ' + grRecordError.getLastErrorMessage());
 			} // if error on insert
 		} // if insert
+		if (this.bTimer) { this._gtDateTime.stopTimer('_writeRecordError'); }
 		return bReturnError;
 	}, // function _writeRecordError
 
@@ -360,14 +385,14 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>113</sys_mod_count>
+        <sys_mod_count>129</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-12-10 16:07:54</sys_updated_on>
+        <sys_updated_on>2024-12-19 15:36:44</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
