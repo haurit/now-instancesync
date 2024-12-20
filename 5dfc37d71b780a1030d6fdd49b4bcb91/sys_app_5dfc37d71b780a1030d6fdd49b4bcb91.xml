@@ -32,16 +32,16 @@
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-13 08:00:13</sys_created_on>
         <sys_id>5dfc37d71b780a1030d6fdd49b4bcb91</sys_id>
-        <sys_mod_count>7</sys_mod_count>
+        <sys_mod_count>9</sys_mod_count>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-12-05 08:56:25</sys_updated_on>
+        <sys_updated_on>2024-12-20 09:14:02</sys_updated_on>
         <template/>
         <trackable>true</trackable>
         <uninstall_blocked>false</uninstall_blocked>
         <user_role/>
         <vendor/>
         <vendor_prefix/>
-        <version>1.0.4.1</version>
+        <version>1.0.5</version>
     </sys_app>
     <sys_translated_text action="delete_multiple" query="documentkey=5dfc37d71b780a1030d6fdd49b4bcb91"/>
     <sys_attachment action="INSERT_OR_UPDATE">
@@ -49,6 +49,7 @@
         <chunk_size_bytes>700000</chunk_size_bytes>
         <compressed>true</compressed>
         <content_type>image/png</content_type>
+        <encryption_context/>
         <file_name>instancesync.png</file_name>
         <hash>b45072a0a09d2b875b8c0d94330980421dcb842d54091ff98529ed06ef57dcdd</hash>
         <image_height>172</image_height>

@@ -1,0 +1,27 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_properties">
+    <sys_properties action="INSERT_OR_UPDATE">
+        <choices/>
+        <description>If set to true will save detailed information about the performance of each Chunk (attachment on each Chunk).</description>
+        <ignore_cache>true</ignore_cache>
+        <is_private>false</is_private>
+        <name>x_snc_instanc_sync.timer</name>
+        <read_roles/>
+        <suffix>timer</suffix>
+        <sys_class_name>sys_properties</sys_class_name>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-12-19 15:29:03</sys_created_on>
+        <sys_id>745a288ec32a16509ebe8d8dc00131a6</sys_id>
+        <sys_mod_count>2</sys_mod_count>
+        <sys_name>x_snc_instanc_sync.timer</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_properties_745a288ec32a16509ebe8d8dc00131a6</sys_update_name>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-12-19 15:41:13</sys_updated_on>
+        <type>boolean</type>
+        <value>false</value>
+        <write_roles/>
+    </sys_properties>
+    <sys_translated_text action="delete_multiple" query="documentkey=745a288ec32a16509ebe8d8dc00131a6"/>
+</record_update>
