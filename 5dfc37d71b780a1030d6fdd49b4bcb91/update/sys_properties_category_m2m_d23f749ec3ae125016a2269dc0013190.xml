@@ -1,0 +1,19 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_properties_category_m2m">
+    <sys_properties_category_m2m action="INSERT_OR_UPDATE">
+        <category display_value="Instance Sync">5bfea1f41b881610e50ddc61ab4bcb19</category>
+        <order>500</order>
+        <property display_value="x_snc_instanc_sync.timer" name="x_snc_instanc_sync.timer">745a288ec32a16509ebe8d8dc00131a6</property>
+        <sys_class_name>sys_properties_category_m2m</sys_class_name>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2024-12-20 11:38:22</sys_created_on>
+        <sys_id>d23f749ec3ae125016a2269dc0013190</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_snc_instanc_sync.timer.Instance Sync</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_properties_category_m2m_d23f749ec3ae125016a2269dc0013190</sys_update_name>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2024-12-20 11:38:22</sys_updated_on>
+    </sys_properties_category_m2m>
+</record_update>
