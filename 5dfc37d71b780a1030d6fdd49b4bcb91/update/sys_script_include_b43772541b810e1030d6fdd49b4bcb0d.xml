@@ -337,20 +337,13 @@ JobController.prototype = {
 						sTableName = grTable.getValue('name');
 						var grTarget = new GlideRecord(sTableName);
 						sMappedClass = '';
-						sQuery = this._getValue('job/sQuery', '');
-						bDeltaLoad = this._getValue('job/bDeltaLoad', false);
-						iChunkSize = this._getValue('job/iChunkSize', 2000);
-						oClassMap = this._getValue('job/oClassMap', {});
+						var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
+						var oTableJobCfg = {};
 						sDeltaQuery = '';
 						iPriority = iPriorityDefault;
 						if (bConfigIsObject) {
-							sQuery = this._getValue(sTableName + '/sQuery', '', oTables);
-							bDeltaLoad = this._getValue(sTableName + '/bDeltaLoad', bDeltaLoad, oTables);
-							iChunkSize = this._getValue(sTableName + '/iChunkSize', iChunkSize, oTables);
-							oClassMap = this._getValue(sTableName + '/oClassMap', {}, oTables);
+							oTableJobCfg = this._gtObject.getValue('job/oTables/' + sTableInHierarchy, '');
 						} else {
-							var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
-							var oTableJobCfg = {};
 							if (this._gtArray.isValidArray(aHierarchy)) {
 								aHierarchy.some(function (sTableInHierarchy) {
 									if (sTableInHierarchy != 'cmdb') {
@@ -361,19 +354,19 @@ JobController.prototype = {
 									} // if not cmdb root
 								}, this); // each table in hierarchy
 							} // if hierarchy
-							this.oConfig = JSON.parse(this.sConfig); // reset JSON
-							this.oConfig['job'] = this._gtObject.deepMerge(this.oConfig['job'], oTableJobCfg, false);
-							sQuery = this._getValue('job/sQuery', '');
-							bDeltaLoad = this._getValue('job/bDeltaLoad', false);
-							bUseDeltaLoadQuery = this._getValue('job/bUseDeltaLoadQuery', '');
-							sDeltaLoadQuery = this._getValue('job/sDeltaLoadQuery', '');
-							aDynamicQuery = this._getValue('job/aDynamicQuery', []);
-							aDynamicDeltaLoadQuery = this._getValue('job/aDynamicDeltaLoadQuery', []);
-							aQuerySysIds = this._getValue('job/aQuerySysIds', []);
-							aDeltaLoadQuerySysIds = this._getValue('job/aDeltaLoadQuerySysIds', []);
-							iChunkSize = this._getValue('job/iChunkSize', iChunkSize);
-							oClassMap = this._getValue('job/oClassMap', {});
 						} // if config obj
+						this.oConfig = JSON.parse(this.sConfig); // reset JSON
+						this.oConfig['job'] = this._gtObject.deepMerge(this.oConfig['job'], oTableJobCfg, false);
+						sQuery = this._getValue('job/sQuery', '');
+						bDeltaLoad = this._getValue('job/bDeltaLoad', false);
+						bUseDeltaLoadQuery = this._getValue('job/bUseDeltaLoadQuery', '');
+						sDeltaLoadQuery = this._getValue('job/sDeltaLoadQuery', '');
+						aDynamicQuery = this._getValue('job/aDynamicQuery', []);
+						aDynamicDeltaLoadQuery = this._getValue('job/aDynamicDeltaLoadQuery', []);
+						aQuerySysIds = this._getValue('job/aQuerySysIds', []);
+						aDeltaLoadQuerySysIds = this._getValue('job/aDeltaLoadQuerySysIds', []);
+						iChunkSize = this._getValue('job/iChunkSize', 2000);
+						oClassMap = this._getValue('job/oClassMap', {});
 						if (bDeltaLoad === true) {
 							if (bInitialJob) {
 								if (this._getValue('job/sDeltaLoadStartTime', '')) {
@@ -885,7 +878,7 @@ JobController.prototype = {
 	*/
 
 	type: 'JobController',
-	version: '1.0.5',
+	version: '1.0.6',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -893,14 +886,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>243</sys_mod_count>
+        <sys_mod_count>245</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2025-02-01 10:21:52</sys_updated_on>
+        <sys_updated_on>2025-02-05 07:04:30</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>

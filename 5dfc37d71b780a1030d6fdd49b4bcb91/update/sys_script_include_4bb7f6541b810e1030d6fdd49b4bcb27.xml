@@ -58,21 +58,27 @@ JobRunner.prototype = {
 					var _getJobCfg = new x_snc_json_cfg_mgr.getCfg(sJSONId);
 					var sJSONName = (sJSONId) ? grJobConfig.json_configuration.name : 'NA';
 					var bValidConfig = false;
+					var oJob = {};
+					var oConfig = {};
 					var oJobCfg = _getJobCfg.getConfig();
-					var bTableAutoExtend = this._gtObject.getValue('job/bTableAutoExtend', false, oJobCfg);
+					var bTableAutoExtend = this._gtObject.getValue('job/bTableAutoExtend', true, oJobCfg);
 					var oTableCfg = {};
 					var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
-					if ((!bTableAutoExtend) && (this._gtObject.getValue('job/oTables/' + sTableName, '', oJobCfg))) {
-						oTableCfg = this._gtObject.getValue('job/oTables/' + sTableInHierarchy, '', oJobCfg);
-						bValidConfig = true;
-					} else {
-						aHierarchy.some(function (sTableInHierarchy) {
-							if (this._gtObject.getValue('job/oTables/' + sTableInHierarchy, '', oJobCfg)) {
-								oTableCfg = this._gtObject.getValue('job/oTables/' + sTableInHierarchy, '', oJobCfg);
-								bValidConfig = true;
-								return true;
-							} // if table exists in config
-						}, this); // each table in hierarchy
+					if (this._gtObject.getValue('job/oTables', '', oJobCfg)) {
+						if ((!bTableAutoExtend) || (aHierarchy.length == 1)) {
+							oTableCfg = this._gtObject.getValue('job/oTables/' + sTableName, '', oJobCfg);
+							bValidConfig = true;
+						} else {
+							aHierarchy.some(function (sTableInHierarchy) {
+								if (this._gtObject.getValue('job/oTables/' + sTableInHierarchy, '', oJobCfg)) {
+									oTableCfg = this._gtObject.getValue('job/oTables/' + sTableInHierarchy, '', oJobCfg);
+									bValidConfig = true;
+									return true;
+								} // if table exists in config
+							}, this); // each table in hierarchy
+						} // if auto extend
+						oJob = this._gtObject.deepMerge(this._gtObject.getValue('job', {}, oJobCfg), oTableCfg);
+						oConfig = this._gtObject.deepMerge(this._gtObject.getValue('config', {}, oJobCfg), this._gtObject.getValue('config', {}, oTableCfg),);
 					} // if table obj
 					if (!bValidConfig) {
 						if (sMappedClass) {
@@ -92,10 +98,10 @@ JobRunner.prototype = {
 								} // if not cmdb root
 							}, this); // each table in hierarchy
 						} // if hierarchy
+						oJob = this._gtObject.deepMerge(this._gtObject.getValue('job', {}, oJobCfg), this._gtObject.getValue('job', {}, oTableCfg));
+						oConfig = this._gtObject.deepMerge(this._gtObject.getValue('config', {}, oJobCfg), this._gtObject.getValue('config', {}, oTableCfg),);
 					} // if mapped class dedicated mapping required
 					if (bValidConfig) {
-						var oJob = this._gtObject.deepMerge(this._gtObject.getValue('job', {}, oJobCfg), this._gtObject.getValue('job', {}, oTableCfg));
-						var oConfig = this._gtObject.deepMerge(this._gtObject.getValue('config', {}, oJobCfg), this._gtObject.getValue('config', {}, oTableCfg),);
 						if (this._gtObject.getValue('bAttachChunkRecordJSONConfig', false, oJob)) {
 							this._gtAttachment.writeAttachmentByTableId(grJobLogTableChunk.getTableName(), grJobLogTableChunk.getUniqueValue(), 'chunk_cfg_rec_' + sTableName + '.json', JSON.stringify(oConfig), '', false, false);
 						} // if attach JSON config to job log table chunk
@@ -388,7 +394,7 @@ JobRunner.prototype = {
 	}, // function _writeRecordError
 
 	type: 'JobRunner',
-	version: '1.0.5',
+	version: '1.0.6',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -396,14 +402,14 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>132</sys_mod_count>
+        <sys_mod_count>136</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2025-01-31 17:00:56</sys_updated_on>
+        <sys_updated_on>2025-02-05 07:23:46</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
