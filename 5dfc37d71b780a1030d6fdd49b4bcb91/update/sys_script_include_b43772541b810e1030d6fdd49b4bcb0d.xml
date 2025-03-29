@@ -457,9 +457,11 @@ JobController.prototype = {
 								bSuccess = true;
 								this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
 							} // if table count
+							var sOrigQuery = sQuery;
 							Object.keys(oClassMap).forEach(function (sMappedClass) {
 								//gs.info('tomtom sMappedClass: ' +  sMappedClass + ' sTableName: ' + sTableName + ' oClassMap[sMappedClass] ' + oClassMap[sMappedClass]);
 								if (oClassMap[sMappedClass] == sTableName) {
+									sQuery = sOrigQuery;
 									var oMappedTableCfg = this._JobCommon.getTableConfig(this._sJSONName, this._getValue('job/sTableJSONPrefix', ''), sMappedClass);
 									var sMappedQuery = this._gtObject.getValue('job/sQuery', '', oMappedTableCfg);
 									var sMappedDeltaLoadQuery = this._gtObject.getValue('job/sDeltaLoadQuery', '', oMappedTableCfg);
@@ -886,14 +888,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>247</sys_mod_count>
+        <sys_mod_count>248</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2025-02-07 08:32:33</sys_updated_on>
+        <sys_updated_on>2025-03-29 11:55:41</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>
