@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_security_acl_role">
+    <sys_security_acl_role action="INSERT_OR_UPDATE">
+        <sys_class_name>sys_security_acl_role</sys_class_name>
+        <sys_created_by>tom.hauri</sys_created_by>
+        <sys_created_on>2025-05-25 09:07:40</sys_created_on>
+        <sys_id>6cb4335cc3b9e25016a2269dc0013107</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>x_snc_instanc_sync_job_log_mapping_error.x_snc_instanc_sync.job_log_mapping_error_user</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_security_acl display_value="x_snc_instanc_sync_job_log_mapping_error">d6710e0b1b4d061030d6fdd49b4bcbe0</sys_security_acl>
+        <sys_update_name>sys_security_acl_role_6cb4335cc3b9e25016a2269dc0013107</sys_update_name>
+        <sys_updated_by>tom.hauri</sys_updated_by>
+        <sys_updated_on>2025-05-25 09:07:40</sys_updated_on>
+        <sys_user_role display_value="x_snc_instanc_sync.job_log_mapping_error_user" name="x_snc_instanc_sync.job_log_mapping_error_user">ce710e0b1b4d061030d6fdd49b4bcbc6</sys_user_role>
+    </sys_security_acl_role>
+</record_update>
