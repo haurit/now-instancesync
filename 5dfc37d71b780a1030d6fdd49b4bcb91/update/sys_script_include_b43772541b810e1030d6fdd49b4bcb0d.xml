@@ -312,6 +312,7 @@ JobController.prototype = {
 					var aDynamicDeltaLoadQuery = [];
 					var bDeltaLoad = false;
 					var sDeltaLoadQuery = '';
+					var sQueryOverride = '';
 					var bUseDeltaLoadQuery = false;
 					var sDeltaQuery = '';
 					var aQuerySysIds = [];
@@ -361,6 +362,11 @@ JobController.prototype = {
 						bDeltaLoad = this._getValue('job/bDeltaLoad', false);
 						bUseDeltaLoadQuery = this._getValue('job/bUseDeltaLoadQuery', '');
 						sDeltaLoadQuery = this._getValue('job/sDeltaLoadQuery', '');
+						sQueryOverride = this._getValue('job/sQueryOverride', '');
+						if (sQueryOverride) {
+							sQuery = sQueryOverride;
+							sDeltaLoadQuery = (sDeltaLoadQuery) ? sQueryOverride : '';
+						} // if ad hoc query
 						aDynamicQuery = this._getValue('job/aDynamicQuery', []);
 						aDynamicDeltaLoadQuery = this._getValue('job/aDynamicDeltaLoadQuery', []);
 						aQuerySysIds = this._getValue('job/aQuerySysIds', []);
@@ -880,7 +886,7 @@ JobController.prototype = {
 	*/
 
 	type: 'JobController',
-	version: '1.0.6',
+	version: '1.0.72',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -888,14 +894,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>248</sys_mod_count>
+        <sys_mod_count>252</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2025-03-29 11:55:41</sys_updated_on>
+        <sys_updated_on>2025-06-22 11:58:02</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>
