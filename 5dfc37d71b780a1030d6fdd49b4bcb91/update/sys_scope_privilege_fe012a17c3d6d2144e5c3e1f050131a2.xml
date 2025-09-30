@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_scope_privilege">
+    <sys_scope_privilege action="INSERT_OR_UPDATE">
+        <operation>read</operation>
+        <source_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</source_scope>
+        <status>allowed</status>
+        <sys_class_name>sys_scope_privilege</sys_class_name>
+        <sys_created_by>system</sys_created_by>
+        <sys_created_on>2024-12-11 11:03:58</sys_created_on>
+        <sys_id>fe012a17c3d6d2144e5c3e1f050131a2</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>cmcb_ci_orcl_vsession</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_scope_privilege_fe012a17c3d6d2144e5c3e1f050131a2</sys_update_name>
+        <sys_updated_by>system</sys_updated_by>
+        <sys_updated_on>2024-12-11 11:03:58</sys_updated_on>
+        <target_name>cmcb_ci_orcl_vsession</target_name>
+        <target_scope display_value="Data Collection for Oracle Global Licensing and Advisory Services">2fb77c64db0de41023c0f9c3f3961930</target_scope>
+        <target_type>sys_db_object</target_type>
+    </sys_scope_privilege>
+</record_update>

@@ -8,6 +8,7 @@
         <description>Common functions of the application</description>
         <mobile_callable>false</mobile_callable>
         <name>JobCommon</name>
+        <sandbox_callable>false</sandbox_callable>
         <script><![CDATA[var JobCommon = Class.create();
 JobCommon.prototype = {
 	initialize: function () {

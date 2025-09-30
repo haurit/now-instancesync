@@ -410,42 +410,38 @@ JobController.prototype = {
 									oTableCount = this._gtRESTAPI.doNOWRESTCount(sTableName, sQuery, 'sys_class_name');
 									gdtEnd = new GlideDateTime();
 									iRESTRequestDuration = gdtEnd.getNumericValue() - gdtStart.getNumericValue();
-									if ((oTableCount) && (typeof oTableCount == 'object') && (oTableCount.hasOwnProperty('error_code'))) {
-										gs.error('JobController.initiateJob count failed for split table ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue() + ' returned: ' + JSON.stringify(oTableCount));
-									} else {
-										iAutoExtendedTables = (oTableCount) ? Object.keys(oTableCount).length : -1;
-										if (iAutoExtendedTables > 0) {
-											iRESTRequestDuration = Math.round(iRESTRequestDuration / iAutoExtendedTables);
-											Object.keys(oTableCount).forEach(function (sTableCountName) {
-												sMappedClass = '';
-												iPriority = iPriorityDefault;
-												bSplitTables = true;
-												iTableCount = oTableCount[sTableCountName];
-												if (oTableCount[sTableCountName] > 0) {
-													if (this._gtObject.isObject(oPriorityClasses)) {
-														iPriority = this.getTableHierarchyPriority(sTableCountName, oPriorityClasses, iPriorityDefault);
-													} // if priority classes
+									iAutoExtendedTables = (oTableCount) ? Object.keys(oTableCount).length : -1;
+									if (iAutoExtendedTables > 0) {
+										iRESTRequestDuration = Math.round(iRESTRequestDuration / iAutoExtendedTables);
+										Object.keys(oTableCount).forEach(function (sTableCountName) {
+											sMappedClass = '';
+											iPriority = iPriorityDefault;
+											bSplitTables = true;
+											iTableCount = oTableCount[sTableCountName];
+											if (oTableCount[sTableCountName] > 0) {
+												if (this._gtObject.isObject(oPriorityClasses)) {
+													iPriority = this.getTableHierarchyPriority(sTableCountName, oPriorityClasses, iPriorityDefault);
+												} // if priority classes
+												sTableCountId = this._gtTable.getTableId(sTableCountName);
+												if (sTableCountId) {
+													sClassQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableCountName);
+												} else if (oClassMap.hasOwnProperty(sTableCountName)) {
+													sMappedClass = sTableCountName;
+													sTableCountName = oClassMap[sMappedClass];
 													sTableCountId = this._gtTable.getTableId(sTableCountName);
-													if (sTableCountId) {
-														sClassQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableCountName);
-													} else if (oClassMap.hasOwnProperty(sTableCountName)) {
-														sMappedClass = sTableCountName;
-														sTableCountName = oClassMap[sMappedClass];
-														sTableCountId = this._gtTable.getTableId(sTableCountName);
-														sClassQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sMappedClass);
-													} // if table found
-													if ((sTableCountId) && (sTableCountId != 'undefined')) {
-														bSuccess = true;
-														this.initiateTable(sTableCountId, sTableCountName, sBaseTableId, sMappedClass, sClassQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
-													} else {
-														gs.error('JobController.initiateJob table not found for ' + sTableCountName + ' count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue());
-													} // if table exists
-												} // if table count
-											}, this); // each count
-										} else if ((bInitialJob) || (!bDeltaLoad)) {
-											gs.error('JobController.initiateJob count returned "' + iAutoExtendedTables + '" for split table ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
-										} // if table count
-									} // if rest count
+													sClassQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sMappedClass);
+												} // if table found
+												if ((sTableCountId) && (sTableCountId != 'undefined')) {
+													bSuccess = true;
+													this.initiateTable(sTableCountId, sTableCountName, sBaseTableId, sMappedClass, sClassQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
+												} else {
+													gs.error('JobController.initiateJob table not found for ' + sTableCountName + ' count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue());
+												} // if table exists
+											} // if table count
+										}, this); // each count
+									} else if ((bInitialJob) || (!bDeltaLoad)) {
+										gs.error('JobController.initiateJob count failed for split table ' + sTableName + ' (' + sTableId + ') for job: ' + grJobLog.getUniqueValue());
+									} // if table count
 								} else {
 									sQuery = this._gtRecordRead.combineQueries(sQuery, 'sys_class_name=' + sTableName);
 								} // if table calc extend tables
@@ -458,19 +454,15 @@ JobController.prototype = {
 							iTableCount = this._gtRESTAPI.doNOWRESTCount(sTableName, sQuery);
 							gdtEnd = new GlideDateTime();
 							iRESTRequestDuration = gdtEnd.getNumericValue() - gdtStart.getNumericValue();
-							if ((iTableCount) && (typeof iTableCount == 'object') && (iTableCount.hasOwnProperty('error_code'))) {
-								gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') with query "' + sQuery + '" for job: ' + grJobLog.getUniqueValue() + ' returned: ' + JSON.stringify(iTableCount));
-							} else {
-								//gs.info('tomtom no split table: ' + sTableName + ' (' + sTableId + ') with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
-								if ((!iTableCount) || (isNaN(iTableCount))) {
-									if ((bInitialJob) || (!bDeltaLoad)) {
-										gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') with query "' + sQuery + '" for job: ' + grJobLog.getUniqueValue());
-									} // if initial job or not delta load
-								} else if (iTableCount > 0) {
-									bSuccess = true;
-									this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
-								} // if table count
-							} // if rest count
+							//gs.info('tomtom no split table: ' + sTableName + ' (' + sTableId + ') with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
+							if ((!iTableCount) || (isNaN(iTableCount))) {
+								if ((bInitialJob) || (!bDeltaLoad)) {
+									gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') with query "' + sQuery + '" for job: ' + grJobLog.getUniqueValue());
+								} // if initial job or not delta load
+							} else if (iTableCount > 0) {
+								bSuccess = true;
+								this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
+							} // if table count
 							var sOrigQuery = sQuery;
 							Object.keys(oClassMap).forEach(function (sMappedClass) {
 								//gs.info('tomtom sMappedClass: ' +  sMappedClass + ' sTableName: ' + sTableName + ' oClassMap[sMappedClass] ' + oClassMap[sMappedClass]);
@@ -501,20 +493,16 @@ JobController.prototype = {
 									iTableCount = this._gtRESTAPI.doNOWRESTCount(sMappedClass, sQuery);
 									gdtEnd = new GlideDateTime();
 									iRESTRequestDuration = gdtEnd.getNumericValue() - gdtStart.getNumericValue();
-									if ((iTableCount) && (typeof iTableCount == 'object') && (iTableCount.hasOwnProperty('error_code'))) {
-										gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' with query "' + sQuery + '" for job: ' + grJobLog.getUniqueValue() + ' returned: ' + JSON.stringify(iTableCount));
-									} else {
-										//gs.info('tomtom no split table: ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
-										if ((!iTableCount) || (isNaN(iTableCount))) {
-											if ((bInitialJob) || (!bDeltaLoad)) {
-												gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' with query "' + sQuery + '" for job: ' + grJobLog.getUniqueValue());
-											} // if initial job or not delta load
-										} else if (iTableCount > 0) {
-											bSuccess = true;
-											this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
-										} // if table count
-									} // if mapped class found
-								} // if rest error
+									//gs.info('tomtom no split table: ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' with count: ' + iTableCount + ' for job: ' + grJobLog.getUniqueValue() + ' query: ' + sQuery);
+									if ((!iTableCount) || (isNaN(iTableCount))) {
+										if ((bInitialJob) || (!bDeltaLoad)) {
+											gs.error('JobController.initiateJob count failed for ' + sTableName + ' (' + sTableId + ') and sMappedClass: ' + sMappedClass + ' with query "' + sQuery + '" for job: ' + grJobLog.getUniqueValue());
+										} // if initial job or not delta load
+									} else if (iTableCount > 0) {
+										bSuccess = true;
+										this.initiateTable(sTableId, sTableName, sBaseTableId, sMappedClass, sQuery, iTableCount, iChunkSize, iPriority, iRESTRequestDuration, grJobLog);
+									} // if table count
+								} // if mapped class found
 							}, this); // each class map table
 						} // if not split tables
 					} // while table
@@ -588,11 +576,9 @@ JobController.prototype = {
 					}, this); // each count
 				} else if (sTargetType == 'remote') {
 					oRecordCount = this._gtRESTAPI.doNOWRESTCount(sTargetTableName, sTargetQuery, sSourceIdField);
-					if ((oRecordCount) && (typeof oRecordCount == 'object') && (oRecordCount.hasOwnProperty('error_code'))) {
-						gs.error('JobController.initiateJob count failed for dynamic remote ' + sTargetTableName + ' (' + sTargetQuery + ') for job: ' + grJobLog.getUniqueValue() + ' returned: ' + JSON.stringify(oRecordCount));
-					} else {
+					if (oRecordCount) {
 						aTmpIds = this._gtArray.mergeArray(aTmpIds, Object.keys(oRecordCount), true);
-					} // if rest count
+					} // if record count
 				} // if target type
 			} // if valid table
 		}, this); // each dynamic query
@@ -900,7 +886,7 @@ JobController.prototype = {
 	*/
 
 	type: 'JobController',
-	version: '1.0.9',
+	version: '1.0.72',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -908,14 +894,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>254</sys_mod_count>
+        <sys_mod_count>252</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2025-09-30 13:42:06</sys_updated_on>
+        <sys_updated_on>2025-06-22 11:58:02</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>

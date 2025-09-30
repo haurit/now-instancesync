@@ -1,22 +1,19 @@
 <?xml version="1.0" encoding="UTF-8"?><database>
     <element db_object_id="e2718c6f1b780a1030d6fdd49b4bcb4a" label="Job Config" max_length="40" name="x_snc_instanc_sync_job_config" type="collection">
-        <element default="0c8515aa1bddc21030d6fdd49b4bcbf1" hint="Connection &amp; Credential Alias" label="Connection &amp; Credential Alias" mandatory="true" max_length="32" name="connection_credential_alias" reference="sys_alias" type="reference"/>
-        <element hint="JSON Configuration" label="JSON Configuration" mandatory="true" max_length="32" name="json_configuration" reference="x_snc_json_cfg_mgr_json_configuration" type="reference"/>
-        <element default="javascript:global.getNextObjNumberPadded();" display="true" hint="Number" label="Number" max_length="40" name="number" read_only="true" type="string" unique="true"/>
-        <element hint="Name" label="Name" mandatory="true" max_length="100" name="name" type="string"/>
-        <element hint="Scheduled" label="Scheduled" max_length="40" name="scheduled" type="boolean"/>
-        <element hint="Run after this Job" label="Run after this Job" max_length="32" name="run_after_this_job" reference="x_snc_instanc_sync_job_config" reference_qual="javascript:&quot;sys_id!=&quot; + current.getUniqueValue() + &quot;^run_after_this_job!=&quot; + current.getUniqueValue() + &quot;^NQsys_id!=&quot; + current.getUniqueValue() + &quot;^run_after_this_jobISEMPTY&quot;" type="reference" use_reference_qualifier="advanced"/>
-        <element hint="Description" label="Description" max_length="4000" name="description" type="string"/>
+        <element default="javascript:global.getNextObjNumberPadded();" display="true" label="Number" max_length="40" name="number" read_only="true" type="string"/>
+        <element attributes="edge_encryption_enabled=true" label="Scheduled" max_length="40" name="scheduled" type="boolean"/>
+        <element attributes="edge_encryption_enabled=true,encode_utf8=false" label="Run after this Job" max_length="32" name="run_after_this_job" reference="x_snc_instanc_sync_job_config" reference_qual="javascript:&quot;sys_id!=&quot; + current.getUniqueValue() + &quot;^run_after_this_job!=&quot; + current.getUniqueValue() + &quot;^NQsys_id!=&quot; + current.getUniqueValue() + &quot;^run_after_this_jobISEMPTY&quot;" type="reference" use_reference_qualifier="advanced"/>
+        <element label="Description" max_length="4000" name="description" type="string"/>
+        <element attributes="edge_encryption_enabled=true,encode_utf8=false" label="JSON Configuration" mandatory="true" max_length="32" name="json_configuration" reference="x_snc_json_cfg_mgr_json_configuration" type="reference"/>
+        <element attributes="edge_encryption_enabled=true,encode_utf8=false" default="0c8515aa1bddc21030d6fdd49b4bcbf1" label="Connection &amp; Credential Alias" mandatory="true" max_length="32" name="connection_credential_alias" reference="sys_alias" type="reference"/>
+        <element label="Name" mandatory="true" max_length="100" name="name" type="string"/>
         <index name="index">
             <element name="connection_credential_alias"/>
         </index>
         <index name="index2">
             <element name="json_configuration"/>
         </index>
-        <index name="index3" unique="true">
-            <element name="number"/>
-        </index>
-        <index name="index4">
+        <index name="index3">
             <element name="run_after_this_job"/>
         </index>
     </element>

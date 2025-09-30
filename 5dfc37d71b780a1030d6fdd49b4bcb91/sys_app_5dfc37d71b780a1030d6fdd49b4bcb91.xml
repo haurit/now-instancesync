@@ -32,55 +32,16 @@
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-13 08:00:13</sys_created_on>
         <sys_id>5dfc37d71b780a1030d6fdd49b4bcb91</sys_id>
-        <sys_mod_count>16</sys_mod_count>
+        <sys_mod_count>15</sys_mod_count>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2025-09-30 13:06:06</sys_updated_on>
+        <sys_updated_on>2025-06-25 07:06:13</sys_updated_on>
         <template/>
         <trackable>true</trackable>
         <uninstall_blocked>false</uninstall_blocked>
         <user_role/>
         <vendor/>
         <vendor_prefix/>
-        <version>1.0.9</version>
+        <version>1.0.8</version>
     </sys_app>
     <sys_translated_text action="delete_multiple" query="documentkey=5dfc37d71b780a1030d6fdd49b4bcb91"/>
-    <sys_attachment action="INSERT_OR_UPDATE">
-        <average_image_color/>
-        <chunk_size_bytes>700000</chunk_size_bytes>
-        <compressed>true</compressed>
-        <content_type>image/png</content_type>
-        <file_name>instancesync.png</file_name>
-        <hash>b45072a0a09d2b875b8c0d94330980421dcb842d54091ff98529ed06ef57dcdd</hash>
-        <image_height>172</image_height>
-        <image_width>172</image_width>
-        <size_bytes>1787</size_bytes>
-        <size_compressed>1810</size_compressed>
-        <state>available</state>
-        <sys_created_by>tom.hauri</sys_created_by>
-        <sys_created_on>2024-03-13 08:00:18</sys_created_on>
-        <sys_id>a6fcbfd71b780a1030d6fdd49b4bcbd1</sys_id>
-        <sys_mod_count>2</sys_mod_count>
-        <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-03-13 08:00:19</sys_updated_on>
-        <table_name>sys_app</table_name>
-        <table_sys_id>5dfc37d71b780a1030d6fdd49b4bcb91</table_sys_id>
-    </sys_attachment>
-    <sys_attachment_doc action="INSERT_OR_UPDATE">
-        <data>H4sIAAAAAAAA/w==</data>
-        <length>16</length>
-        <position>0</position>
-        <sys_attachment display_value="instancesync.png" sys_id="a6fcbfd71b780a1030d6fdd49b4bcbd1">a6fcbfd71b780a1030d6fdd49b4bcbd1</sys_attachment>
-        <sys_created_by>tom.hauri</sys_created_by>
-        <sys_created_on>2024-03-13 08:00:18</sys_created_on>
-        <sys_id>e6fcbfd71b780a1030d6fdd49b4bcbd1</sys_id>
-    </sys_attachment_doc>
-    <sys_attachment_doc action="INSERT_OR_UPDATE">
-        <data>AfsGBPmJUE5HDQoaCgAAAA1JSERSAAAArAAAAKwIAwAAANHvt+oAAAABc1JHQgCuzhzpAAAABGdBTUEAALGPC/xhBQAAABtQTFRFAAAAAAAAYNdMAAAAYtdOAAAAYdhNAAAAYthOQb6sJQAAAAd0Uk5TAEBAgIC/vzYgCawAAAAJcEhZcwAAMsAAADLAAShkWtsAAAZWSURBVHhe7ZzboqMoEEXbJGbm/794QLdWAXUjx8CZGddLR4XsRQXjJfb5Y7Gs6/rXSNbnE9G9PPEOg/lEdxlbU0637qSy7nTaTnXttJ3s2meLLhNZYOIzvbDpSwwqPugwlWhpeWHXZRzPIhgyHtRnjU+da2DRWOOB5gmsGAgdirDCA60/O/L9kAXR0Unb2/5aEH3LXg6ib9nLQfQtezmIvmUvB9G37OUg+pb9Mcu6FudLiC7Dn6mRfFY1VHY/JWQi23KGhTeNiJGyx8k2iWAFDz/OcSWdgbIUddpimYWf5+PSxcNAWXbRddhikcLp2kG6eJhS2dMWS2c4c/1FsrDFwhHOXSdPg8Jlt8XrPby8lXnOa8ZI2dYWL7fwovCi61jZxhavcnjAdbBsbYsXKTziOlq2ssW//FVGcR0uW9rKaK7jZX1b1XWCrGeru86QtW0N1ymylq3lOkdWtzVdJ8lqtrbrLFnZ1nGdJivZeq7zZFtb13WibG3ru86ULW0DruwsDcsjYbYh17NDrPXFnLbR9L1D/OfTS4FtvFL5XHJKXTM5fPhPm5+z/HtUb25ubv4HbM/X4PUHfN778Xi//868X68H1hksCz2G+sEDoqx39/Olj92TcHybZzvL330c2idDO3wb1czrha0t5b2wg2ie/BBrUFdUzSi2+hOzoTx5pIlI7xfUJCRdNSzh5+kjTbh7m+Uq2Vphvi1dt4k43W3X1tZ29S4brE9lw7T1XGtbz9W2dV1NW9+1tA2kGXHOHNhR523EldtWrvkx1HRweFblVm2rdvtTrMXzpRk0boCNx3F8KCvDncpApThFI36lV/oq8yhW2HT8RXv+nnX5+DY5rjCqxmNt24m6HqW1XMutYhxrIFxA861YVRCX3UuL98pI09KJ82zYhBbG+oBJhFxalibvQqyBEMe2Yk0F2QqDiRd2Ly2lya5OHLYklO5s923HCo8YqT3eKLH3b2FxWEP4Q7XG2jML8jwgEzWNxTW1IVlhigA0EGR7ZkGWjaTRgJo2WK/sXTs0Vqw46ZN9M1m8gQRaCEpYb30uxli1M26ZNw3bSKNGtaxRc0JvBIsoodL8UFbPgESUmKw6V0KT6LfIUmWxQgRNfo/skGmgTkfOt+bsx98GliyatGkhWfpc6kZ9si+SNeJIqZkrWG+OVd8L+w63r1BtKK2RpbFihQAaJLDi5PNzAz0O2xNYQRjjOLCaQCNGak+10eKsNDZW7ZPB5kTbvWfS5gtcN441EIZDY1VmLQ1V+Oh6rxTYyOWJgG0ZrOHYQylcpe3x0u53Dqg20hUfv+Mm2tjbmatYinhpcZsD77VR57HCKYXnLRpb7ioONVza45YMf8fyLcsbmXIaL63ZHSsroqVF8yruvFe9VPdcFdey+Kx79ScytO6xqwW611XFZcqgDTRuKT6ZDeFPeWiuMVtyFW0b9AOcYNugu0ZsuWskznANdLdcfdvS1Y8zXd3utqtnW7s6M8F/ZMW09Vxt29Y1oef5YXnnR+OG2MM5mu5b+ZVRsY2Fqd0jI828JF1NNVPfmU9EVTOCblQ186h1LdWNwnft/XW7/EsVPQPdebxe+/H3/X54pjvLc+PTn+F/2P3m5ubm5rfxL/pG386geo7ql5IP+PFwHN+te6BfBOcmWPI4z0Wm2B7psXB23jTDFtGx0vJzvBm2SA7JFq4zbBEcka1cJ9giNyDbuI63RawvK7gOt0WqKyu6jrZFqCeruA62RaYjq7qOtUWkLWu4DrVFoilruo60RaAl67gOtEWeIeu6jrNFnC5buK60VK5H4y+DNFW2cqLF8m94jLFFmCZb14/JlreYh9giS5FtPmsuO94WUbJsa1PIDrdFkizLC7u7lLKl7fcvehEky2JTBnWrZAvb75cWQZ7sIVLLctvJsudd+dOjkWW237+ZgCB7B6OatbJki+UvgiAlandjn68ge9gOuEuzByWwXJN/rcDLjCSbG61Fq2+B6OiHKMuOAtG37OUg+pa9HETfspeD6Fv2chB9y14Oov+TsiPPXhuoUljhQLLBDleC4Pg1CZonvn8VU0FPE0U/VeqR+jy3/588Bh4c3V/YPJgHXHz4CCcR37fnl7ZnZ6EvkEl0fcNPngidX/BTa9t95Jxn2/+4ZWKO7keqmafwPO03Wc37KH/+/APOGPQL5XpDtgAAAABJRU5ErkJgghxowE77BgAA</data>
-        <length>2400</length>
-        <position>1</position>
-        <sys_attachment display_value="instancesync.png" sys_id="a6fcbfd71b780a1030d6fdd49b4bcbd1">a6fcbfd71b780a1030d6fdd49b4bcbd1</sys_attachment>
-        <sys_created_by>tom.hauri</sys_created_by>
-        <sys_created_on>2024-03-13 08:00:18</sys_created_on>
-        <sys_id>6afcbfd71b780a1030d6fdd49b4bcbd1</sys_id>
-    </sys_attachment_doc>
 </record_update>
