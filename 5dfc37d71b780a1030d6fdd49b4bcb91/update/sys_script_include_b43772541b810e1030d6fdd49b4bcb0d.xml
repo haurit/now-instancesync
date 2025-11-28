@@ -309,6 +309,7 @@ JobController.prototype = {
 					var sMappedClass = '';
 					var sQuery = '';
 					var aDynamicQuery = [];
+					var sDynamicQueryScript = '';
 					var aDynamicDeltaLoadQuery = [];
 					var bDeltaLoad = false;
 					var sDeltaLoadQuery = '';
@@ -368,6 +369,7 @@ JobController.prototype = {
 							sDeltaLoadQuery = (sDeltaLoadQuery) ? sQueryOverride : '';
 						} // if ad hoc query
 						aDynamicQuery = this._getValue('job/aDynamicQuery', []);
+						sDynamicQueryScript = this._getValue('job/sDynamicQueryScript', '');
 						aDynamicDeltaLoadQuery = this._getValue('job/aDynamicDeltaLoadQuery', []);
 						aQuerySysIds = this._getValue('job/aQuerySysIds', []);
 						aDeltaLoadQuerySysIds = this._getValue('job/aDeltaLoadQuerySysIds', []);
@@ -397,12 +399,12 @@ JobController.prototype = {
 						bSplitTables = false;
 						iAutoExtendedTables = -1;
 						aTableExtensions = this._gtTable.getTableExtensions(sTableName);
-						if ((bUseDeltaLoadQuery) && ((this._gtArray.isValidArray(aDynamicDeltaLoadQuery)) || (this._gtArray.isValidArray(aDeltaLoadQuerySysIds)))) {
+						if ((bUseDeltaLoadQuery) && ((this._gtArray.isValidArray(aDynamicDeltaLoadQuery)) || (this._gtArray.isValidArray(aDeltaLoadQuerySysIds)) || (sDynamicQueryScript))) {
 							bSplitTables = true;
-							bSuccess = this.initiateDynamicQueryJob(sTableName, aDynamicDeltaLoadQuery, aDeltaLoadQuerySysIds, aTableExtensions, sBaseTableId, iPriority, grJobLog, bSuccess);
-						} else if ((!bUseDeltaLoadQuery) && ((this._gtArray.isValidArray(aDynamicQuery)) || (this._gtArray.isValidArray(aQuerySysIds)))) {
+							bSuccess = this.initiateDynamicQueryJob(sTableName, aDynamicDeltaLoadQuery, aDeltaLoadQuerySysIds, sDynamicQueryScript, aTableExtensions, sBaseTableId, iPriority, grJobLog, bSuccess);
+						} else if ((!bUseDeltaLoadQuery) && ((this._gtArray.isValidArray(aDynamicQuery)) || (this._gtArray.isValidArray(aQuerySysIds)) || (sDynamicQueryScript))) {
 							bSplitTables = true;
-							bSuccess = this.initiateDynamicQueryJob(sTableName, aDynamicQuery, aQuerySysIds, aTableExtensions, sBaseTableId, iPriority, grJobLog, bSuccess);
+							bSuccess = this.initiateDynamicQueryJob(sTableName, aDynamicQuery, aQuerySysIds, sDynamicQueryScript, aTableExtensions, sBaseTableId, iPriority, grJobLog, bSuccess);
 						} else if (this._gtArray.isValidArray(aTableExtensions)) {
 							if (grTarget.isValidField('sys_class_name')) {
 								if (this._getValue('job/bTableAutoExtend', true) === true) {
@@ -571,7 +573,7 @@ JobController.prototype = {
 		return iTmpPriority;
 	}, // function getTablePriority
 
-	initiateDynamicQueryJob: function (sTableName, aDynamicQuery, aQuerySysIds, aTableExtensions, sBaseTableId, iPriority, grJobLog, bSuccess) {
+	initiateDynamicQueryJob: function (sTableName, aDynamicQuery, aQuerySysIds, sDynamicQueryScript, aTableExtensions, sBaseTableId, iPriority, grJobLog, bSuccess) {
 		var oDynamicResult = {}, aRecordCount = [], oRecordCount = {}, aTmpIds = [], sTmpClass = '', aTmpQueryIds = [], sTmpQuery = '', sTargetType = '', sTargetTableName = '', sTargetQuery = '', sSourceIdField = '', grTargetRecord, sTmpId = '', sTargetTableId = '', iMaxURLSize = 0, iMaxSysIds = 0;
 		var grSourceRecord = new GlideRecord(sTableName);
 		var bHasClassName = grSourceRecord.isValidField('sys_class_name');
@@ -603,6 +605,19 @@ JobController.prototype = {
 		if (this._gtArray.isValidArray(aQuerySysIds)) {
 			aTmpIds = this._gtArray.mergeArray(aTmpIds, aQuerySysIds, true);
 		} // if sysid array
+		if (sDynamicQueryScript) {
+			var oParams = {
+				sTableName: sTableName,
+				aTableExtensions: aTableExtensions,
+				sBaseTableId: sBaseTableId,
+				grJobLog: grJobLog,
+				oConfig: this.oConfig,
+			}; // script params
+			var aDynamicQueryScriptIds = this._gt.runFunction(sDynamicQueryScript, oParams);
+			if (this._gtArray.isValidArray(aDynamicQueryScriptIds)) {
+				aTmpIds = this._gtArray.mergeArray(aTmpIds, aDynamicQueryScriptIds, true);
+			} // if valid array
+		} // if dynamic query script
 		if (this._gtArray.isValidArray(aTmpIds)) {
 			if ((this._gtArray.isValidArray(aTableExtensions)) && (bHasClassName)) {
 				var i = 0;
@@ -912,14 +927,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>256</sys_mod_count>
+        <sys_mod_count>258</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2025-10-03 05:43:54</sys_updated_on>
+        <sys_updated_on>2025-11-27 06:47:01</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>
