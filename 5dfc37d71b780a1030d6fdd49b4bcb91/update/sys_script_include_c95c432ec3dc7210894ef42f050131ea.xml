@@ -1,0 +1,94 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_script_include">
+    <sys_script_include action="INSERT_OR_UPDATE">
+        <access>public</access>
+        <active>true</active>
+        <api_name>x_snc_instanc_sync.AZInstanceSyncManageServiceGroups</api_name>
+        <caller_access/>
+        <client_callable>false</client_callable>
+        <description>STRY0038251 Migration of Business Applications to Application Service Groups in BOOST</description>
+        <mobile_callable>false</mobile_callable>
+        <name>AZInstanceSyncManageServiceGroups</name>
+        <sandbox_callable>false</sandbox_callable>
+        <script><![CDATA[var AZInstanceSyncManageServiceGroups = Class.create();
+AZInstanceSyncManageServiceGroups.prototype = {
+	initialize: function () {
+		this._gtArray = new global.GlobalToolsArray();
+		this._gtRead = new global.GlobalToolsRecordRead();
+		this._gtWrite = new global.GlobalToolsRecordWrite();
+	}, // function initialize
+
+	manageServiceGroupImport: function (sId, sName, sParentId, sParentName) {
+		var aErrorMsgs = [];
+		var bNoActionError = false;
+		var sValidGroupId = '';
+		var sServiceGroupId = ((sParentId) && (sParentName)) ? sParentId : sId;
+		var sServiceGroupName = ((sParentId) && (sParentName)) ? sParentName : sName;
+		//gs.error('tomtom sServiceGroupId: ' + sServiceGroupId + ' sServiceGroupName: ' + sServiceGroupName + ' sId: ' + sId + ' sName: ' + sName + ' sParentId: ' + sParentId + ' sParentName: ' + sParentName);
+		var sTagBasedServiceQuery = ((sParentId) && (sParentName)) ? 'parentIN' + sParentId + ',' + sId : 'parent=' + sId;
+		var grSAGroup = this._gtRead.getRecord('cmdb_ci_service_group', sServiceGroupId);
+		if (grSAGroup) {
+			sValidGroupId = grSAGroup.getUniqueValue();
+		} else {
+			var aTmpServiceGroupNameElements = sServiceGroupName.split('_');
+			aTmpServiceGroupNameElements[0] = 'ASG';
+			sServiceGroupName = aTmpServiceGroupNameElements.join('_');
+			var oGroupError = {};
+			var oGroupConfig = { sTargetTable: 'cmdb_ci_service_group', bKeepSysId: true, aQueryFields: ['sys_id'], bInsert: true, bUpdate: true };
+			var oGroupValues = { sys_id: sServiceGroupId, name: sServiceGroupName, parent_group: '4a40d5103bffe61096f2a44a85e45ace' };
+			sValidGroupId = this._gtWrite.doRecord(oGroupValues, oGroupConfig, oGroupError); // required because of scoped boundries
+			if ((oGroupError) && (oGroupError.hasOwnProperty('message'))) {
+				aErrorMsgs.push('Service Group save for "' + sServiceGroupName + '" with sServiceGroupId: "' + sServiceGroupId + '" failed with error: ' + oGroupError['message']);
+				bNoActionError = true;
+			} // if error
+		} // if group does not exist create it
+		if (sValidGroupId) {
+			var grTagBasedService = this._gtRead.getRecords('cmdb_ci_service_by_tags', sTagBasedServiceQuery);
+			while (grTagBasedService.next()) {
+				var sTagBasedServiceId = grTagBasedService.getUniqueValue();
+				var oGroupMemberError = {};
+				var oGroupMemberConfig = { sTargetTable: 'sa_service_group_member', aQueryFields: ['service_group', 'service'], bInsert: true, bUpdate: true };
+				var oGroupMemberValues = { service_group: sValidGroupId, service: sTagBasedServiceId };
+				sGroupMemberId = this._gtWrite.doRecord(oGroupMemberValues, oGroupMemberConfig, oGroupMemberError); // required because of scoped boundries
+				if ((oGroupMemberError) && (oGroupMemberError.hasOwnProperty('message'))) {
+					aErrorMsgs.push('Service group member save for sTagBasedServiceId: "' + sTagBasedServiceId + '" and sValidGroupId: "' + sValidGroupId + '" failed with error: ' + oGroupMemberError['message']);
+					bNoActionError = true;
+				} // if error
+				if (grTagBasedService.getValue('parent') != sValidGroupId) {
+					grTagBasedService.setValue('parent', sValidGroupId);
+					if (!grTagBasedService.update()) {
+						aErrorMsgs.push('Tag Based Service save for sTagBasedServiceId: "' + sTagBasedServiceId + '" and sValidGroupId: "' + sValidGroupId + '" failed with error: ' + grTagBasedService.getLastErrorMessage());
+						bNoActionError = true;
+					} // if error
+				} // if parent group id
+			} // while service
+		} // if group found
+		if ((!sValidGroupId) || (bNoActionError)) {
+			return {
+				sErrorType: 'record',
+				aErrorDetailArgs: [aErrorMsgs.join(' // ')],
+				bNoActionError: true,
+			}; // error object
+		} else {
+			return sValidGroupId;
+		} // if error
+	}, // function manageServiceGroupImport
+
+	type: 'AZInstanceSyncManageServiceGroups',
+	version: '1.0.0',
+	author: 'Tom Hauri',
+	email: 'tom.hauri@servicenow.com'
+};]]></script>
+        <sys_class_name>sys_script_include</sys_class_name>
+        <sys_created_by>admin_OVL3NLV</sys_created_by>
+        <sys_created_on>2025-10-03 12:34:35</sys_created_on>
+        <sys_id>c95c432ec3dc7210894ef42f050131ea</sys_id>
+        <sys_mod_count>25</sys_mod_count>
+        <sys_name>AZInstanceSyncManageServiceGroups</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy>read</sys_policy>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_script_include_c95c432ec3dc7210894ef42f050131ea</sys_update_name>
+        <sys_updated_by>admin_OVL3NLV</sys_updated_by>
+        <sys_updated_on>2025-10-23 15:01:32</sys_updated_on>
+    </sys_script_include>
+</record_update>

@@ -3,7 +3,7 @@
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>number</element>
-            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="db1ab0509000021087de3cfccdb0d629">4c9648001b6b065004bab8449b4bcbd7</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="283fc051c313211059374d8dc001313c">4c9648001b6b065004bab8449b4bcbd7</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>0</position>
@@ -18,7 +18,7 @@
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>name</element>
-            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="db1ab0509000021087de3cfccdb0d629">4c9648001b6b065004bab8449b4bcbd7</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="283fc051c313211059374d8dc001313c">4c9648001b6b065004bab8449b4bcbd7</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>1</position>
@@ -33,7 +33,7 @@
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>description</element>
-            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="db1ab0509000021087de3cfccdb0d629">4c9648001b6b065004bab8449b4bcbd7</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="283fc051c313211059374d8dc001313c">4c9648001b6b065004bab8449b4bcbd7</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>2</position>
@@ -48,7 +48,7 @@
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>scheduled</element>
-            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="db1ab0509000021087de3cfccdb0d629">4c9648001b6b065004bab8449b4bcbd7</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="283fc051c313211059374d8dc001313c">4c9648001b6b065004bab8449b4bcbd7</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>3</position>
@@ -63,7 +63,7 @@
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>run_after_this_job</element>
-            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="db1ab0509000021087de3cfccdb0d629">4c9648001b6b065004bab8449b4bcbd7</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="283fc051c313211059374d8dc001313c">4c9648001b6b065004bab8449b4bcbd7</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>4</position>
@@ -78,7 +78,7 @@
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>connection_credential_alias</element>
-            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="db1ab0509000021087de3cfccdb0d629">4c9648001b6b065004bab8449b4bcbd7</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="283fc051c313211059374d8dc001313c">4c9648001b6b065004bab8449b4bcbd7</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>5</position>
@@ -93,7 +93,7 @@
         <sys_ui_list_element action="INSERT_OR_UPDATE">
             <average_value>false</average_value>
             <element>json_configuration</element>
-            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="db1ab0509000021087de3cfccdb0d629">4c9648001b6b065004bab8449b4bcbd7</list_id>
+            <list_id display_value="x_snc_instanc_sync_job_config" element="NULL" name="x_snc_instanc_sync_job_config" parent="NULL" relationship="NULL" sys_domain="global" view="283fc051c313211059374d8dc001313c">4c9648001b6b065004bab8449b4bcbd7</list_id>
             <max_value>false</max_value>
             <min_value>false</min_value>
             <position>6</position>
@@ -130,7 +130,7 @@
             <sys_updated_by>tom.hauri</sys_updated_by>
             <sys_updated_on>2024-07-17 04:36:07</sys_updated_on>
             <sys_user/>
-            <view display_value="Reference List" name="sys_ref_list">db1ab0509000021087de3cfccdb0d629</view>
+            <view display_value="Reference List" name="sys_ref_list">283fc051c313211059374d8dc001313c</view>
             <view_name/>
         </sys_ui_list>
     </sys_ui_list>

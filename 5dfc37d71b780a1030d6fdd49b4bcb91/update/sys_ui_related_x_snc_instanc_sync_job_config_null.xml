@@ -2,7 +2,7 @@
     <sys_ui_related sys_domain="global" table="x_snc_instanc_sync_job_config" version="2" view="">
         <sys_ui_related_list_entry action="INSERT_OR_UPDATE">
             <filter/>
-            <list_id display_value="Job Config - Default view" name="x_snc_instanc_sync_job_config" related_list="NULL" sys_domain="global" view="Default view">979f99781bc41610e50ddc61ab4bcbe1</list_id>
+            <list_id display_value="Job Config - Default view" name="x_snc_instanc_sync_job_config" related_list="NULL" sys_domain="global" view="Default view">348676141b810e1030d6fdd49b4bcb95</list_id>
             <order_by/>
             <position>0</position>
             <related_list>x_snc_instanc_sync_job_log.job_config</related_list>
@@ -16,7 +16,7 @@
         </sys_ui_related_list_entry>
         <sys_ui_related_list_entry action="INSERT_OR_UPDATE">
             <filter/>
-            <list_id display_value="Job Config - Default view" name="x_snc_instanc_sync_job_config" related_list="NULL" sys_domain="global" view="Default view">979f99781bc41610e50ddc61ab4bcbe1</list_id>
+            <list_id display_value="Job Config - Default view" name="x_snc_instanc_sync_job_config" related_list="NULL" sys_domain="global" view="Default view">348676141b810e1030d6fdd49b4bcb95</list_id>
             <order_by/>
             <position>1</position>
             <related_list>REL:76a2e4e61b334654ebc254242a4bcba4</related_list>
@@ -40,7 +40,7 @@
             <sys_created_on>2024-08-13 15:32:01</sys_created_on>
             <sys_domain>global</sys_domain>
             <sys_domain_path>/</sys_domain_path>
-            <sys_id>979f99781bc41610e50ddc61ab4bcbe1</sys_id>
+            <sys_id>348676141b810e1030d6fdd49b4bcb95</sys_id>
             <sys_mod_count>0</sys_mod_count>
             <sys_name>Job Config - Default view</sys_name>
             <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>

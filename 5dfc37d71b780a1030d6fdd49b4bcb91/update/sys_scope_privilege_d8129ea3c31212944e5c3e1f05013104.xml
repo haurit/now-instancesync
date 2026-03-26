@@ -1,0 +1,22 @@
+<?xml version="1.0" encoding="UTF-8"?><record_update table="sys_scope_privilege">
+    <sys_scope_privilege action="INSERT_OR_UPDATE">
+        <operation>read</operation>
+        <source_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</source_scope>
+        <status>allowed</status>
+        <sys_class_name>sys_scope_privilege</sys_class_name>
+        <sys_created_by>system</sys_created_by>
+        <sys_created_on>2024-12-12 04:37:01</sys_created_on>
+        <sys_id>d8129ea3c31212944e5c3e1f05013104</sys_id>
+        <sys_mod_count>0</sys_mod_count>
+        <sys_name>cmdb_ci_hyper_v_resource_pool</sys_name>
+        <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
+        <sys_policy/>
+        <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
+        <sys_update_name>sys_scope_privilege_d8129ea3c31212944e5c3e1f05013104</sys_update_name>
+        <sys_updated_by>system</sys_updated_by>
+        <sys_updated_on>2024-12-12 04:37:01</sys_updated_on>
+        <target_name>cmdb_ci_hyper_v_resource_pool</target_name>
+        <target_scope display_value="Global">global</target_scope>
+        <target_type>sys_db_object</target_type>
+    </sys_scope_privilege>
+</record_update>
