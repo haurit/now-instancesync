@@ -32,6 +32,7 @@ JobRunner.prototype = {
 		this._gtObject = new global.GlobalToolsObject();
 		this._gtTable = new global.GlobalToolsTable();
 		this._gtRecordRead = new global.GlobalToolsRecordRead();
+		this._gtRecordWrite = new global.GlobalToolsRecordWrite();
 		this._gtAttachment = new global.GlobalToolsAttachment();
 		this._JobCommon = new JobCommon();
 		this._gdDigest = new GlideDigest();
@@ -115,6 +116,10 @@ JobRunner.prototype = {
 						var bDeleteCompareAttachment = this._gtObject.getValue('bDeleteCompareAttachment', false, oJob);
 						var aDeltaCompareRemoveFields = this._gtObject.getValue('aDeltaCompareRemoveFields', [], oJob);
 						var sDeltaCompareFileNamePrefix = this._gtObject.getValue('sDeltaCompareFileNamePrefix', 'instsync', oJob);
+						var bFieldCompareHash = this._gtObject.getValue('bFieldCompareHash', false, oJob);
+						var sHashField = this._gtObject.getValue('sHashField', 'u_sync_hash', oJob);
+						var sRunCounterProperty = this._gtObject.getValue('sRunCounterProperty', '', oJob);
+						var sRunCounterValue = (sRunCounterProperty) ? gs.getProperty(sRunCounterProperty, '') : '';
 						var bLogErrorDetails = this._gtObject.getValue('bLogErrorDetails', false, oJob);
 						var aLogErrorDetailTypes = this._gtObject.getValue('aLogErrorDetailTypes', ['all'], oJob);
 						var bLogErrorMappingToLastJobLog = this._gtObject.getValue('bLogErrorMappingToLastJobLog', true, oJob);
@@ -187,37 +192,63 @@ JobRunner.prototype = {
 											this._gtObject.setValue('sys_class_name', sClassName, oRecord);
 										} // if mapped class
 										this._gtObject.setValue('sTargetTable', sClassName, oConfig);
-										var bChangeDetected = (bDeltaCompareAttachment) ? false : true;
-										if (bDeltaCompareAttachment) {
-											if (this.bTimer) { this._gtDateTime.startTimer('runTrigger/CompareAttach'); }
+										var bChangeDetected = ((bDeltaCompareAttachment) || (bFieldCompareHash)) ? false : true;
+										var sRecordTargetHash = '';
+										if ((bDeltaCompareAttachment) || (bFieldCompareHash)) {
 											if (this._gtArray.isValidArray(aDeltaCompareRemoveFields)) {
 												aDeltaCompareRemoveFields.forEach(function (sDeltaCompareRemoveField) {
 													delete oRecordCompare[sDeltaCompareRemoveField];
 												}); // each remove delta field
 											} // if delta compare remove field
-											var sRecordTargetHash = '';
-											var grSourceRecordAttachment = this._gtRecordRead.getRecord('sys_attachment', 'table_name=ZZ_YY' + sClassName + '^table_sys_id=' + sSysId + '^file_name=' + sDeltaCompareFileNamePrefix + '_' + sSysId + '.json');
-											if (grSourceRecordAttachment) {
-												sRecordTargetHash = grSourceRecordAttachment.getValue('hash');
-											} // if attachment
-											var sRecordSourceHash = String(this._gdDigest.getSHA256Hex(JSON.stringify(oRecordCompare))).toLocaleLowerCase();
-											if (sRecordSourceHash != sRecordTargetHash) {
-												bChangeDetected = true;
-											} // if hash is not same
-											if ((sBaseTable) && (sBaseTable != sClassName)) {
-												var grRecordClassOld = new GlideRecord(sBaseTable);
-												if (grRecordClassOld.get('sys_id', sSysId)) {
-													var sClassNameOld = this._gtTable.getRecordClass(grRecordClassOld);
-													if ((sClassName) && (sClassNameOld) && (sClassName != sClassNameOld)) {
-														this._gtAttachment.deleteAttachment(sClassNameOld, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
-														bChangeDetected = true;
-													} // if class switch
-												} else if (!bChangeDetected) {
+											var sRecordSourceHash = String(this._gdDigest.getSHA256Hex(JSON.stringify(oRecordCompare))).toLowerCase();
+											if (bFieldCompareHash) {
+												if (this.bTimer) { this._gtDateTime.startTimer('runTrigger/CompareFieldHash'); }
+												var grHashRecord = new GlideRecord(sClassName);
+												if (grHashRecord.get('sys_id', sSysId)) {
+													sRecordTargetHash = grHashRecord.getValue(sHashField) || '';
+												} // if target record exists
+												if ((sRecordTargetHash) && (sRecordSourceHash === sRecordTargetHash)) {
+													bChangeDetected = false;
+												} else {
 													bChangeDetected = true;
-												} // if record found
-											} // if base table
-											if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/CompareAttach'); }
-										} // if compare attachment
+													oRecord[sHashField] = sRecordSourceHash;
+												} // if hash match
+												if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/CompareFieldHash'); }
+											} else if (bDeltaCompareAttachment) {
+												if (this.bTimer) { this._gtDateTime.startTimer('runTrigger/CompareAttach'); }
+												var grSourceRecordAttachment = this._gtRecordRead.getRecord('sys_attachment', 'table_name=ZZ_YY' + sClassName + '^table_sys_id=' + sSysId + '^file_name=' + sDeltaCompareFileNamePrefix + '_' + sSysId + '.json');
+												if (grSourceRecordAttachment) {
+													sRecordTargetHash = grSourceRecordAttachment.getValue('hash');
+												} // if attachment
+												if (sRecordSourceHash != sRecordTargetHash) {
+													bChangeDetected = true;
+												} // if hash is not same
+												if ((sBaseTable) && (sBaseTable != sClassName)) {
+													var grRecordClassOld = new GlideRecord(sBaseTable);
+													if (grRecordClassOld.get('sys_id', sSysId)) {
+														var sClassNameOld = this._gtTable.getRecordClass(grRecordClassOld);
+														if ((sClassName) && (sClassNameOld) && (sClassName != sClassNameOld)) {
+															this._gtAttachment.deleteAttachment(sClassNameOld, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
+															bChangeDetected = true;
+														} // if class switch
+													} else if (!bChangeDetected) {
+														bChangeDetected = true;
+													} // if record found
+												} // if base table
+												if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/CompareAttach'); }
+											} // if attachment
+											if ((bChangeDetected === false) && (sRunCounterValue)) {
+												var oRunCounterUpdateValues = { 'sys_id': sSysId, 'u_sync_run': sRunCounterValue };
+												var oRunCounterUpdateCfg = {
+													sTargetTable: sClassName,
+													aQueryFields: ['sys_id'],
+													bNoWorkflow: 'true',
+													bUpdate: 'true',
+													bInsert: 'false',
+												}; // run counter values
+												this._gtRecordWrite.doRecord(oRunCounterUpdateValues, oRunCounterUpdateCfg);
+											} // if no change detected and update counter
+										} // if field compare hash or delta compare attachment
 										if (bChangeDetected === true) {
 											var bRunIREAgainAfterInsert = false;
 											if ((this._gtObject.getValue('bRunIREAgainAfterInsert', false, oJob) === true) && (this._gtObject.getValue('bKeepSysId', false, oConfig) === true) && (this._gtObject.getValue('bUseIRE', false, oConfig) === true)) {
@@ -413,7 +444,7 @@ JobRunner.prototype = {
 	}, // function _writeRecordError
 
 	type: 'JobRunner',
-	version: '1.0.9',
+	version: '1.0.10',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -421,14 +452,14 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>138</sys_mod_count>
+        <sys_mod_count>141</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2026-02-15 19:49:27</sys_updated_on>
+        <sys_updated_on>2026-04-04 12:56:19</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
