@@ -18,7 +18,7 @@ JobScheduler.prototype = {
 		if (isNaN(this.iAvailableTriggers)) {
 			this.iAvailableTriggers = 20;
 		} // if trigger is not a number set default
-		this.bSchedulerEnabled = Boolean(gs.getProperty('x_snc_instanc_sync.scheduler.enabled', false));
+		this.bSchedulerEnabled = (gs.getProperty('x_snc_instanc_sync.scheduler.enabled', 'false') == 'true') ? true : false;
 	}, // function initialize
 
 	checkScheduler: function () {
@@ -99,7 +99,7 @@ JobScheduler.prototype = {
 						grJobConfigRunAfterThis.query();
 						while (grJobConfigRunAfterThis.next()) {
 							var _JobCtrRunAfterThis = new JobController(grJobConfigRunAfterThis);
-							if (_JobCtrRunAfterThis.checkScheduleAllowed()) {
+							if (_JobCtrRunAfterThis.checkScheduleAllowed(true)) {
 								var sScheduledJobName = _JobCtrRunAfterThis._getValue('job/sScheduledJob', '');
 								if (sScheduledJobName) {
 									this._gt.executeScheduledScriptExecution(sScheduledJobName);
@@ -254,7 +254,7 @@ JobScheduler.prototype = {
 	}, // function createSplitChunk
 
 	type: 'JobScheduler',
-	version: '1.0.12',
+	version: '1.0.13',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -262,14 +262,14 @@ JobScheduler.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 06:32:06</sys_created_on>
         <sys_id>06f40bd01bc10e1030d6fdd49b4bcbcd</sys_id>
-        <sys_mod_count>77</sys_mod_count>
+        <sys_mod_count>78</sys_mod_count>
         <sys_name>JobScheduler</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_06f40bd01bc10e1030d6fdd49b4bcbcd</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2026-03-29 13:06:04</sys_updated_on>
+        <sys_updated_on>2026-04-19 18:36:44</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>06f40bd01bc10e1030d6fdd49b4bcbcd</id>

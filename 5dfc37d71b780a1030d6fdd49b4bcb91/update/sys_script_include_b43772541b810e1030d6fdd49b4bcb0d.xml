@@ -90,8 +90,12 @@ JobController.prototype = {
 		} // if schedule exists
 	}, // function validateScheduler
 
-	checkScheduleAllowed: function () {
+	checkScheduleAllowed: function (bRunAfterPreviousJob) {
 		if (!this.isJobRunning()) {
+			var bAfterPreviousJob = this._getValue('job/oScheduleCfg/bAfterPreviousJob', false);
+			if ((bRunAfterPreviousJob) && (bAfterPreviousJob)) {
+				return true;
+			} // if allowed after previous job
 			var dtLastJobStartTime = this.getLastJobStartTime();
 			var gtLastJobStartTime = new GlideTime();
 			gtLastJobStartTime.setDisplayValueInternal(dtLastJobStartTime.getInternalFormattedLocalTime());
@@ -934,7 +938,6 @@ JobController.prototype = {
 				iPriorityDefault = 100000;
 			} // if default priority out of range
 			var oPriorityClasses = this._getValue('job/oPriorityClasses', {});
-			var sBaseQuery = this._getValue('job/sQuery', ''); // source filter applied during validation
 			var bCalculateOnly = this._getValue('job/bCalculateOnly', false);
 			var iPriority = iPriorityDefault;
 			var iMaxUrlLength = this._getValue('job/iTrueUpMaxUrlLength', 4000);
@@ -942,6 +945,8 @@ JobController.prototype = {
 			iJobRunCount++;
 			grJobLog.setValue('run_count', iJobRunCount);
 			var sTableQuery = this._getValue('job/sTableQuery', '');
+			var oTables = this._getValue('job/oTables', {}); // inline per-table overrides
+			var bConfigIsObject = ((this._gt.getType(oTables) == 'object') && (Object.keys(oTables).length > 0)) ? true : false;
 			if ((!this._gtArray.isValidArray(aTables)) && (sTableQuery)) {
 				var grTableQuery = new GlideRecord('sys_db_object');
 				grTableQuery.addEncodedQuery(sTableQuery);
@@ -959,6 +964,23 @@ JobController.prototype = {
 						if (this._gtObject.isObject(oPriorityClasses)) {
 							iPriority = this.getTableHierarchyPriority(sTableName, oPriorityClasses, iPriorityDefault);
 						} // if priority classes
+						var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
+						var oTableJobCfg = {};
+						if (bConfigIsObject) {
+							oTableJobCfg = this._getValue('job/oTables/' + sTableName, ''); // inline override
+						} else if (this._gtArray.isValidArray(aHierarchy)) {
+							aHierarchy.some(function (sTableInHierarchy) {
+								if (sTableInHierarchy != 'cmdb') {
+									oTableJobCfg = this._JobCommon.getTableConfig(this._sJSONName, this._getValue('job/sTableJSONPrefix', ''), sTableInHierarchy, 'job');
+									if (Object.keys(oTableJobCfg).length > 0) {
+										return true;
+									} // if valid obj
+								} // if not cmdb root
+							}, this); // each table in hierarchy
+						} // if inline vs separate cfg
+						this.oConfig = JSON.parse(this.sConfig); // reset JSON before merge
+						this.oConfig['job'] = this._gtObject.deepMerge(this.oConfig['job'], oTableJobCfg, false); // merge per-table override
+						var sBaseQuery = this._getValue('job/sQuery', ''); // source filter, may be overridden per-table
 						var sAbsoluteBaseTable = this._gtTable.getAbsoluteBase(sTableName);
 						sAbsoluteBaseTable = (sAbsoluteBaseTable) ? sAbsoluteBaseTable : sTableName;
 						var bHasClassField = new GlideRecord(sTableName).isValidField('sys_class_name');
@@ -967,11 +989,11 @@ JobController.prototype = {
 						var iTargetRecordCount = this._gtRecordRead.countRecords(sReadTable, sTargetQuery);
 						iTargetRecordCount = (iTargetRecordCount) ? Number(iTargetRecordCount) : 0;
 						if (iTargetRecordCount > 0) {
-							var iFixedUrlLength = String(this._gtRESTAPI.sRemoteUrl).length	+ String('/api/now/table/' + sAbsoluteBaseTable + '?sysparm_exclude_reference_link=true&sysparm_limit=9999').length + String(this._gtRESTAPI.sQueryNoDomain).length	+ String('&sysparm_query=' + encodeURIComponent('sys_idIN')).length	+ String('&sysparm_fields=' + encodeURIComponent('sys_id,sys_class_name')).length + ((sBaseQuery) ? encodeURIComponent('^' + sBaseQuery).length : 0); // encoded source filter
+							var iFixedUrlLength = String(this._gtRESTAPI.sRemoteUrl).length	+ String('/api/now/table/' + sAbsoluteBaseTable + '?sysparm_exclude_reference_link=true&sysparm_limit=10000').length + String(this._gtRESTAPI.sQueryNoDomain).length + String('&sysparm_query=' + encodeURIComponent('sys_idIN')).length + String('&sysparm_fields=' + encodeURIComponent('sys_id,sys_class_name')).length + ((sBaseQuery) ? encodeURIComponent('^' + sBaseQuery).length : 0); // encoded source filter
 							iMaxUrlLength = ((iMaxUrlLength) && (!isNaN(iMaxUrlLength))) ? iMaxUrlLength : 4000;
 							var iAvailableChars = iMaxUrlLength - iFixedUrlLength - 100; // 100 chars safety buffer
 							var iChunkSize = (iAvailableChars >= 35) ? Math.floor(iAvailableChars / 35) : 1;
-							if (this.bLog) { gs.info('JobController.initiateTrueUpJob ' + sTableName + ' iTargetRecordCount: ' + iTargetRecordCount + ' iChunkSize: ' + iChunkSize); }
+							if (this.bLog) { gs.info('JobController.initiateTrueUpJob ' + sTableName + ' iTargetRecordCount: ' + iTargetRecordCount + ' iChunkSize: ' + iChunkSize + ' sBaseQuery: ' + sBaseQuery); }
 							var bTableSuccess = this._initiateTrueUpTable(sTableName, sBaseQuery, sReadTable, sTargetQuery, iTargetRecordCount, iChunkSize, iPriority, bCalculateOnly, grJobLog);
 							if (bTableSuccess) {
 								bSuccess = true;
@@ -1091,7 +1113,7 @@ JobController.prototype = {
 	*/
 
 	type: 'JobController',
-	version: '1.0.12',
+	version: '1.0.13',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -1099,14 +1121,14 @@ JobController.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:30:52</sys_created_on>
         <sys_id>b43772541b810e1030d6fdd49b4bcb0d</sys_id>
-        <sys_mod_count>270</sys_mod_count>
+        <sys_mod_count>274</sys_mod_count>
         <sys_name>JobController</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b43772541b810e1030d6fdd49b4bcb0d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2026-04-16 19:17:27</sys_updated_on>
+        <sys_updated_on>2026-04-19 18:36:31</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b43772541b810e1030d6fdd49b4bcb0d</id>

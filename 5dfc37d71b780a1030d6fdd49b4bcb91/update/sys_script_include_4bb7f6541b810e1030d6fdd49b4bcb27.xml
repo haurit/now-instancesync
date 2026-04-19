@@ -64,7 +64,24 @@ JobRunner.prototype = {
 					var oJobCfg = _getJobCfg.getConfig();
 					var bTrueUpJob = this._gtObject.getValue('job/bTrueUpJob', false, oJobCfg);
 					if (bTrueUpJob === true) {
-						this._runTrueUpTrigger(grJobLogTableChunk, grJobLogTable, _gtRESTAPI, sTableName, oJobCfg);
+						var oTrueUpTableCfg = {};
+						var aTrueUpHierarchy = this._gtTable.getTableHierarchy(sTableName);
+						if (this._gtObject.getValue('job/oTables/' + sTableName, '', oJobCfg)) {
+							oTrueUpTableCfg = this._gtObject.getValue('job/oTables/' + sTableName, {}, oJobCfg); // inline override
+						} else if (this._gtArray.isValidArray(aTrueUpHierarchy)) {
+							aTrueUpHierarchy.some(function (sTableInHierarchy) {
+								if (sTableInHierarchy != 'cmdb') {
+									var oTmpCfg = this._JobCommon.getTableConfig(sJSONName, this._gtObject.getValue('job/sTableJSONPrefix', '', oJobCfg), sTableInHierarchy, 'job');
+									if (Object.keys(oTmpCfg).length > 0) {
+										oTrueUpTableCfg = oTmpCfg;
+										return true;
+									} // if valid obj
+								} // if not cmdb root
+							}, this); // each table in hierarchy
+						} // if inline vs separate cfg
+						var oMergedJobCfg = JSON.parse(JSON.stringify(oJobCfg)); // fresh copy to avoid mutating shared config
+						oMergedJobCfg['job'] = this._gtObject.deepMerge(this._gtObject.getValue('job', {}, oMergedJobCfg), oTrueUpTableCfg); // merge per-table override
+						this._runTrueUpTrigger(grJobLogTableChunk, grJobLogTable, _gtRESTAPI, sTableName, oMergedJobCfg);
 						dtNow = new GlideDateTime();
 						grJobLogTableChunk.setValue('end_time', dtNow);
 						if (grJobLogTableChunk.getValue('retry_count') == '-1') {
@@ -474,6 +491,7 @@ JobRunner.prototype = {
 		var bTrueUpNoEngine = this._gtObject.getValue('bTrueUpNoEngine', true, oJob);
 		var bTrueUpLogDeletedRecords = this._gtObject.getValue('bTrueUpLogDeletedRecords', false, oJob);
 		var bTrueUpLogReclassifiedRecords = this._gtObject.getValue('bTrueUpLogReclassifiedRecords', false, oJob);
+		var oClassMap = this._gtObject.getValue('oClassMap', {}, oJob);
 		var sAbsoluteBaseTable = this._gtTable.getAbsoluteBase(sTableName);
 		sAbsoluteBaseTable = (sAbsoluteBaseTable) ? sAbsoluteBaseTable : sTableName;
 		var sChunkCondition = grJobLogTableChunk.getValue('condition');
@@ -548,6 +566,7 @@ JobRunner.prototype = {
 			var sTargetClass = oTargetRecordMap[sTargetSysId];
 			if (oSourceRecordMap.hasOwnProperty(sTargetSysId)) {
 				var sSourceClass = oSourceRecordMap[sTargetSysId];
+				sSourceClass = (oClassMap.hasOwnProperty(sSourceClass)) ? oClassMap[sSourceClass] : sSourceClass;
 				if (sTargetClass == sSourceClass) {
 					iValidRecordCount++;
 				} else if (bTrueUpReclassifyRecords) {
@@ -597,7 +616,7 @@ JobRunner.prototype = {
 		} // if cleanup compare attachments
 		var oDeleteValues = { 'sys_id': sSysId };
 		var oDeleteConfig = {
-			sTargetTable: sDeleteTable,
+			sTargetTable: sBaseTable,
 			aQueryFields: ['sys_id'],
 			bDelete: 'true',
 			bNoWorkflow: (bNoWorkflow) ? 'true' : 'false',
@@ -669,7 +688,7 @@ JobRunner.prototype = {
 	}, // function _writeTrueUpRecordLog
 
 	type: 'JobRunner',
-	version: '1.0.11',
+	version: '1.0.13',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -677,14 +696,14 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>142</sys_mod_count>
+        <sys_mod_count>146</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2026-04-16 19:17:17</sys_updated_on>
+        <sys_updated_on>2026-04-19 06:51:24</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
