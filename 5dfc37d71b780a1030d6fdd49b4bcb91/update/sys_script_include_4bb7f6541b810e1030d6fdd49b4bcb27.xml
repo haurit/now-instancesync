@@ -154,8 +154,29 @@ JobRunner.prototype = {
 						var sDeltaCompareFileNamePrefix = this._gtObject.getValue('sDeltaCompareFileNamePrefix', 'instsync', oJob);
 						var bFieldCompareHash = this._gtObject.getValue('bFieldCompareHash', false, oJob);
 						var sHashField = this._gtObject.getValue('sHashField', 'u_sync_hash', oJob);
-						var sRunCounterProperty = this._gtObject.getValue('sRunCounterProperty', '', oJob);
-						var sRunCounterValue = (sRunCounterProperty) ? gs.getProperty(sRunCounterProperty, '') : '';
+						var aDuplicateCheckFields = this._gtObject.getValue('aDuplicateCheckFields', [], oJob); // business-key fields to check before insert
+						var sRunCounterField = this._gtObject.getValue('sRunCounterField', '', oJob); // target field holding the run counter
+						var sRunCounterValue = grJobLog.getValue('run_count') || ''; // run counter from job log
+						if (!sRunCounterValue) { // fallback to property based mechanism for backward compatibility
+							var sRunCounterProperty = this._gtObject.getValue('sRunCounterProperty', '', oJob);
+							sRunCounterValue = (sRunCounterProperty) ? gs.getProperty(sRunCounterProperty, '') : '';
+						} // if no run_count on job log
+						var aConfigFields = this._gtObject.getValue('aFields', [], oConfig); // auto-inject hash and run counter fields once per chunk
+						var aConfigFieldNames = [];
+						aConfigFields.forEach(function (oCfgField) {
+							var sFieldType = this._gt.getType(oCfgField);
+							if (sFieldType == 'string') {
+								aConfigFieldNames.push(oCfgField);
+							} else if (this._gtObject.isObject(oCfgField)) {
+								aConfigFieldNames.push(this._gtObject.getValue('sField', '', oCfgField));
+							} // if field type
+						}, this); // each existing field
+						if ((bFieldCompareHash) && (sHashField) && (aConfigFieldNames.indexOf(sHashField) == -1)) {
+							aConfigFields.push(sHashField);
+						} // if hash field auto-injected
+						if ((sRunCounterField) && (sRunCounterValue) && (aConfigFieldNames.indexOf(sRunCounterField) == -1)) {
+							aConfigFields.push(sRunCounterField);
+						} // if run counter field auto-injected
 						var bLogErrorDetails = this._gtObject.getValue('bLogErrorDetails', false, oJob);
 						var aLogErrorDetailTypes = this._gtObject.getValue('aLogErrorDetailTypes', ['all'], oJob);
 						var bLogErrorMappingToLastJobLog = this._gtObject.getValue('bLogErrorMappingToLastJobLog', true, oJob);
@@ -228,9 +249,32 @@ JobRunner.prototype = {
 											this._gtObject.setValue('sys_class_name', sClassName, oRecord);
 										} // if mapped class
 										this._gtObject.setValue('sTargetTable', sClassName, oConfig);
-										var bChangeDetected = ((bDeltaCompareAttachment) || (bFieldCompareHash)) ? false : true;
+										var bAbandoned = false; // pre-flight duplicate check
+										if (this._gtArray.isValidArray(aDuplicateCheckFields)) {
+											if (this.bTimer) { this._gtDateTime.startTimer('runTrigger/DuplicateCheck'); }
+											var grDuplicate = new GlideRecord(sClassName);
+											aDuplicateCheckFields.forEach(function (sDuplicateField) {
+												var sDuplicateValue = this._gtObject.getValue(sDuplicateField, '', oRecord);
+												if (sDuplicateValue) {
+													grDuplicate.addQuery(sDuplicateField, sDuplicateValue);
+												} else {
+													grDuplicate.addNullQuery(sDuplicateField); // empty source value --> match NULL/empty on target
+												} // if duplicate value present
+											}, this); // each duplicate check field
+											grDuplicate.addQuery('sys_id', '!=', sSysId); // exclude source's own record
+											if ((sRunCounterField) && (sRunCounterValue)) { // restrict to NULL or current run
+												grDuplicate.addEncodedQuery(sRunCounterField + 'ISEMPTY^OR' + sRunCounterField + '=' + sRunCounterValue);
+											} // if run counter configured
+											grDuplicate.setLimit(1);
+											grDuplicate.query();
+											if (grDuplicate.next()) {
+												bAbandoned = true; // valid duplicate exists --> abandon all processing, sweep will delete source's own record
+											} // if duplicate found on target
+											if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/DuplicateCheck'); }
+										} // if duplicate check configured
+										var bChangeDetected = (bAbandoned) ? false : (((bDeltaCompareAttachment) || (bFieldCompareHash)) ? false : true);
 										var sRecordTargetHash = '';
-										if ((bDeltaCompareAttachment) || (bFieldCompareHash)) {
+										if (((bDeltaCompareAttachment) || (bFieldCompareHash)) && (!bAbandoned)) {
 											if (this._gtArray.isValidArray(aDeltaCompareRemoveFields)) {
 												aDeltaCompareRemoveFields.forEach(function (sDeltaCompareRemoveField) {
 													delete oRecordCompare[sDeltaCompareRemoveField];
@@ -273,16 +317,21 @@ JobRunner.prototype = {
 												} // if base table
 												if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/CompareAttach'); }
 											} // if attachment
-											if ((bChangeDetected === false) && (sRunCounterValue)) {
-												var oRunCounterUpdateValues = { 'sys_id': sSysId, 'u_sync_run': sRunCounterValue };
-												var oRunCounterUpdateCfg = {
-													sTargetTable: sClassName,
-													aQueryFields: ['sys_id'],
-													bNoWorkflow: 'true',
-													bUpdate: 'true',
-													bInsert: 'false',
-												}; // run counter values
-												this._gtRecordWrite.doRecord(oRunCounterUpdateValues, oRunCounterUpdateCfg);
+											if ((sRunCounterValue) && (sRunCounterField)) {
+												if (bChangeDetected === false) {
+													var oRunCounterUpdateValues = { 'sys_id': sSysId };
+													oRunCounterUpdateValues[sRunCounterField] = sRunCounterValue;
+													var oRunCounterUpdateCfg = {
+														sTargetTable: sClassName,
+														aQueryFields: ['sys_id'],
+														bNoWorkflow: 'true',
+														bUpdate: 'true',
+														bInsert: 'false',
+													}; // run counter values
+													this._gtRecordWrite.doRecord(oRunCounterUpdateValues, oRunCounterUpdateCfg);
+												} else {
+													oRecord[sRunCounterField] = sRunCounterValue;
+												} // if run counter and no change
 											} // if no change detected and update counter
 										} // if field compare hash or delta compare attachment
 										if (bChangeDetected === true) {
@@ -688,7 +737,7 @@ JobRunner.prototype = {
 	}, // function _writeTrueUpRecordLog
 
 	type: 'JobRunner',
-	version: '1.0.13',
+	version: '1.0.14',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -696,14 +745,14 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>146</sys_mod_count>
+        <sys_mod_count>147</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2026-04-19 06:51:24</sys_updated_on>
+        <sys_updated_on>2026-04-26 19:35:18</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
