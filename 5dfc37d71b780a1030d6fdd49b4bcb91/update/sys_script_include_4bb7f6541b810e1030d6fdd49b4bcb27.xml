@@ -246,7 +246,7 @@ JobRunner.prototype = {
 										var oRecordDisplayValues = {};
 										Object.keys(oRecord).forEach(function (sField) {
 											var sValue = oRecord[sField]['value'];
-											var sDisplayValue = oRecord[sField]['display_value']
+											var sDisplayValue = oRecord[sField]['display_value'];
 											oRecordTmpValues[sField] = sValue;
 											if ((sDisplayValue != sValue) && (sDisplayValue != null)) {
 												oRecordDisplayValues[sField] = sDisplayValue;
@@ -264,7 +264,6 @@ JobRunner.prototype = {
 										sName = (oRecord.hasOwnProperty('number')) ? oRecord['number'] : '';
 										sName = (!sName) && (oRecord.hasOwnProperty('name')) ? oRecord['name'] : '';
 										var sClassName = this._gtObject.getValue('sys_class_name', sTableName, oRecord);
-										var sSourceClassName = (sMappedClass) ? sMappedClass : sClassName;
 										if (sMappedClass) {
 											sClassName = sTableName;
 											this._gtObject.setValue('sys_class_name', sClassName, oRecord);
@@ -370,7 +369,7 @@ JobRunner.prototype = {
 											} // run same again to insert IRE
 											if ((sResultId) && (sResultId != -1)) {
 												if (bAttachment) {
-													aAttachmentRecordPairs.push({ sSourceClass: sSourceClassName, sSourceSysId: sSysId, sTargetClass: sClassName, sTargetSysId: sResultId });
+													aAttachmentRecordPairs.push({ sSourceSysId: sSysId, sTargetSysId: sResultId });
 												} // if attachment sync enabled
 												if ((bDeltaCompareAttachment) || (bUpdateCompareAttachment)) {
 													if (this.bTimer) { this._gtDateTime.startTimer('runTrigger/CompareAttach'); }
@@ -396,12 +395,7 @@ JobRunner.prototype = {
 										} else {
 											iNoOpRecordCount++;
 											if (bAttachment) {
-												var sNoOpTargetClass = sClassName;
-												if (sMappedClass) {
-													var grNoOpTargetRecord = this._gtRecordRead.getRecord(sClassName, sSysId, false, false);
-													sNoOpTargetClass = (grNoOpTargetRecord) ? this._gtTable.getRecordClass(grNoOpTargetRecord) : sClassName;
-												} // if mapped class resolve true local class (sClassName is the queried table, not necessarily the record's actual subclass)
-												aAttachmentRecordPairs.push({ sSourceClass: sSourceClassName, sSourceSysId: sSysId, sTargetClass: sNoOpTargetClass, sTargetSysId: sSysId });
+												aAttachmentRecordPairs.push({ sSourceSysId: sSysId, sTargetSysId: sSysId });
 											} // if attachment sync enabled
 										} // if diff
 									} catch (oEx) {
@@ -416,7 +410,7 @@ JobRunner.prototype = {
 								} // if no sys id
 							}, this); // each record
 							if (bAttachment) {
-								this._syncAttachments(aAttachmentRecordPairs, oJob, grJobLogTableChunk, sTableId, _gtRESTAPI);
+								this._syncAttachments(aAttachmentRecordPairs, oJob, grJobLogTableChunk, sTableId, _gtRESTAPI, (sMappedClass) ? sMappedClass : sTableName, sTableName);
 							} // if attachment sync enabled
 							grJobLogTableChunk.setValue('successful_record_count', iSuccessRecordCount);
 							grJobLogTableChunk.setValue('no_operation_count', iNoOpRecordCount);
@@ -805,14 +799,13 @@ JobRunner.prototype = {
 			aRecords.forEach(function (oRecord) {
 				var sSysId = this._gtObject.getValue('sys_id', '', oRecord);
 				if (sSysId) {
-					var grTargetRecord = this._gtRecordRead.getRecord(sTableName, sSysId, false, false);
-					if (grTargetRecord) {
+					if (this._gtRecordRead.getRecord(sTableName, sSysId, false, false)) {
 						iMatchedRecordCount++;
-						aAttachmentRecordPairs.push({ sSourceClass: sSourceTableName, sSourceSysId: sSysId, sTargetClass: this._gtTable.getRecordClass(grTargetRecord), sTargetSysId: sSysId });
+						aAttachmentRecordPairs.push({ sSourceSysId: sSysId, sTargetSysId: sSysId });
 					} // if local record exists
 				} // if sysid
 			}, this); // each source record
-			this._syncAttachments(aAttachmentRecordPairs, oJob, grJobLogTableChunk, grJobLogTable.getValue('table'), oRESTAPI);
+			this._syncAttachments(aAttachmentRecordPairs, oJob, grJobLogTableChunk, grJobLogTable.getValue('table'), oRESTAPI, sSourceTableName, sTableName);
 			grJobLogTableChunk.setValue('successful_record_count', 0);
 			grJobLogTableChunk.setValue('no_operation_count', iMatchedRecordCount);
 			grJobLogTableChunk.setValue('error_count', 0);
@@ -838,7 +831,7 @@ JobRunner.prototype = {
 		if (this.bTimer) { this._gtDateTime.stopTimer('_runAttachmentOnlyTrigger'); }
 	}, // function _runAttachmentOnlyTrigger
 
-	_syncAttachments: function (aRecordPairs, oJob, grJobLogTableChunk, sTableId, oRESTAPI) {
+	_syncAttachments: function (aRecordPairs, oJob, grJobLogTableChunk, sTableId, oRESTAPI, sSourceClass, sTargetClass) {
 		if (!this._gtArray.isValidArray(aRecordPairs)) { return; }
 		if (this.bTimer) { this._gtDateTime.startTimer('_syncAttachments'); }
 		var sAttachmentQuery = this._gtObject.getValue('sAttachmentQuery', '', oJob);
@@ -848,8 +841,8 @@ JobRunner.prototype = {
 			bAttachmentDeleteOrphaned = false; // sAttachmentQuery narrows what is fetched from source, so "missing from source list" would wrongly include attachments outside the query scope, not just deleted ones
 			gs.warn('JobRunner._syncAttachments bAttachmentDeleteOrphaned is ignored because sAttachmentQuery is set, to avoid deleting target attachments that are simply outside the query scope');
 		} // if delete orphaned combined with attachment query
-		var oTargetAttachmentsBySysId = this._getLocalAttachmentsBySysId(aRecordPairs.map(function (oPair) { return oPair['sTargetSysId']; }));
-		var oSourceAttachmentsBySysId = this._getRemoteAttachmentsBySysId(aRecordPairs.map(function (oPair) { return oPair['sSourceSysId']; }), sAttachmentQuery, oRESTAPI);
+		var oTargetAttachmentsBySysId = this._getLocalAttachmentsBySysId(aRecordPairs.map(function (oPair) { return oPair['sTargetSysId']; }), sTargetClass);
+		var oSourceAttachmentsBySysId = this._getRemoteAttachmentsBySysId(aRecordPairs.map(function (oPair) { return oPair['sSourceSysId']; }), sSourceClass, sAttachmentQuery, oRESTAPI);
 		var iAttachmentSuccessCount = 0, iAttachmentErrorCount = 0, iAttachmentDeletedCount = 0;
 		aRecordPairs.forEach(function (oPair) {
 			var aSourceAttachments = oSourceAttachmentsBySysId[oPair['sSourceSysId']] || [];
@@ -863,7 +856,7 @@ JobRunner.prototype = {
 				if (!bAlreadySynced) {
 					var oDownloadResult;
 					try {
-						oDownloadResult = oRESTAPI.doRESTRequest('api/now/attachment/' + oSourceAttachment['sys_id'] + '/file', 'GET', { sTable: oPair['sTargetClass'], sSysId: oPair['sTargetSysId'], sFilename: sFileName });
+						oDownloadResult = oRESTAPI.doRESTRequest('api/now/attachment/' + oSourceAttachment['sys_id'] + '/file', 'GET', { sTable: sTargetClass, sSysId: oPair['sTargetSysId'], sFilename: sFileName });
 					} catch (oEx) {
 						oDownloadResult = { success: false, message: String(oEx), error_code: '-99' };
 					} // try download
@@ -881,7 +874,7 @@ JobRunner.prototype = {
 			if (bAttachmentDeleteOrphaned) {
 				Object.keys(oExistingTargetAttachments).forEach(function (sExistingFileName) {
 					if (aSourceFileNames.indexOf(sExistingFileName) == -1) {
-						this._gtAttachment.deleteAttachment(oPair['sTargetClass'], oPair['sTargetSysId'], sExistingFileName);
+						this._gtAttachment.deleteAttachment(sTargetClass, oPair['sTargetSysId'], sExistingFileName);
 						iAttachmentDeletedCount++;
 					} // if orphaned
 				}, this); // each existing attachment
@@ -891,51 +884,47 @@ JobRunner.prototype = {
 		if (this.bTimer) { this._gtDateTime.stopTimer('_syncAttachments'); }
 	}, // function _syncAttachments
 
-	_getLocalAttachmentsBySysId: function (aSysIds) {
+	_getLocalAttachmentsBySysId: function (aSysIds, sTargetClass) {
 		var oResult = {};
 		aSysIds = this._gtArray.unique(aSysIds, true);
-		if (!this._gtArray.isValidArray(aSysIds)) { return oResult; }
+		if ((!this._gtArray.isValidArray(aSysIds)) || (!sTargetClass)) { return oResult; }
 		var grAttachment = new GlideRecord('sys_attachment');
-		grAttachment.addEncodedQuery('table_sys_idIN' + aSysIds.join(','));
+		grAttachment.addEncodedQuery('table_sys_idIN' + aSysIds.join(',') + '^table_name=' + sTargetClass); // a sys_id can carry rows of other classes, so scope to the chunk target table (also excludes the ZZ_YY hidden compare attachments)
 		grAttachment.query();
 		var sTargetSysId = '';
 		while (grAttachment.next()) {
-			if (String(grAttachment.getValue('table_name')).indexOf('ZZ_YY') !== 0) {
-				sTargetSysId = grAttachment.getValue('table_sys_id');
-				if (!oResult.hasOwnProperty(sTargetSysId)) {
-					oResult[sTargetSysId] = {};
-				} // if new target
-				oResult[sTargetSysId][grAttachment.getValue('file_name')] = { hash: grAttachment.getValue('hash') };
-			} // if not hidden compare attachment
+			sTargetSysId = grAttachment.getValue('table_sys_id');
+			if (!oResult.hasOwnProperty(sTargetSysId)) {
+				oResult[sTargetSysId] = {};
+			} // if new target
+			oResult[sTargetSysId][grAttachment.getValue('file_name')] = { hash: grAttachment.getValue('hash') };
 		} // while attachments
 		return oResult;
 	}, // function _getLocalAttachmentsBySysId
 
-	_getRemoteAttachmentsBySysId: function (aSysIds, sAttachmentQuery, oRESTAPI) {
+	_getRemoteAttachmentsBySysId: function (aSysIds, sSourceClass, sAttachmentQuery, oRESTAPI) {
 		var oResult = {};
 		aSysIds = this._gtArray.unique(aSysIds, true);
-		if (!this._gtArray.isValidArray(aSysIds)) { return oResult; }
-		var iMaxURLSize = 2000 - String(oRESTAPI.sRemoteUrl).length - 250; // buffer to avoid url length error
+		if ((!this._gtArray.isValidArray(aSysIds)) || (!sSourceClass)) { return oResult; }
+		var sClassQuery = 'table_name=' + sSourceClass; // a sys_id can carry rows of other classes, so scope to the chunk source class (also excludes the ZZ_YY hidden compare attachments)
+		var iMaxURLSize = 2000 - String(oRESTAPI.sRemoteUrl).length - sClassQuery.length - 250; // buffer to avoid url length error
 		var iMaxSysIds = Math.floor(iMaxURLSize / 33);
 		var aBatchIds = [];
 		for (var i = 0; i < aSysIds.length; i++) {
 			aBatchIds.push(aSysIds[i]);
 			if ((aBatchIds.length >= iMaxSysIds) || (i == aSysIds.length - 1)) {
-				var sBatchQuery = this._gtRecordRead.combineQueries('table_sys_idIN' + aBatchIds.join(','), sAttachmentQuery);
+				var sBatchQuery = this._gtRecordRead.combineQueries('table_sys_idIN' + aBatchIds.join(',') + '^' + sClassQuery, sAttachmentQuery);
 				var aBatchRecords = oRESTAPI.doNOWRESTQuery('sys_attachment', sBatchQuery, 0, 10000, ['sys_id', 'file_name', 'table_sys_id', 'table_name', 'hash']);
 				if (this._gtArray.isValidArray(aBatchRecords)) {
 					if (aBatchRecords.length >= 10000) {
 						gs.warn('JobRunner._getRemoteAttachmentsBySysId batch returned 10000 or more attachments, results may be truncated for query: ' + sBatchQuery);
 					} // if truncated
 					aBatchRecords.forEach(function (oAttachment) {
-						var sAttachmentTableName = this._gtObject.getValue('table_name', '', oAttachment);
-						if (sAttachmentTableName.indexOf('ZZ_YY') != 0) {
-							var sSourceSysId = oAttachment['table_sys_id'];
-							if (!oResult.hasOwnProperty(sSourceSysId)) {
-								oResult[sSourceSysId] = [];
-							} // if new source
-							oResult[sSourceSysId].push(oAttachment);
-						} // if not hidden compare attachment
+						var sSourceSysId = this._gtObject.getValue('table_sys_id', '', oAttachment);
+						if (!oResult.hasOwnProperty(sSourceSysId)) {
+							oResult[sSourceSysId] = [];
+						} // if new source
+						oResult[sSourceSysId].push(oAttachment);
 					}, this); // each attachment
 				} // if valid array
 				aBatchIds = [];
@@ -953,14 +942,14 @@ JobRunner.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>149</sys_mod_count>
+        <sys_mod_count>151</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2026-08-18 07:01:55</sys_updated_on>
+        <sys_updated_on>2026-08-18 15:22:32</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
