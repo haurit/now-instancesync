@@ -47,7 +47,7 @@ action.setRedirectURL(current);]]></script>
         <sys_domain>global</sys_domain>
         <sys_domain_path>/</sys_domain_path>
         <sys_id>5408fe541b810e1030d6fdd49b4bcb4d</sys_id>
-        <sys_mod_count>4</sys_mod_count>
+        <sys_mod_count>5</sys_mod_count>
         <sys_name>Start Job</sys_name>
         <sys_overrides/>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
@@ -55,7 +55,7 @@ action.setRedirectURL(current);]]></script>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_ui_action_5408fe541b810e1030d6fdd49b4bcb4d</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2026-08-18 06:56:55</sys_updated_on>
+        <sys_updated_on>2026-08-19 14:30:33</sys_updated_on>
         <table>x_snc_instanc_sync_job_config</table>
         <ui11_compatible>true</ui11_compatible>
         <ui16_compatible>false</ui16_compatible>

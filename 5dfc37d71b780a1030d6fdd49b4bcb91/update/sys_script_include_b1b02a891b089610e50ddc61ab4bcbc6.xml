@@ -8,6 +8,7 @@
         <description>Common functions of the application</description>
         <mobile_callable>false</mobile_callable>
         <name>JobCommon</name>
+        <sandbox_callable>false</sandbox_callable>
         <script><![CDATA[var JobCommon = Class.create();
 JobCommon.prototype = {
 	initialize: function () {
@@ -42,8 +43,23 @@ JobCommon.prototype = {
 		return oReturnObj;
 	}, // function getTableConfig
 
+	resolveClassMapTarget: function (sClassName, oClassMap, bReverse) {
+		if (bReverse) {
+			var sMappedClass = sClassName;
+			Object.keys(oClassMap).some(function (sMappedClassTmp) {
+				if (oClassMap[sMappedClassTmp] == sClassName) {
+					sMappedClass = sMappedClassTmp;
+					return true;
+				} // if class map
+			}, this); // find first class map
+			return sMappedClass;
+		} else {
+			return (oClassMap.hasOwnProperty(sClassName)) ? oClassMap[sClassName] : sClassName;
+		} // if reverse
+	}, // function resolveClassMapTarget
+
 	type: 'JobCommon',
-	version: '1.0.1',
+	version: '1.0.14',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -51,14 +67,14 @@ JobCommon.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-08-14 14:55:26</sys_created_on>
         <sys_id>b1b02a891b089610e50ddc61ab4bcbc6</sys_id>
-        <sys_mod_count>15</sys_mod_count>
+        <sys_mod_count>17</sys_mod_count>
         <sys_name>JobCommon</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b1b02a891b089610e50ddc61ab4bcbc6</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2024-08-27 13:23:36</sys_updated_on>
+        <sys_updated_on>2026-08-19 14:29:16</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b1b02a891b089610e50ddc61ab4bcbc6</id>
