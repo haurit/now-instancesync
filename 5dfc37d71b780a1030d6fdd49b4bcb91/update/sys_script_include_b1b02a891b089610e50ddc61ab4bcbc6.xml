@@ -58,6 +58,27 @@ JobCommon.prototype = {
 		} // if reverse
 	}, // function resolveClassMapTarget
 
+	insertJobLogTableChunk: function (oValues) {
+		var grJobLogTableChunk = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
+		grJobLogTableChunk.initialize();
+		Object.keys(oValues).forEach(function (sField) {
+			grJobLogTableChunk.setValue(sField, oValues[sField]);
+		}); // each field
+		var sChunkId = grJobLogTableChunk.insert();
+		if (!sChunkId) {
+			gs.error('JobCommon.insertJobLogTableChunk failed to insert chunk. Error: ' + grJobLogTableChunk.getLastErrorMessage() + ' Values: ' + JSON.stringify(oValues));
+		} // if insert failed
+		return sChunkId;
+	}, // function insertJobLogTableChunk
+
+	getMaxIdsPerBatch: function (oRESTAPI, sConditionPrefix, iMaxUrlLength, iBufferChars) {
+		iMaxUrlLength = (iMaxUrlLength) ? iMaxUrlLength : 4000;
+		iBufferChars = (iBufferChars) ? iBufferChars : 250;
+		var iAvailableChars = iMaxUrlLength - String(oRESTAPI.sRemoteUrl).length - String(sConditionPrefix).length - iBufferChars;
+		var iMaxIds = Math.floor(iAvailableChars / 33);
+		return (iMaxIds > 0) ? iMaxIds : 1;
+	}, // function getMaxIdsPerBatch
+
 	type: 'JobCommon',
 	version: '1.0.14',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
@@ -67,14 +88,14 @@ JobCommon.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-08-14 14:55:26</sys_created_on>
         <sys_id>b1b02a891b089610e50ddc61ab4bcbc6</sys_id>
-        <sys_mod_count>17</sys_mod_count>
+        <sys_mod_count>20</sys_mod_count>
         <sys_name>JobCommon</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_b1b02a891b089610e50ddc61ab4bcbc6</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2026-08-19 14:29:16</sys_updated_on>
+        <sys_updated_on>2026-08-30 18:31:40</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>b1b02a891b089610e50ddc61ab4bcbc6</id>

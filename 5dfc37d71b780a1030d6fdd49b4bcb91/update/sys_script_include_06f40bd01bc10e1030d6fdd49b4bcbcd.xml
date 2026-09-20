@@ -201,8 +201,8 @@ JobScheduler.prototype = {
 		} // if target overload 429 is more than 1 and is smaller 10
 		if (this.bLog) { gs.info('JobScheduler.manageTriggers iAvailableTriggers: ' + iAvailableTriggers + ' iRunningTriggers: ' + iRunningTriggers + ' iTargetOverloaded: ' + iTargetOverloaded); }
 		if (iAvailableTriggers > 1) {
-			var iPriority = 100000;
-			var iCurrentJobPriority = 100000;
+			var iPriority = 100003;
+			var iCurrentJobPriority = 100003;
 			gaJobLogTableChunk = new GlideAggregate('x_snc_instanc_sync_job_log_table_chunks');
 			gaJobLogTableChunk.addEncodedQuery('job_log.statusNOT INcompleted,cancelled^status=running');
 			gaJobLogTableChunk.addAggregate('MIN', 'priority');
@@ -218,7 +218,6 @@ JobScheduler.prototype = {
 				iPriority = Number(gaJobLogTableChunk.getAggregate('MIN', 'priority'));
 			} // while errors
 			if (iPriority <= iCurrentJobPriority) {
-				// TODO: investigate options to take sys_created_on into account and still take highest junk first
 				var grJobLogTableChunk = new GlideRecord('x_snc_instanc_sync_job_log_table_chunks');
 				grJobLogTableChunk.addEncodedQuery('job_log.statusNOT INcompleted,cancelled^statusINpending_retry,not_started^retry_count!=-1^priority=' + String(iPriority));
 				grJobLogTableChunk.setLimit(iAvailableTriggers);
@@ -264,7 +263,7 @@ JobScheduler.prototype = {
 	}, // function createSplitChunk
 
 	type: 'JobScheduler',
-	version: '1.0.13',
+	version: '1.0.14',
 	author: 'ServiceNow Customer Outcomes, Tom Hauri',
 	email: 'tom@hauri.biz',
 };]]></script>
@@ -272,14 +271,14 @@ JobScheduler.prototype = {
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 06:32:06</sys_created_on>
         <sys_id>06f40bd01bc10e1030d6fdd49b4bcbcd</sys_id>
-        <sys_mod_count>79</sys_mod_count>
+        <sys_mod_count>80</sys_mod_count>
         <sys_name>JobScheduler</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_06f40bd01bc10e1030d6fdd49b4bcbcd</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2026-04-23 06:00:18</sys_updated_on>
+        <sys_updated_on>2026-08-30 18:32:35</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>06f40bd01bc10e1030d6fdd49b4bcbcd</id>
