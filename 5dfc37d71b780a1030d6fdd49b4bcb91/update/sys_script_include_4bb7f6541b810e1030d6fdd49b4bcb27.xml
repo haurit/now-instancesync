@@ -27,6 +27,8 @@ JobRunner.prototype = {
 		if (isNaN(this.iMaxRetryCount)) {
 			this.iMaxRetryCount = 5;
 		} // if max retry is not a number set default
+		this.iPriorityAttachment = 100001;
+		this.iPriorityAttachmentDoc = 100002;
 		this._gt = new global.GlobalTools();
 		this._gtArray = new global.GlobalToolsArray();
 		this._gtObject = new global.GlobalToolsObject();
@@ -36,6 +38,7 @@ JobRunner.prototype = {
 		this._gtAttachment = new global.GlobalToolsAttachment();
 		this._JobCommon = new JobCommon();
 		this._gdDigest = new GlideDigest();
+		gs.getSession().putClientData('instance_sync_running', true);
 		if (this.bTimer) { this._gtDateTime.stopTimer('initialize'); }
 	}, // function initialize
 
@@ -67,7 +70,7 @@ JobRunner.prototype = {
 						var oTrueUpTableCfg = {};
 						var aTrueUpHierarchy = this._gtTable.getTableHierarchy(sTableName);
 						if (this._gtObject.getValue('job/oTables/' + sTableName, '', oJobCfg)) {
-							oTrueUpTableCfg = this._gtObject.getValue('job/oTables/' + sTableName, {}, oJobCfg); // inline override
+							oTrueUpTableCfg = this._gtObject.getValue('job/oTables/' + sTableName, {}, oJobCfg);
 						} else if (this._gtArray.isValidArray(aTrueUpHierarchy)) {
 							aTrueUpHierarchy.some(function (sTableInHierarchy) {
 								if (sTableInHierarchy != 'cmdb') {
@@ -80,7 +83,7 @@ JobRunner.prototype = {
 							}, this); // each table in hierarchy
 						} // if inline vs separate cfg
 						var oMergedJobCfg = JSON.parse(JSON.stringify(oJobCfg)); // fresh copy to avoid mutating shared config
-						oMergedJobCfg['job'] = this._gtObject.deepMerge(this._gtObject.getValue('job', {}, oMergedJobCfg), oTrueUpTableCfg); // merge per-table override
+						oMergedJobCfg['job'] = this._gtObject.deepMerge(this._gtObject.getValue('job', {}, oMergedJobCfg), oTrueUpTableCfg);
 						this._runTrueUpTrigger(grJobLogTableChunk, grJobLogTable, _gtRESTAPI, sTableName, oMergedJobCfg);
 						dtNow = new GlideDateTime();
 						grJobLogTableChunk.setValue('end_time', dtNow);
@@ -98,6 +101,28 @@ JobRunner.prototype = {
 						if (this.bLog) { gs.info('JobRunner.runTrigger true-up ended'); }
 						return;
 					} // if true-up job
+					if ((sTableName === 'sys_attachment') || (sTableName === 'sys_attachment_doc')) {
+						if (sTableName === 'sys_attachment') {
+							this._runAttachmentTableTrigger(grJobLogTableChunk, grJobLogTable, _gtRESTAPI, oJobCfg);
+						} else {
+							this._runAttachmentDocTrigger(grJobLogTableChunk, grJobLogTable, _gtRESTAPI);
+						} // if sys_attachment or sys_attachment_doc
+						dtNow = new GlideDateTime();
+						grJobLogTableChunk.setValue('end_time', dtNow);
+						if (grJobLogTableChunk.getValue('retry_count') == '-1') {
+							grJobLogTableChunk.setValue('retry_count', 0);
+						} // if manual chunk
+						if (!grJobLogTableChunk.update()) {
+							gs.error('JobRunner.runTrigger error writing attachment chunk record: ' + sChunkId + ' Error: ' + grJobLogTableChunk.getLastErrorMessage());
+						} // if error
+						if (this.bLog) { gs.info('JobRunner.runTrigger attachment table ended sTableName: ' + sTableName); }
+						if (this.bTimer) {
+							this._gtDateTime.stopTimer('runTrigger');
+							var sTimerResultAttachment = this._gtDateTime.getTimer();
+							this._gtAttachment.writeAttachmentByTableId(grJobLogTableChunk.getTableName(), grJobLogTableChunk.getUniqueValue(), 'chunk_timer_attachment_' + sTableName + '.json', sTimerResultAttachment, '', false, false);
+						} // if timer
+						return;
+					} // if sys_attachment or sys_attachment_doc dispatch
 					var bTableAutoExtend = this._gtObject.getValue('job/bTableAutoExtend', true, oJobCfg);
 					var oTableCfg = {};
 					var aHierarchy = this._gtTable.getTableHierarchy(sTableName);
@@ -138,24 +163,6 @@ JobRunner.prototype = {
 						oJob = this._gtObject.deepMerge(this._gtObject.getValue('job', {}, oJobCfg), this._gtObject.getValue('job', {}, oTableCfg));
 						oConfig = this._gtObject.deepMerge(this._gtObject.getValue('config', {}, oJobCfg), this._gtObject.getValue('config', {}, oTableCfg),);
 					} // if mapped class dedicated mapping required
-					if (this._gtObject.getValue('bAttachmentOnlyTable', false, oJob) === true) {
-						this._runAttachmentOnlyTrigger(grJobLogTableChunk, grJobLogTable, _gtRESTAPI, sTableName, sMappedClass, oJob);
-						dtNow = new GlideDateTime();
-						grJobLogTableChunk.setValue('end_time', dtNow);
-						if (grJobLogTableChunk.getValue('retry_count') == '-1') {
-							grJobLogTableChunk.setValue('retry_count', 0);
-						} // if manual chunk
-						if (!grJobLogTableChunk.update()) {
-							gs.error('JobRunner.runTrigger error writing attachment-only chunk record: ' + sChunkId + ' Error: ' + grJobLogTableChunk.getLastErrorMessage());
-						} // if error
-						if (this.bLog) { gs.info('JobRunner.runTrigger attachment-only ended'); }
-						if (this.bTimer) {
-							this._gtDateTime.stopTimer('runTrigger');
-							var sTimerResultAttachOnly = this._gtDateTime.getTimer();
-							this._gtAttachment.writeAttachmentByTableId(grJobLogTableChunk.getTableName(), grJobLogTableChunk.getUniqueValue(), 'chunk_timer_attachonly_' + sTableName + '.json', sTimerResultAttachOnly, '', false, false);
-						} // if timer
-						return;
-					} // if attachment-only table
 					if (bValidConfig) {
 						if (this._gtObject.getValue('bAttachChunkRecordJSONConfig', false, oJob)) {
 							this._gtAttachment.writeAttachmentByTableId(grJobLogTableChunk.getTableName(), grJobLogTableChunk.getUniqueValue(), 'chunk_cfg_rec_' + sTableName + '.json', JSON.stringify(oConfig), '', false, false);
@@ -172,14 +179,32 @@ JobRunner.prototype = {
 						var sDeltaCompareFileNamePrefix = this._gtObject.getValue('sDeltaCompareFileNamePrefix', 'instsync', oJob);
 						var bFieldCompareHash = this._gtObject.getValue('bFieldCompareHash', false, oJob);
 						var sHashField = this._gtObject.getValue('sHashField', 'u_sync_hash', oJob);
-						var aDuplicateCheckFields = this._gtObject.getValue('aDuplicateCheckFields', [], oJob); // business-key fields to check before insert
-						var sRunCounterField = this._gtObject.getValue('sRunCounterField', '', oJob); // target field holding the run counter
-						var sRunCounterValue = grJobLog.getValue('run_count') || ''; // run counter from job log
+						var aDuplicateCheckFields = this._gtObject.getValue('aDuplicateCheckFields', [], oJob);
+						var sRunCounterField = this._gtObject.getValue('sRunCounterField', '', oJob);
+						var sRunCounterValue = grJobLog.getValue('run_count') || '';
 						if (!sRunCounterValue) { // fallback to property based mechanism for backward compatibility
 							var sRunCounterProperty = this._gtObject.getValue('sRunCounterProperty', '', oJob);
 							sRunCounterValue = (sRunCounterProperty) ? gs.getProperty(sRunCounterProperty, '') : '';
 						} // if no run_count on job log
-						var aConfigFields = this._gtObject.getValue('aFields', [], oConfig); // auto-inject hash and run counter fields once per chunk
+						var bLocalUpdateFlag = this._gtObject.getValue('bLocalUpdateFlag', false, oJob);
+						var sLocalUpdateField = (bLocalUpdateFlag === true) ? this._gtObject.getValue('sLocalUpdateField', 'u_sync_local_update', oJob) : '';
+						var bFetchOnlyConfigFields = this._gtObject.getValue('bFetchOnlyConfigFields', false, oJob);
+						var aQueryFields = ''; // default fetch all fields
+						if (bFetchOnlyConfigFields === true) {
+							aQueryFields = this._gtRecordWriteValidate.getSourceQueryFields(oConfig);
+							if (this._gtArray.isValidArray(aQueryFields)) {
+								if (aQueryFields.indexOf('sys_id') == -1) { aQueryFields.push('sys_id'); } // required for dispatch and error logging
+								if (aQueryFields.indexOf('sys_class_name') == -1) { aQueryFields.push('sys_class_name'); } // required for polymorphic class resolution
+								aDuplicateCheckFields.forEach(function (sDuplicateField) {
+									if ((sDuplicateField) && (aQueryFields.indexOf(sDuplicateField) == -1)) {
+										aQueryFields.push(sDuplicateField);
+									} // if duplicate check field missing
+								}, this); // each duplicate check field, else addNullQuery would spuriously match and skip the record
+							} else {
+								aQueryFields = ''; // access denied or no configured fields, fall back to all fields
+							} // if valid query fields
+						} // if fetch only configured fields
+						var aConfigFields = this._gtObject.getValue('aFields', [], oConfig);
 						var aConfigFieldNames = [];
 						aConfigFields.forEach(function (oCfgField) {
 							var sFieldType = this._gt.getType(oCfgField);
@@ -219,7 +244,7 @@ JobRunner.prototype = {
 						try {
 							if (this.bTimer) { this._gtDateTime.startTimer('runTrigger/RESTCall'); }
 							var gdtStart = new GlideDateTime();
-							var aRecords = (sMappedClass) ? _gtRESTAPI.doNOWRESTQuery(sMappedClass, sQuery, iOffset, iChunkSize, '', sDisplayValues) : _gtRESTAPI.doNOWRESTQuery(sTableName, sQuery, iOffset, iChunkSize, '', sDisplayValues);
+							var aRecords = (sMappedClass) ? _gtRESTAPI.doNOWRESTQuery(sMappedClass, sQuery, iOffset, iChunkSize, aQueryFields, sDisplayValues) : _gtRESTAPI.doNOWRESTQuery(sTableName, sQuery, iOffset, iChunkSize, aQueryFields, sDisplayValues);
 							var gdtEnd = new GlideDateTime();
 							var iDuration = gdtEnd.getNumericValue() - gdtStart.getNumericValue();
 							grJobLogTableChunk.rest_request_duration.setDateNumericValue(iDuration);
@@ -278,18 +303,18 @@ JobRunner.prototype = {
 												if (sDuplicateValue) {
 													grDuplicate.addQuery(sDuplicateField, sDuplicateValue);
 												} else {
-													grDuplicate.addNullQuery(sDuplicateField); // empty source value --> match NULL/empty on target
+													grDuplicate.addNullQuery(sDuplicateField);
 												} // if duplicate value present
 											}, this); // each duplicate check field
-											grDuplicate.addQuery('sys_id', '!=', sSysId); // exclude source's own record
-											if ((sRunCounterField) && (sRunCounterValue)) { // restrict to NULL or current run
+											grDuplicate.addQuery('sys_id', '!=', sSysId);
+											if ((sRunCounterField) && (sRunCounterValue)) {
 												grDuplicate.addEncodedQuery(sRunCounterField + 'ISEMPTY^OR' + sRunCounterField + '=' + sRunCounterValue);
 											} // if run counter configured
 											grDuplicate.setLimit(1);
 											grDuplicate.query();
 											if (grDuplicate.next()) {
-												bAbandoned = true; // valid duplicate exists --> abandon all processing, sweep will delete source's own record
-											} // if duplicate found on target
+												bAbandoned = true;
+											} // if duplicate found on target abandon
 											if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/DuplicateCheck'); }
 										} // if duplicate check configured
 										var bChangeDetected = (bAbandoned) ? false : (((bDeltaCompareAttachment) || (bFieldCompareHash)) ? false : true);
@@ -337,10 +362,15 @@ JobRunner.prototype = {
 												} // if base table
 												if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/CompareAttach'); }
 											} // if attachment
-											if ((sRunCounterValue) && (sRunCounterField)) {
+											if ((sLocalUpdateField) || ((sRunCounterValue) && (sRunCounterField))) {
 												if (bChangeDetected === false) {
-													var oRunCounterUpdateValues = { 'sys_id': sSysId };
-													oRunCounterUpdateValues[sRunCounterField] = sRunCounterValue;
+													var oNoChangeUpdateValues = { 'sys_id': sSysId };
+													if ((sRunCounterValue) && (sRunCounterField)) {
+														oNoChangeUpdateValues[sRunCounterField] = sRunCounterValue;
+													} // if no change update values
+													if (sLocalUpdateField) {
+														oNoChangeUpdateValues[sLocalUpdateField] = false;
+													} // if local update field
 													var oRunCounterUpdateCfg = {
 														sTargetTable: sClassName,
 														aQueryFields: ['sys_id'],
@@ -348,608 +378,837 @@ JobRunner.prototype = {
 														bUpdate: 'true',
 														bInsert: 'false',
 													}; // run counter values
-													this._gtRecordWrite.doRecord(oRunCounterUpdateValues, oRunCounterUpdateCfg);
+													this._gtRecordWrite.doRecord(oNoChangeUpdateValues, oRunCounterUpdateCfg);
 												} else {
-													oRecord[sRunCounterField] = sRunCounterValue;
+													if ((sRunCounterValue) && (sRunCounterField)) {
+														oRecord[sRunCounterField] = sRunCounterValue;
+													} // if run counter
+													if (sLocalUpdateField) {
+														oRecord[sLocalUpdateField] = false;
+													} // if local update field
 												} // if run counter and no change
 											} // if no change detected and update counter
-										} // if field compare hash or delta compare attachment
+									} // if field compare hash or delta compare attachment
 										if (bChangeDetected === true) {
-											var bRunIREAgainAfterInsert = false;
-											if ((this._gtObject.getValue('bRunIREAgainAfterInsert', false, oJob) === true) && (this._gtObject.getValue('bKeepSysId', false, oConfig) === true) && (this._gtObject.getValue('bUseIRE', false, oConfig) === true)) {
-												var grRecord = new GlideRecord(sTableName);
-												if (!grRecord.get('sys_id', sSysId)) {
-													bRunIREAgainAfterInsert = true;
-												} // if record does not exist
-											} // if bRunIREAgainAfterInsert and bKeepSysId and bUseIRE
-											var sResultId = this._gtRecordWriteValidate.validateAndWrite(oConfig, oRecordValues, oError);
-											if (bRunIREAgainAfterInsert) {
-												var oErrorDummy = {}; // no need to treat errors again, already done on insert
-												this._gtRecordWriteValidate.validateAndWrite(oConfig, oRecordValues, oErrorDummy);
-											} // run same again to insert IRE
-											if ((sResultId) && (sResultId != -1)) {
-												if (bAttachment) {
-													aAttachmentRecordPairs.push({ sSourceSysId: sSysId, sTargetSysId: sResultId });
-												} // if attachment sync enabled
-												if ((bDeltaCompareAttachment) || (bUpdateCompareAttachment)) {
-													if (this.bTimer) { this._gtDateTime.startTimer('runTrigger/CompareAttach'); }
-													this._gtAttachment.deleteAttachment(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
-													this._gtAttachment.writeAttachmentByTableId(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', JSON.stringify(oRecordCompare), '', false, true);
-													if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/CompareAttach'); }
-												} else if (bDeleteCompareAttachment) {
-													this._gtAttachment.deleteAttachment(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
-												} // if compare attachment
-												if (this._gtObject.getValue('default/bError', false, oError)) {
-													if (this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk)) {
-														iErrorCount++;
-													} else {
-														iSuccessRecordCount++;
-													} // if fatal error
+										var bRunIREAgainAfterInsert = false;
+										if ((this._gtObject.getValue('bRunIREAgainAfterInsert', false, oJob) === true) && (this._gtObject.getValue('bKeepSysId', false, oConfig) === true) && (this._gtObject.getValue('bUseIRE', false, oConfig) === true)) {
+											var grRecord = new GlideRecord(sTableName);
+											if (!grRecord.get('sys_id', sSysId)) {
+												bRunIREAgainAfterInsert = true;
+											} // if record does not exist
+										} // if bRunIREAgainAfterInsert and bKeepSysId and bUseIRE
+										var sResultId = this._gtRecordWriteValidate.validateAndWrite(oConfig, oRecordValues, oError);
+										if (bRunIREAgainAfterInsert) {
+											var oErrorDummy = {}; // no need to treat errors again, already done on insert
+											this._gtRecordWriteValidate.validateAndWrite(oConfig, oRecordValues, oErrorDummy);
+										} // run same again to insert IRE
+										if ((sResultId) && (sResultId != -1)) {
+											if (bAttachment) {
+												aAttachmentRecordPairs.push({ sSourceSysId: sSysId, sTargetSysId: sResultId });
+											} // if attachment sync enabled
+											if ((bDeltaCompareAttachment) || (bUpdateCompareAttachment)) {
+												if (this.bTimer) { this._gtDateTime.startTimer('runTrigger/CompareAttach'); }
+												this._gtAttachment.deleteAttachment(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
+												this._gtAttachment.writeAttachmentByTableId(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', JSON.stringify(oRecordCompare), '', false, true);
+												if (this.bTimer) { this._gtDateTime.stopTimer('runTrigger/CompareAttach'); }
+											} else if (bDeleteCompareAttachment) {
+												this._gtAttachment.deleteAttachment(sClassName, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
+											} // if compare attachment
+											if (this._gtObject.getValue('default/bError', false, oError)) {
+												if (this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk)) {
+													iErrorCount++;
 												} else {
 													iSuccessRecordCount++;
-												} // if has mapping error
+												} // if fatal error
 											} else {
-												iErrorCount++;
-												this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk);
-											} // if result
+												iSuccessRecordCount++;
+											} // if has mapping error
 										} else {
-											iNoOpRecordCount++;
-											if (bAttachment) {
-												aAttachmentRecordPairs.push({ sSourceSysId: sSysId, sTargetSysId: sSysId });
-											} // if attachment sync enabled
-										} // if diff
-									} catch (oEx) {
-										iErrorCount++;
-										//gs.error('JobRunner.runTrigger sTableName: ' + sTableName + ' error writing record: ' + String(oEx));
-										this._writeRecordError(sTableId, sTableName, sSysId, '', { code: -97, message: String(oEx) }, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk);
-									} // if catch
-								} else {
+											iErrorCount++;
+											this._writeRecordError(sTableId, sTableName, sSysId, sName, oError, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk);
+										} // if result
+									} else {
+										iNoOpRecordCount++;
+										if (bAttachment) {
+											aAttachmentRecordPairs.push({ sSourceSysId: sSysId, sTargetSysId: sSysId });
+										} // if attachment sync enabled
+									} // if diff
+								} catch (oEx) {
 									iErrorCount++;
-									//gs.error('JobRunner.runTrigger sTableName: ' + sTableName + ' sSysId: empty oRecord: ' + JSON.stringify(oRecord));
-									this._writeRecordError(sTableId, sTableName, '', '', { code: -98, message: 'No SysId in Payload' }, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk);
-								} // if no sys id
-							}, this); // each record
-							if (bAttachment) {
-								this._syncAttachments(aAttachmentRecordPairs, oJob, grJobLogTableChunk, sTableId, _gtRESTAPI, (sMappedClass) ? sMappedClass : sTableName, sTableName);
-							} // if attachment sync enabled
-							grJobLogTableChunk.setValue('successful_record_count', iSuccessRecordCount);
-							grJobLogTableChunk.setValue('no_operation_count', iNoOpRecordCount);
-							grJobLogTableChunk.setValue('error_count', iErrorCount);
-							grJobLogTableChunk.setValue('status', 'completed');
-							grJobLogTableChunk.setValue('error_code', 0);
-						} else if (iErrorCode == -105) {
-							grJobLogTableChunk.setValue('status', 'pending_retry');
-							grJobLogTableChunk.setValue('error_code', -105); // error string size to big
-						} else {
-							if ((aRecords) && (typeof aRecords == 'object') && (aRecords.hasOwnProperty('error_code'))) {
-								iErrorCode = aRecords['error_code'];
-							} // if has error code
-							if ((iErrorCode == -103) && (this._gt.getType(aRecords) == 'array') && (aRecords.length == 0)) {
-								grJobLogTableChunk.setValue('status', 'completed');
+									//gs.error('JobRunner.runTrigger sTableName: ' + sTableName + ' error writing record: ' + String(oEx));
+									this._writeRecordError(sTableId, sTableName, sSysId, '', { code: -97, message: String(oEx) }, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk);
+								} // if catch
 							} else {
-								var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
-								var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
-								grJobLogTableChunk.setValue('status', sStatus);
-								grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
-								grJobLogTableChunk.setValue('error_code', iErrorCode); // error no records
-							} // if no content returned
-						} // if records
-					} else {
-						grJobLogTableChunk.setValue('status', 'failed');
-						grJobLogTableChunk.setValue('error_code', -106); // error config not found
-					} // if no valid config
+							iErrorCount++;
+							//gs.error('JobRunner.runTrigger sTableName: ' + sTableName + ' sSysId: empty oRecord: ' + JSON.stringify(oRecord));
+							this._writeRecordError(sTableId, sTableName, '', '', { code: -98, message: 'No SysId in Payload' }, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk);
+						} // if no sys id
+					}, this); // each record
+					if (bAttachment) {
+						this._spawnAttachmentSync(aAttachmentRecordPairs, (sMappedClass) ? sMappedClass : sTableName, sTableName, grJobLogTableChunk, _gtRESTAPI);
+					} // if attachment sync enabled
+					grJobLogTableChunk.setValue('successful_record_count', iSuccessRecordCount);
+					grJobLogTableChunk.setValue('no_operation_count', iNoOpRecordCount);
+					grJobLogTableChunk.setValue('error_count', iErrorCount);
+					grJobLogTableChunk.setValue('status', 'completed');
+					grJobLogTableChunk.setValue('error_code', 0);
+				} else if (iErrorCode == -105) {
+					grJobLogTableChunk.setValue('status', 'pending_retry');
+					grJobLogTableChunk.setValue('error_code', -105); // error string size to big
 				} else {
-					grJobLogTableChunk.setValue('status', 'failed');
-					grJobLogTableChunk.setValue('error_code', -101); // error loading job config or table name empty
-				} // if no config
+					if ((aRecords) && (typeof aRecords == 'object') && (aRecords.hasOwnProperty('error_code'))) {
+						iErrorCode = aRecords['error_code'];
+					} // if has error code
+					if ((iErrorCode == -103) && (this._gt.getType(aRecords) == 'array') && (aRecords.length == 0)) {
+						grJobLogTableChunk.setValue('status', 'completed');
+					} else {
+						var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
+						var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
+						grJobLogTableChunk.setValue('status', sStatus);
+						grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
+						grJobLogTableChunk.setValue('error_code', iErrorCode); // error no records
+					} // if no content returned
+				} // if records
 			} else {
 				grJobLogTableChunk.setValue('status', 'failed');
-				grJobLogTableChunk.setValue('error_code', -100); // error loading job table or job
-			} // if job table
-			dtNow = new GlideDateTime();
-			grJobLogTableChunk.setValue('end_time', dtNow);
-			if (grJobLogTableChunk.getValue('retry_count') == '-1') {
-				grJobLogTableChunk.setValue('retry_count', 0);
-			} // if manual chunk
-			if (!grJobLogTableChunk.update()) {
-				gs.error('JobRunner.runTrigger error writing chunk record: ' + sChunkId + ' Error: ' + grJobLogTableChunk.getLastErrorMessage());
-			} // if error
+				grJobLogTableChunk.setValue('error_code', -106); // error config not found
+			} // if no valid config
+		} else {
+			grJobLogTableChunk.setValue('status', 'failed');
+			grJobLogTableChunk.setValue('error_code', -101); // error loading job config or table name empty
+		} // if no config
+} else {
+	grJobLogTableChunk.setValue('status', 'failed');
+	grJobLogTableChunk.setValue('error_code', -100); // error loading job table or job
+} // if job table
+dtNow = new GlideDateTime();
+grJobLogTableChunk.setValue('end_time', dtNow);
+if (grJobLogTableChunk.getValue('retry_count') == '-1') {
+	grJobLogTableChunk.setValue('retry_count', 0);
+} // if manual chunk
+if (!grJobLogTableChunk.update()) {
+	gs.error('JobRunner.runTrigger error writing chunk record: ' + sChunkId + ' Error: ' + grJobLogTableChunk.getLastErrorMessage());
+} // if error
 		} catch (oEx) {
-			gs.error('JobRunner.runTrigger error with message: ' + String(oEx));
-		} // initiate job
-		if (this.bLog) { gs.info('JobRunner.runTrigger ended'); }
-		if (this.bTimer) {
-			this._gtDateTime.stopTimer('runTrigger');
-			var sTimerResult = this._gtDateTime.getTimer();
-			this._gtAttachment.writeAttachmentByTableId(grJobLogTableChunk.getTableName(), grJobLogTableChunk.getUniqueValue(), 'chunk_timer_' + sTableName + '.json', sTimerResult, '', false, false);
-		} // if timer
+	gs.error('JobRunner.runTrigger error with message: ' + String(oEx));
+} finally {
+	gs.getSession().clearClientData('instance_sync_running');
+} // initiate job
+if (this.bLog) { gs.info('JobRunner.runTrigger ended'); }
+if (this.bTimer) {
+	this._gtDateTime.stopTimer('runTrigger');
+	var sTimerResult = this._gtDateTime.getTimer();
+	this._gtAttachment.writeAttachmentByTableId(grJobLogTableChunk.getTableName(), grJobLogTableChunk.getUniqueValue(), 'chunk_timer_' + sTableName + '.json', sTimerResult, '', false, false);
+} // if timer
 	}, // function runTrigger
 
-	_writeRecordError: function (sTableId, sTableName, sRecordSysId, sRecordName, oError, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk) {
-		if (this.bTimer) { this._gtDateTime.startTimer('_writeRecordError'); }
-		//gs.info('tomtom sTableId: ' + sTableId + ' sRecordSysId: ' + sRecordSysId + ' sRecordName: ' + sRecordName + ' oError: ' + JSON.stringify(oError));
-		var bReturnError = true;
-		var bInsertError = true;
-		var aErrorMessages = this._gtObject.getValue('default/aErrorMessages', [], oError);
-		var aMappingErrors = [];
-		var grRecordError = new GlideRecord('x_snc_instanc_sync_job_log_record_error');
-		grRecordError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
-		grRecordError.setValue('job_log_table', grJobLogTableChunk.getValue('job_log_table'));
-		grRecordError.setValue('job_log_table_chunk', grJobLogTableChunk.getUniqueValue());
-		if ((this._gtObject.getValue('default/bNoActionError', true, oError) === false) && (this._gtObject.getValue('default/bFatalError', true, oError) === false)) {
-			grRecordError.setValue('status', 1);
-			bReturnError = false;
-		} // if inserted
-		grRecordError.setValue('table', sTableId);
-		grRecordError.setValue('remote_record_sysid', sRecordSysId);
-		grRecordError.setValue('remote_record_display_name', sRecordName);
-		grRecordError.setValue('error_messages', JSON.stringify(aErrorMessages));
-		if (this._gtArray.isValidArray(aErrorMessages)) {
-			var aMessageDetailArgs = [], sErrorCode = '', sFieldId = '', sValue = '', sValidValues = '', aHierarchy = [], grDict, grMappingError, aMappingErrorQueries = [], sMappingErrorId;
-			aErrorMessages.forEach(function (oErrorMsg) {
-				if ((!this._gtArray.isValidArray(aLogErrorDetailTypes)) || (aLogErrorDetailTypes[0] == 'all') || (aLogErrorDetailTypes.indexOf(this._gtObject.getValue('sErrorType', '', oErrorMsg)) != -1)) {
-					aMessageDetailArgs = this._gtObject.getValue('aMessageDetailArgs', '', oErrorMsg);
-					if (this._gtArray.isValidArray(aMessageDetailArgs)) {
-						sErrorCode = this._gtObject.getValue('sCode', '', oErrorMsg);
-						sFieldId = aMessageDetailArgs[0];
-						sValue = (aMessageDetailArgs[1]) ? aMessageDetailArgs[1] : '';
-						sValidValues = (aMessageDetailArgs[2]) ? aMessageDetailArgs[2] : '';
-						if ((sFieldId) && (sValue)) {
-							aHierarchy = this._gtTable.getTableHierarchy(sTableName);
-							aHierarchy.reverse();
-							aHierarchy.some(function (sDictField) {
-								grDict = this._gtRecordRead.getRecord('sys_dictionary', 'name=' + sDictField + '^element=' + sFieldId, false, false, false);
-								if (grDict) {
-									sFieldId = grDict.getUniqueValue();
-									return true;
-								} // if value
-							}, this); // field
-							grMappingError = new GlideRecord('x_snc_instanc_sync_job_log_mapping_error');
-							aMappingErrorQueries = [];
-							aMappingErrorQueries.push('field=' + sFieldId);
-							aMappingErrorQueries.push('value=' + sValue);
-							if (bLogErrorMappingToLastJobLog === true) {
-								grMappingError.orderByDesc('sys_created_on');
+_writeRecordError: function (sTableId, sTableName, sRecordSysId, sRecordName, oError, bLogErrorMappingToLastJobLog, aLogErrorDetailTypes, grJobLogTableChunk) {
+	if (this.bTimer) { this._gtDateTime.startTimer('_writeRecordError'); }
+	//gs.info('tomtom sTableId: ' + sTableId + ' sRecordSysId: ' + sRecordSysId + ' sRecordName: ' + sRecordName + ' oError: ' + JSON.stringify(oError));
+	var bReturnError = true;
+	var bInsertError = true;
+	var aErrorMessages = this._gtObject.getValue('default/aErrorMessages', [], oError);
+	var aMappingErrors = [];
+	var grRecordError = new GlideRecord('x_snc_instanc_sync_job_log_record_error');
+	grRecordError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
+	grRecordError.setValue('job_log_table', grJobLogTableChunk.getValue('job_log_table'));
+	grRecordError.setValue('job_log_table_chunk', grJobLogTableChunk.getUniqueValue());
+	if ((this._gtObject.getValue('default/bNoActionError', true, oError) === false) && (this._gtObject.getValue('default/bFatalError', true, oError) === false)) {
+		grRecordError.setValue('status', 1);
+		bReturnError = false;
+	} // if inserted
+	grRecordError.setValue('table', sTableId);
+	grRecordError.setValue('remote_record_sysid', sRecordSysId);
+	grRecordError.setValue('remote_record_display_name', sRecordName);
+	grRecordError.setValue('error_messages', JSON.stringify(aErrorMessages));
+	if (this._gtArray.isValidArray(aErrorMessages)) {
+		var aMessageDetailArgs = [], sErrorCode = '', sFieldId = '', sValue = '', sValidValues = '', aHierarchy = [], grDict, grMappingError, aMappingErrorQueries = [], sMappingErrorId;
+		aErrorMessages.forEach(function (oErrorMsg) {
+			if ((!this._gtArray.isValidArray(aLogErrorDetailTypes)) || (aLogErrorDetailTypes[0] == 'all') || (aLogErrorDetailTypes.indexOf(this._gtObject.getValue('sErrorType', '', oErrorMsg)) != -1)) {
+				aMessageDetailArgs = this._gtObject.getValue('aMessageDetailArgs', '', oErrorMsg);
+				if (this._gtArray.isValidArray(aMessageDetailArgs)) {
+					sErrorCode = this._gtObject.getValue('sCode', '', oErrorMsg);
+					sFieldId = aMessageDetailArgs[0];
+					sValue = (aMessageDetailArgs[1]) ? aMessageDetailArgs[1] : '';
+					sValidValues = (aMessageDetailArgs[2]) ? aMessageDetailArgs[2] : '';
+					if ((sFieldId) && (sValue)) {
+						aHierarchy = this._gtTable.getTableHierarchy(sTableName);
+						aHierarchy.reverse();
+						aHierarchy.some(function (sDictField) {
+							grDict = this._gtRecordRead.getRecord('sys_dictionary', 'name=' + sDictField + '^element=' + sFieldId, false, false, false);
+							if (grDict) {
+								sFieldId = grDict.getUniqueValue();
+								return true;
+							} // if value
+						}, this); // field
+						grMappingError = new GlideRecord('x_snc_instanc_sync_job_log_mapping_error');
+						aMappingErrorQueries = [];
+						aMappingErrorQueries.push('field=' + sFieldId);
+						aMappingErrorQueries.push('value=' + sValue);
+						if (bLogErrorMappingToLastJobLog === true) {
+							grMappingError.orderByDesc('sys_created_on');
+						} else {
+							aMappingErrorQueries.push('job_log=' + grJobLogTableChunk.getValue('job_log'));
+						} // if map to last
+						grMappingError.addEncodedQuery(aMappingErrorQueries.join('^'));
+						grMappingError.setLimit(1);
+						grMappingError.query();
+						if (grMappingError.next()) {
+							sMappingErrorId = grMappingError.getUniqueValue();
+							if (sMappingErrorId) {
+								aMappingErrors.push(sMappingErrorId);
+							} // if mapping id
+							grMappingError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
+							if (!grMappingError.update()) {
+								gs.error('JobRunner._writeRecordError error updating mapping error record for chunk ' + grJobLogTableChunk.getUniqueValue() + ' record ' + sRecordSysId + '. Error: ' + grMappingError.getLastErrorMessage());
+							} // if error on update
+						} else {
+							grMappingError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
+							grMappingError.setValue('field', sFieldId);
+							grMappingError.setValue('error_code', sErrorCode);
+							grMappingError.setValue('value', sValue);
+							grMappingError.setValue('valid_values', sValidValues);
+							sMappingErrorId = grMappingError.insert();
+							if (sMappingErrorId) {
+								aMappingErrors.push(sMappingErrorId);
 							} else {
-								aMappingErrorQueries.push('job_log=' + grJobLogTableChunk.getValue('job_log'));
-							} // if map to last
-							grMappingError.addEncodedQuery(aMappingErrorQueries.join('^'));
-							grMappingError.setLimit(1);
-							grMappingError.query();
-							if (grMappingError.next()) {
-								sMappingErrorId = grMappingError.getUniqueValue();
-								if (sMappingErrorId) {
-									aMappingErrors.push(sMappingErrorId);
-								} // if mapping id
-								grMappingError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
-								if (!grMappingError.update()) {
-									gs.error('JobRunner._writeRecordError error updating mapping error record for chunk ' + grJobLogTableChunk.getUniqueValue() + ' record ' + sRecordSysId + '. Error: ' + grMappingError.getLastErrorMessage());
-								} // if error on update
-							} else {
-								grMappingError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
-								grMappingError.setValue('field', sFieldId);
-								grMappingError.setValue('error_code', sErrorCode);
-								grMappingError.setValue('value', sValue);
-								grMappingError.setValue('valid_values', sValidValues);
-								sMappingErrorId = grMappingError.insert();
-								if (sMappingErrorId) {
-									aMappingErrors.push(sMappingErrorId);
-								} else {
-									gs.error('JobRunner._writeRecordError error writing mapping error record for chunk ' + grJobLogTableChunk.getUniqueValue() + ' record ' + sRecordSysId + '. Error: ' + grMappingError.getLastErrorMessage());
-								} // if error on insert
-							} // if error does not exist
-						} // if field and value
-					} // if error detail args
-				} // if value error
-			}, this); // each error message
-		} else if (oError.hasOwnProperty('code')) {
-			grRecordError.setValue('error_messages', JSON.stringify(oError));
-		} else {
-			bInsertError = false;
-		} // if error messages
-		grRecordError.setValue('mapping_errors', aMappingErrors.join(','));
-		if (bInsertError) {
-			if (!grRecordError.insert()) {
-				gs.error('JobRunner._writeRecordError error writing error record for chunk ' + grJobLogTableChunk.getUniqueValue() + ' record ' + sRecordSysId + '. Error: ' + grRecordError.getLastErrorMessage());
-			} // if error on insert
-		} // if insert
-		if (this.bTimer) { this._gtDateTime.stopTimer('_writeRecordError'); }
-		return bReturnError;
-	}, // function _writeRecordError
+								gs.error('JobRunner._writeRecordError error writing mapping error record for chunk ' + grJobLogTableChunk.getUniqueValue() + ' record ' + sRecordSysId + '. Error: ' + grMappingError.getLastErrorMessage());
+							} // if error on insert
+						} // if error does not exist
+					} // if field and value
+				} // if error detail args
+			} // if value error
+		}, this); // each error message
+	} else if (oError.hasOwnProperty('code')) {
+		grRecordError.setValue('error_messages', JSON.stringify(oError));
+	} else {
+		bInsertError = false;
+	} // if error messages
+	grRecordError.setValue('mapping_errors', aMappingErrors.join(','));
+	if (bInsertError) {
+		if (!grRecordError.insert()) {
+			gs.error('JobRunner._writeRecordError error writing error record for chunk ' + grJobLogTableChunk.getUniqueValue() + ' record ' + sRecordSysId + '. Error: ' + grRecordError.getLastErrorMessage());
+		} // if error on insert
+	} // if insert
+	if (this.bTimer) { this._gtDateTime.stopTimer('_writeRecordError'); }
+	return bReturnError;
+}, // function _writeRecordError
 
-	_runTrueUpTrigger: function (grJobLogTableChunk, grJobLogTable, oRESTAPI, sTableName, oJobCfg) {
-		if (this.bTimer) { this._gtDateTime.startTimer('_runTrueUpTrigger'); }
-		var oJob = this._gtObject.getValue('job', {}, oJobCfg);
-		var sSourceQuery = this._gtObject.getValue('sQuery', '', oJob); // source filter (e.g. install_status!=7^duplicate_ofISEMPTY)
-		var bTrueUpDeleteRecords = this._gtObject.getValue('bTrueUpDeleteRecords', true, oJob);
-		var bTrueUpReclassifyRecords = this._gtObject.getValue('bTrueUpReclassifyRecords', true, oJob);
-		var bTrueUpCleanupCompareAttachments = this._gtObject.getValue('bTrueUpCleanupCompareAttachments', true, oJob);
-		var sDeltaCompareFileNamePrefix = this._gtObject.getValue('sDeltaCompareFileNamePrefix', 'instsync', oJob);
-		var bTrueUpNoWorkflow = this._gtObject.getValue('bTrueUpNoWorkflow', true, oJob);
-		var bTrueUpNoEngine = this._gtObject.getValue('bTrueUpNoEngine', true, oJob);
-		var bTrueUpLogDeletedRecords = this._gtObject.getValue('bTrueUpLogDeletedRecords', false, oJob);
-		var bTrueUpLogReclassifiedRecords = this._gtObject.getValue('bTrueUpLogReclassifiedRecords', false, oJob);
-		var oClassMap = this._gtObject.getValue('oClassMap', {}, oJob);
-		var sAbsoluteBaseTable = this._gtTable.getAbsoluteBase(sTableName);
-		sAbsoluteBaseTable = (sAbsoluteBaseTable) ? sAbsoluteBaseTable : sTableName;
-		var sChunkCondition = grJobLogTableChunk.getValue('condition');
-		if (!sChunkCondition) {
-			grJobLogTableChunk.setValue('status', 'failed');
-			grJobLogTableChunk.setValue('error_code', -201); // no condition on true-up chunk
-			gs.error('JobRunner._runTrueUpTrigger sTableName: ' + sTableName + ' no condition on chunk');
+_runTrueUpTrigger: function (grJobLogTableChunk, grJobLogTable, oRESTAPI, sTableName, oJobCfg) {
+	if (this.bTimer) { this._gtDateTime.startTimer('_runTrueUpTrigger'); }
+	var oJob = this._gtObject.getValue('job', {}, oJobCfg);
+	var sSourceQuery = this._gtObject.getValue('sQuery', '', oJob); // source filter (e.g. install_status!=7^duplicate_ofISEMPTY)
+	var bTrueUpDeleteRecords = this._gtObject.getValue('bTrueUpDeleteRecords', true, oJob);
+	var bTrueUpReclassifyRecords = this._gtObject.getValue('bTrueUpReclassifyRecords', true, oJob);
+	var bTrueUpCleanupCompareAttachments = this._gtObject.getValue('bTrueUpCleanupCompareAttachments', true, oJob);
+	var sDeltaCompareFileNamePrefix = this._gtObject.getValue('sDeltaCompareFileNamePrefix', 'instsync', oJob);
+	var bTrueUpNoWorkflow = this._gtObject.getValue('bTrueUpNoWorkflow', true, oJob);
+	var bTrueUpNoEngine = this._gtObject.getValue('bTrueUpNoEngine', true, oJob);
+	var bTrueUpLogDeletedRecords = this._gtObject.getValue('bTrueUpLogDeletedRecords', false, oJob);
+	var bTrueUpLogReclassifiedRecords = this._gtObject.getValue('bTrueUpLogReclassifiedRecords', false, oJob);
+	var oClassMap = this._gtObject.getValue('oClassMap', {}, oJob);
+	var sAbsoluteBaseTable = this._gtTable.getAbsoluteBase(sTableName);
+	sAbsoluteBaseTable = (sAbsoluteBaseTable) ? sAbsoluteBaseTable : sTableName;
+	var sChunkCondition = grJobLogTableChunk.getValue('condition');
+	if (!sChunkCondition) {
+		grJobLogTableChunk.setValue('status', 'failed');
+		grJobLogTableChunk.setValue('error_code', -201); // no condition on true-up chunk
+		gs.error('JobRunner._runTrueUpTrigger sTableName: ' + sTableName + ' no condition on chunk');
+		if (this.bTimer) { this._gtDateTime.stopTimer('_runTrueUpTrigger'); }
+		return;
+	} // if no condition
+	var aSysIds = [];
+	var iStartIndex = sChunkCondition.indexOf('sys_idIN');
+	if (iStartIndex != -1) {
+		var sSysIdPart = sChunkCondition.substring(iStartIndex + 8);
+		var iEndIndex = sSysIdPart.indexOf('^');
+		if (iEndIndex != -1) {
+			sSysIdPart = sSysIdPart.substring(0, iEndIndex);
+		} // if trailing conditions
+		aSysIds = sSysIdPart.split(',').filter(function (sSysId) { return ((sSysId) && (sSysId.length == 32)); });
+	} // if sys_idIN
+	if (!this._gtArray.isValidArray(aSysIds)) {
+		grJobLogTableChunk.setValue('status', 'failed');
+		grJobLogTableChunk.setValue('error_code', -202); // no sys_ids parsed
+		gs.error('JobRunner._runTrueUpTrigger sTableName: ' + sTableName + ' could not parse sys_ids from: ' + sChunkCondition);
+		if (this.bTimer) { this._gtDateTime.stopTimer('_runTrueUpTrigger'); }
+		return;
+	} // if no sys_ids
+	var oTargetRecordMap = {};
+	var grTargetRecord = new GlideRecord(sAbsoluteBaseTable);
+	grTargetRecord.addEncodedQuery('sys_idIN' + aSysIds.join(','));
+	grTargetRecord.query();
+	while (grTargetRecord.next()) {
+		var sTargetClassName = this._gtTable.getRecordClass(grTargetRecord);
+		oTargetRecordMap[grTargetRecord.getUniqueValue()] = (sTargetClassName) ? sTargetClassName : sTableName;
+	} // while target records
+	var oSourceRecordMap = {};
+	try {
+		var gdtStart = new GlideDateTime();
+		var aSourceRecords = oRESTAPI.doNOWRESTQuery(sAbsoluteBaseTable, sChunkCondition, '', aSysIds.length, ['sys_id', 'sys_class_name']);
+		var gdtEnd = new GlideDateTime();
+		grJobLogTableChunk.rest_request_duration.setDateNumericValue(gdtEnd.getNumericValue() - gdtStart.getNumericValue());
+		if (this._gtArray.isValidArray(aSourceRecords)) {
+			aSourceRecords.forEach(function (oSourceRecord) {
+				if (oSourceRecord.hasOwnProperty('sys_id')) {
+					oSourceRecordMap[oSourceRecord['sys_id']] = (oSourceRecord.hasOwnProperty('sys_class_name')) ? oSourceRecord['sys_class_name'] : sTableName;
+				} // if has sys_id
+			}, this); // each source record
+		} else if ((aSourceRecords) && (typeof aSourceRecords == 'object') && (aSourceRecords.hasOwnProperty('error_code'))) {
+			var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
+			grJobLogTableChunk.setValue('error_code', aSourceRecords['error_code']);
+			grJobLogTableChunk.setValue('status', (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed');
+			grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
 			if (this.bTimer) { this._gtDateTime.stopTimer('_runTrueUpTrigger'); }
 			return;
-		} // if no condition
-		var aSysIds = [];
-		var iStartIndex = sChunkCondition.indexOf('sys_idIN');
-		if (iStartIndex != -1) {
-			var sSysIdPart = sChunkCondition.substring(iStartIndex + 8);
-			var iEndIndex = sSysIdPart.indexOf('^');
-			if (iEndIndex != -1) {
-				sSysIdPart = sSysIdPart.substring(0, iEndIndex);
-			} // if trailing conditions
-			aSysIds = sSysIdPart.split(',').filter(function (sSysId) { return ((sSysId) && (sSysId.length == 32)); });
-		} // if sys_idIN
-		if (!this._gtArray.isValidArray(aSysIds)) {
-			grJobLogTableChunk.setValue('status', 'failed');
-			grJobLogTableChunk.setValue('error_code', -202); // no sys_ids parsed
-			gs.error('JobRunner._runTrueUpTrigger sTableName: ' + sTableName + ' could not parse sys_ids from: ' + sChunkCondition);
-			if (this.bTimer) { this._gtDateTime.stopTimer('_runTrueUpTrigger'); }
-			return;
-		} // if no sys_ids
-		var oTargetRecordMap = {};
-		var grTargetRecord = new GlideRecord(sAbsoluteBaseTable);
-		grTargetRecord.addEncodedQuery('sys_idIN' + aSysIds.join(','));
-		grTargetRecord.query();
-		while (grTargetRecord.next()) {
-			var sTargetClassName = this._gtTable.getRecordClass(grTargetRecord);
-			oTargetRecordMap[grTargetRecord.getUniqueValue()] = (sTargetClassName) ? sTargetClassName : sTableName;
-		} // while target records
-		var oSourceRecordMap = {};
-		try {
-			var gdtStart = new GlideDateTime();
-			var aSourceRecords = oRESTAPI.doNOWRESTQuery(sAbsoluteBaseTable, sChunkCondition, '', aSysIds.length, ['sys_id', 'sys_class_name']);
-			var gdtEnd = new GlideDateTime();
-			grJobLogTableChunk.rest_request_duration.setDateNumericValue(gdtEnd.getNumericValue() - gdtStart.getNumericValue());
-			if (this._gtArray.isValidArray(aSourceRecords)) {
-				aSourceRecords.forEach(function (oSourceRecord) {
-					if (oSourceRecord.hasOwnProperty('sys_id')) {
-						oSourceRecordMap[oSourceRecord['sys_id']] = (oSourceRecord.hasOwnProperty('sys_class_name')) ? oSourceRecord['sys_class_name'] : sTableName;
-					} // if has sys_id
-				}, this); // each source record
-			} else if ((aSourceRecords) && (typeof aSourceRecords == 'object') && (aSourceRecords.hasOwnProperty('error_code'))) {
-				var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
-				grJobLogTableChunk.setValue('error_code', aSourceRecords['error_code']);
-				grJobLogTableChunk.setValue('status', (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed');
-				grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
-				if (this.bTimer) { this._gtDateTime.stopTimer('_runTrueUpTrigger'); }
-				return;
-			} // if REST error
-		} catch (oEx) {
-			var iErrorCode = (String(oEx).indexOf('33554432') != -1) ? -105 : -104;
-			var iRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
-			grJobLogTableChunk.setValue('error_code', iErrorCode);
-			grJobLogTableChunk.setValue('status', (iRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed');
-			grJobLogTableChunk.setValue('retry_count', iRetryCount);
-			gs.error('JobRunner._runTrueUpTrigger REST exception for ' + sTableName + ': ' + String(oEx));
-			if (this.bTimer) { this._gtDateTime.stopTimer('_runTrueUpTrigger'); }
-			return;
-		} // try source query
-		var iValidRecordCount = 0;
-		var iDeletedRecordCount = 0;
-		var iReclassifiedRecordCount = 0;
-		var iErrorCount = 0;
-		var sTableIdForErrors = grJobLogTable.getValue('table');
-		Object.keys(oTargetRecordMap).forEach(function (sTargetSysId) {
-			var sTargetClass = oTargetRecordMap[sTargetSysId];
-			if (oSourceRecordMap.hasOwnProperty(sTargetSysId)) {
-				var sSourceClass = oSourceRecordMap[sTargetSysId];
-				sSourceClass = this._JobCommon.resolveClassMapTarget(sSourceClass, oClassMap);
-				if (sTargetClass == sSourceClass) {
-					iValidRecordCount++;
-				} else if (bTrueUpReclassifyRecords) {
-					if (this._reclassifyTargetRecord(sTargetSysId, sTargetClass, sSourceClass, sAbsoluteBaseTable, bTrueUpNoWorkflow, bTrueUpNoEngine, bTrueUpCleanupCompareAttachments, sDeltaCompareFileNamePrefix)) {
-						iReclassifiedRecordCount++;
-						if (bTrueUpLogReclassifiedRecords) {
-							this._writeTrueUpRecordLog(grJobLogTableChunk, sTableIdForErrors, sTargetSysId, 'reclassified', 'From ' + sTargetClass + ' to ' + sSourceClass);
-						} // if log reclassified
-					} else {
-						iErrorCount++;
-						this._writeTrueUpRecordError(grJobLogTableChunk, sTableIdForErrors, sTargetSysId, 'reclassify_failed', 'From ' + sTargetClass + ' to ' + sSourceClass);
-					} // if reclassify success
-				} else {
-					iValidRecordCount++; // reclassification disabled
-				} // if class match
-			} else if (bTrueUpDeleteRecords) {
-				if (this._deleteTargetRecord(sTargetSysId, sTargetClass, sAbsoluteBaseTable, bTrueUpNoWorkflow, bTrueUpNoEngine, bTrueUpCleanupCompareAttachments, sDeltaCompareFileNamePrefix)) {
-					iDeletedRecordCount++;
-					if (bTrueUpLogDeletedRecords) {
-						this._writeTrueUpRecordLog(grJobLogTableChunk, sTableIdForErrors, sTargetSysId, 'deleted', 'Class: ' + sTargetClass);
-					} // if log deleted
+		} // if REST error
+	} catch (oEx) {
+		var iErrorCode = (String(oEx).indexOf('33554432') != -1) ? -105 : -104;
+		var iRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
+		grJobLogTableChunk.setValue('error_code', iErrorCode);
+		grJobLogTableChunk.setValue('status', (iRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed');
+		grJobLogTableChunk.setValue('retry_count', iRetryCount);
+		gs.error('JobRunner._runTrueUpTrigger REST exception for ' + sTableName + ': ' + String(oEx));
+		if (this.bTimer) { this._gtDateTime.stopTimer('_runTrueUpTrigger'); }
+		return;
+	} // try source query
+	var iValidRecordCount = 0;
+	var iDeletedRecordCount = 0;
+	var iReclassifiedRecordCount = 0;
+	var iErrorCount = 0;
+	var sTableIdForErrors = grJobLogTable.getValue('table');
+	Object.keys(oTargetRecordMap).forEach(function (sTargetSysId) {
+		var sTargetClass = oTargetRecordMap[sTargetSysId];
+		if (oSourceRecordMap.hasOwnProperty(sTargetSysId)) {
+			var sSourceClass = oSourceRecordMap[sTargetSysId];
+			sSourceClass = this._JobCommon.resolveClassMapTarget(sSourceClass, oClassMap);
+			if (sTargetClass == sSourceClass) {
+				iValidRecordCount++;
+			} else if (bTrueUpReclassifyRecords) {
+				if (this._reclassifyTargetRecord(sTargetSysId, sTargetClass, sSourceClass, sAbsoluteBaseTable, bTrueUpNoWorkflow, bTrueUpNoEngine, bTrueUpCleanupCompareAttachments, sDeltaCompareFileNamePrefix)) {
+					iReclassifiedRecordCount++;
+					if (bTrueUpLogReclassifiedRecords) {
+						this._writeTrueUpRecordLog(grJobLogTableChunk, sTableIdForErrors, sTargetSysId, 'reclassified', 'From ' + sTargetClass + ' to ' + sSourceClass);
+					} // if log reclassified
 				} else {
 					iErrorCount++;
-					this._writeTrueUpRecordError(grJobLogTableChunk, sTableIdForErrors, sTargetSysId, 'delete_failed', 'Record not found in source');
-				} // if delete success
+					this._writeTrueUpRecordError(grJobLogTableChunk, sTableIdForErrors, sTargetSysId, 'reclassify_failed', 'From ' + sTargetClass + ' to ' + sSourceClass);
+				} // if reclassify success
 			} else {
-				iValidRecordCount++; // deletion disabled
-			} // if exists in source
-		}, this); // each target record
-		aSysIds.forEach(function (sSysId) {
-			if (!oTargetRecordMap.hasOwnProperty(sSysId)) {
-				iValidRecordCount++;
-			} // if already removed
-		}, this); // each condition sys_id that are already gone from target as no-ops
-		grJobLogTableChunk.setValue('successful_record_count', iDeletedRecordCount + iReclassifiedRecordCount);
-		grJobLogTableChunk.setValue('no_operation_count', iValidRecordCount);
+				iValidRecordCount++; // reclassification disabled
+			} // if class match
+		} else if (bTrueUpDeleteRecords) {
+			if (this._deleteTargetRecord(sTargetSysId, sTargetClass, sAbsoluteBaseTable, bTrueUpNoWorkflow, bTrueUpNoEngine, bTrueUpCleanupCompareAttachments, sDeltaCompareFileNamePrefix)) {
+				iDeletedRecordCount++;
+				if (bTrueUpLogDeletedRecords) {
+					this._writeTrueUpRecordLog(grJobLogTableChunk, sTableIdForErrors, sTargetSysId, 'deleted', 'Class: ' + sTargetClass);
+				} // if log deleted
+			} else {
+				iErrorCount++;
+				this._writeTrueUpRecordError(grJobLogTableChunk, sTableIdForErrors, sTargetSysId, 'delete_failed', 'Record not found in source');
+			} // if delete success
+		} else {
+			iValidRecordCount++; // deletion disabled
+		} // if exists in source
+	}, this); // each target record
+	aSysIds.forEach(function (sSysId) {
+		if (!oTargetRecordMap.hasOwnProperty(sSysId)) {
+			iValidRecordCount++;
+		} // if already removed
+	}, this); // each condition sys_id that are already gone from target as no-ops
+	grJobLogTableChunk.setValue('successful_record_count', iDeletedRecordCount + iReclassifiedRecordCount);
+	grJobLogTableChunk.setValue('no_operation_count', iValidRecordCount);
+	grJobLogTableChunk.setValue('error_count', iErrorCount);
+	grJobLogTableChunk.setValue('status', 'completed');
+	grJobLogTableChunk.setValue('error_code', 0);
+	if (this.bTimer) { this._gtDateTime.stopTimer('_runTrueUpTrigger'); }
+}, // function _runTrueUpTrigger
+
+_deleteTargetRecord: function (sSysId, sClassName, sBaseTable, bNoWorkflow, bNoEngine, bCleanupAttachments, sDeltaCompareFileNamePrefix) {
+	var sDeleteTable = (sClassName) ? sClassName : sBaseTable;
+	if (bCleanupAttachments) {
+		this._gtAttachment.deleteAttachment(sDeleteTable, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
+	} // if cleanup compare attachments
+	var oDeleteValues = { 'sys_id': sSysId };
+	var oDeleteConfig = {
+		sTargetTable: sBaseTable,
+		aQueryFields: ['sys_id'],
+		bDelete: 'true',
+		bNoWorkflow: (bNoWorkflow) ? 'true' : 'false',
+		bNoEngine: (bNoEngine) ? 'true' : 'false'
+	}; // delete config
+	var oDeleteError = {};
+	var bDeleteResult = this._gtRecordWrite.doRecord(oDeleteValues, oDeleteConfig, oDeleteError);
+	if (bDeleteResult === true) {
+		return true;
+	} // if deleted
+	if (oDeleteError['code'] == '006') {
+		return true; // record already gone
+	} // if not found
+	gs.error('JobRunner._deleteTargetRecord failed for ' + sSysId + ' in ' + sDeleteTable + ': ' + JSON.stringify(oDeleteError));
+	return false;
+}, // function _deleteTargetRecord
+
+_reclassifyTargetRecord: function (sSysId, sCurrentClass, sNewClass, sBaseTable, bNoWorkflow, bNoEngine, bCleanupAttachments, sDeltaCompareFileNamePrefix) {
+	if ((!sNewClass) || (!this._gtTable.isValidTable(sNewClass))) {
+		gs.error('JobRunner._reclassifyTargetRecord invalid new class ' + sNewClass + ' for ' + sSysId);
+		return false;
+	} // if invalid class
+	if (bCleanupAttachments) {
+		this._gtAttachment.deleteAttachment(sCurrentClass, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
+	} // if cleanup old class attachment
+	var oReclassifyValues = { 'sys_id': sSysId, 'sys_class_name': sNewClass };
+	var oReclassifyConfig = {
+		sTargetTable: sBaseTable,
+		aQueryFields: ['sys_id'],
+		bUpdate: 'true',
+		bInsert: 'false',
+		bNoWorkflow: (bNoWorkflow) ? 'true' : 'false',
+		bNoEngine: (bNoEngine) ? 'true' : 'false'
+	}; // reclassify config
+	var oReclassifyError = {};
+	var sResultId = this._gtRecordWrite.doRecord(oReclassifyValues, oReclassifyConfig, oReclassifyError);
+	if ((sResultId) && (!oReclassifyError['code'])) {
+		return true;
+	} // if updated
+	gs.error('JobRunner._reclassifyTargetRecord failed for ' + sSysId + ' from ' + sCurrentClass + ' to ' + sNewClass + ': ' + JSON.stringify(oReclassifyError));
+	return false;
+}, // function _reclassifyTargetRecord
+
+_writeTrueUpRecordError: function (grJobLogTableChunk, sTableId, sSysId, sErrorCode, sErrorMessage) {
+	var grRecordError = new GlideRecord('x_snc_instanc_sync_job_log_record_error');
+	grRecordError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
+	grRecordError.setValue('job_log_table', grJobLogTableChunk.getValue('job_log_table'));
+	grRecordError.setValue('job_log_table_chunk', grJobLogTableChunk.getUniqueValue());
+	grRecordError.setValue('table', sTableId);
+	grRecordError.setValue('remote_record_sysid', sSysId);
+	grRecordError.setValue('error_messages', JSON.stringify({ 'code': sErrorCode, 'message': sErrorMessage }));
+	if (!grRecordError.insert()) {
+		gs.error('JobRunner._writeTrueUpRecordError failed for chunk ' + grJobLogTableChunk.getUniqueValue() + ' sys_id ' + sSysId + ': ' + grRecordError.getLastErrorMessage());
+	} // if insert error
+}, // function _writeTrueUpRecordError
+
+_writeTrueUpRecordLog: function (grJobLogTableChunk, sTableId, sSysId, sCode, sMessage) {
+	var grRecordLog = new GlideRecord('x_snc_instanc_sync_job_log_record_error');
+	grRecordLog.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
+	grRecordLog.setValue('job_log_table', grJobLogTableChunk.getValue('job_log_table'));
+	grRecordLog.setValue('job_log_table_chunk', grJobLogTableChunk.getUniqueValue());
+	grRecordLog.setValue('table', sTableId);
+	grRecordLog.setValue('remote_record_sysid', sSysId);
+	grRecordLog.setValue('error_messages', JSON.stringify({ 'code': sCode, 'message': sMessage }));
+	grRecordLog.setValue('status', 3); // Information
+	if (!grRecordLog.insert()) {
+		gs.error('JobRunner._writeTrueUpRecordLog failed for chunk ' + grJobLogTableChunk.getUniqueValue() + ' sys_id ' + sSysId + ': ' + grRecordLog.getLastErrorMessage());
+	} // if insert error
+}, // function _writeTrueUpRecordLog
+
+_spawnAttachmentSync: function (aRecordPairs, sSourceClass, sTargetClass, grJobLogTableChunk, oRESTAPI) {
+	if (!this._gtArray.isValidArray(aRecordPairs)) { return; }
+	if (this.bTimer) { this._gtDateTime.startTimer('_spawnAttachmentSync'); }
+	var sJobLogId = grJobLogTableChunk.getValue('job_log');
+	var sAttachmentTableId = this._gtTable.getTableId('sys_attachment');
+	var grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
+	grJobLogTable.addEncodedQuery('job_log=' + sJobLogId + '^table=' + sAttachmentTableId + '^mapped_class=' + sTargetClass);
+	grJobLogTable.setLimit(1);
+	grJobLogTable.query();
+	if (!grJobLogTable.next()) {
+		grJobLogTable.initialize();
+		grJobLogTable.setValue('job_log', sJobLogId);
+		grJobLogTable.setValue('table', sAttachmentTableId);
+		grJobLogTable.setValue('basetable', sAttachmentTableId);
+		grJobLogTable.setValue('mapped_class', sTargetClass);
+		grJobLogTable.setValue('start_time', new GlideDateTime());
+		if (!grJobLogTable.insert()) {
+			gs.error('JobRunner._spawnAttachmentSync error creating sys_attachment job_log_table for sTargetClass: ' + sTargetClass + ' Error: ' + grJobLogTable.getLastErrorMessage());
+			if (this.bTimer) { this._gtDateTime.stopTimer('_spawnAttachmentSync'); }
+			return;
+		} // if insert error
+	} // if job_log_table does not exist yet
+	var aSourceSysIds = aRecordPairs.map(function (oPair) { return oPair['sSourceSysId']; });
+	var sConditionPrefix = 'table_name=' + sSourceClass + '^table_sys_idIN';
+	var iMaxSysIds = this._JobCommon.getMaxIdsPerBatch(oRESTAPI, sConditionPrefix, 4000);
+	var aBatchIds = [];
+	var iChunkNumber = this._getNextChunkNumber(grJobLogTable.getUniqueValue());
+	for (var i = 0; i < aSourceSysIds.length; i++) {
+		aBatchIds.push(aSourceSysIds[i]);
+		if ((aBatchIds.length >= iMaxSysIds) || (i == aSourceSysIds.length - 1)) {
+			var sBatchCondition = sConditionPrefix + aBatchIds.join(',');
+			var iAttachmentCount = oRESTAPI.doNOWRESTCount('sys_attachment', sBatchCondition);
+			if ((isNaN(iAttachmentCount)) || (typeof iAttachmentCount == 'object')) {
+				gs.error('JobRunner._spawnAttachmentSync count failed for condition: ' + sBatchCondition + ' returned: ' + JSON.stringify(iAttachmentCount));
+			} else if (iAttachmentCount > 0) {
+				this._insertAttachmentChunk(grJobLogTable, sBatchCondition, Number(iAttachmentCount), iChunkNumber, this.iPriorityAttachment);
+				iChunkNumber++;
+			} // if count valid
+			aBatchIds = [];
+		} // if batch full
+	} // each source sys_id
+	if (this.bTimer) { this._gtDateTime.stopTimer('_spawnAttachmentSync'); }
+}, // function _spawnAttachmentSync
+
+_runAttachmentTableTrigger: function (grJobLogTableChunk, grJobLogTable, oRESTAPI, oJobCfg) {
+	if (this.bTimer) { this._gtDateTime.startTimer('_runAttachmentTableTrigger'); }
+	var sConfiguredMappedClass = grJobLogTable.getValue('mapped_class'); // target class, empty for a standalone sys_attachment table entry
+	var bIsRuntimeSpawned = !!sConfiguredMappedClass;
+	var sRawCondition = grJobLogTableChunk.getValue('condition');
+	sRawCondition = (sRawCondition) ? sRawCondition : grJobLogTable.getValue('condition');
+	var sQueryOrderBy = this._gtObject.getValue('job/sQueryOrderBy', 'ORDERBYsys_created_on^ORDERBYsys_id', oJobCfg);
+	var sQuery = sRawCondition;
+	if (sQueryOrderBy) {
+		sQueryOrderBy = ((!sQuery) || (sQueryOrderBy.startsWith('^'))) ? sQueryOrderBy : '^' + sQueryOrderBy;
+		sQuery = (sQuery) ? sQuery + sQueryOrderBy : sQueryOrderBy;
+	} // if order by query
+	var iChunkSize = grJobLogTableChunk.getValue('chunksize');
+	var iOffset = grJobLogTableChunk.getValue('offset');
+	var iErrorCode = -103; // undefined error
+	var aRecords;
+	var aFields = ['sys_id', 'table_name', 'table_sys_id', 'file_name', 'content_type', 'size_bytes', 'size_compressed', 'compressed', 'chunk_size_bytes', 'hash'];
+	try {
+		var gdtStart = new GlideDateTime();
+		aRecords = oRESTAPI.doNOWRESTQuery('sys_attachment', sQuery, iOffset, iChunkSize, aFields);
+		var gdtEnd = new GlideDateTime();
+		grJobLogTableChunk.rest_request_duration.setDateNumericValue(gdtEnd.getNumericValue() - gdtStart.getNumericValue());
+	} catch (oEx) {
+		aRecords = '';
+		if (String(oEx).indexOf('33554432') != -1) {
+			iErrorCode = -105;
+		} else {
+			iErrorCode = -104; // undefined error during rest query
+		} // if string too big
+		gs.error('JobRunner._runAttachmentTableTrigger error in rest query: ' + String(oEx));
+	} // if catch
+	if (this._gtArray.isValidArray(aRecords)) {
+		var iSuccessRecordCount = 0;
+		var iErrorCount = 0;
+		var aSourceAttachmentIds = [];
+		var aChangedAttachments = [];
+		aRecords.forEach(function (oRecord) {
+			var sSysId = this._gtObject.getValue('sys_id', '', oRecord);
+			if (!sSysId) {
+				iErrorCount++;
+				this._writeRecordError(grJobLogTable.getValue('table'), 'sys_attachment', '', '', { code: -98, message: 'No SysId in Payload' }, true, ['all'], grJobLogTableChunk);
+				return;
+			} // if no sys id
+			aSourceAttachmentIds.push(sSysId);
+			try {
+				var sRowTargetTable = (sConfiguredMappedClass) ? sConfiguredMappedClass : oRecord['table_name'];
+				var grExistingAttachment = new GlideRecord('sys_attachment');
+				var bExisted = grExistingAttachment.get(sSysId);
+				var sExistingHash = (bExisted) ? grExistingAttachment.getValue('hash') : '';
+				var oValues = {
+					'sys_id': sSysId,
+					'table_name': sRowTargetTable,
+					'table_sys_id': oRecord['table_sys_id'],
+					'file_name': oRecord['file_name'],
+					'content_type': oRecord['content_type'],
+					'size_bytes': oRecord['size_bytes'],
+					'size_compressed': oRecord['size_compressed'],
+					'compressed': oRecord['compressed'],
+					'chunk_size_bytes': oRecord['chunk_size_bytes'],
+					'hash': oRecord['hash']
+				}; // upsert values
+				var oWriteConfig = { sTargetTable: 'sys_attachment', aQueryFields: ['sys_id'], bKeepSysId: true, bInsert: true, bUpdate: true, bNoWorkflow: true, bNoEngine: true };
+				var oWriteError = {};
+				var sResultId = this._gtRecordWrite.doRecord(oValues, oWriteConfig, oWriteError);
+				if (!sResultId) {
+					iErrorCount++;
+					this._writeRecordError(grJobLogTable.getValue('table'), 'sys_attachment', sSysId, oRecord['file_name'], { code: -97, message: JSON.stringify(oWriteError) }, true, ['all'], grJobLogTableChunk);
+					return;
+				} // if write error
+				iSuccessRecordCount++;
+				if ((!bExisted) || (sExistingHash != oRecord['hash'])) {
+					aChangedAttachments.push({ sAttachmentId: sSysId, iSizeCompressed: Number(oRecord['size_compressed']) || 0, iChunkSizeBytes: Number(oRecord['chunk_size_bytes']) || 0 });
+				} // if changed or new
+			} catch (oEx) {
+				iErrorCount++;
+				this._writeRecordError(grJobLogTable.getValue('table'), 'sys_attachment', sSysId, '', { code: -97, message: String(oEx) }, true, ['all'], grJobLogTableChunk);
+			} // try write attachment row
+		}, this); // each source attachment
+		if (((bIsRuntimeSpawned) || (this._gtObject.getValue('job/bAttachmentSyncDeleteOrphaned', false, oJobCfg))) && (!grJobLogTableChunk.getValue('parent_chunk'))) {
+			this._deleteOrphanedAttachments(sRawCondition, grJobLogTable, aSourceAttachmentIds); // skipped on -105 split children, whose fetch is only an offset slice of the scope
+		} // if delete orphaned enabled
+		if (aChangedAttachments.length > 0) {
+			this._spawnAttachmentDocSync(aChangedAttachments, grJobLogTableChunk, oRESTAPI);
+		} // if changed attachments
+		grJobLogTableChunk.setValue('successful_record_count', iSuccessRecordCount);
+		grJobLogTableChunk.setValue('no_operation_count', 0);
 		grJobLogTableChunk.setValue('error_count', iErrorCount);
 		grJobLogTableChunk.setValue('status', 'completed');
 		grJobLogTableChunk.setValue('error_code', 0);
-		if (this.bTimer) { this._gtDateTime.stopTimer('_runTrueUpTrigger'); }
-	}, // function _runTrueUpTrigger
-
-	_deleteTargetRecord: function (sSysId, sClassName, sBaseTable, bNoWorkflow, bNoEngine, bCleanupAttachments, sDeltaCompareFileNamePrefix) {
-		var sDeleteTable = (sClassName) ? sClassName : sBaseTable;
-		if (bCleanupAttachments) {
-			this._gtAttachment.deleteAttachment(sDeleteTable, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
-		} // if cleanup compare attachments
-		var oDeleteValues = { 'sys_id': sSysId };
-		var oDeleteConfig = {
-			sTargetTable: sBaseTable,
-			aQueryFields: ['sys_id'],
-			bDelete: 'true',
-			bNoWorkflow: (bNoWorkflow) ? 'true' : 'false',
-			bNoEngine: (bNoEngine) ? 'true' : 'false'
-		}; // delete config
-		var oDeleteError = {};
-		var bDeleteResult = this._gtRecordWrite.doRecord(oDeleteValues, oDeleteConfig, oDeleteError);
-		if (bDeleteResult === true) {
-			return true;
-		} // if deleted
-		if (oDeleteError['code'] == '006') {
-			return true; // record already gone
-		} // if not found
-		gs.error('JobRunner._deleteTargetRecord failed for ' + sSysId + ' in ' + sDeleteTable + ': ' + JSON.stringify(oDeleteError));
-		return false;
-	}, // function _deleteTargetRecord
-
-	_reclassifyTargetRecord: function (sSysId, sCurrentClass, sNewClass, sBaseTable, bNoWorkflow, bNoEngine, bCleanupAttachments, sDeltaCompareFileNamePrefix) {
-		if ((!sNewClass) || (!this._gtTable.isValidTable(sNewClass))) {
-			gs.error('JobRunner._reclassifyTargetRecord invalid new class ' + sNewClass + ' for ' + sSysId);
-			return false;
-		} // if invalid class
-		if (bCleanupAttachments) {
-			this._gtAttachment.deleteAttachment(sCurrentClass, sSysId, sDeltaCompareFileNamePrefix + '_' + sSysId + '.json', true);
-		} // if cleanup old class attachment
-		var oReclassifyValues = { 'sys_id': sSysId, 'sys_class_name': sNewClass };
-		var oReclassifyConfig = {
-			sTargetTable: sBaseTable,
-			aQueryFields: ['sys_id'],
-			bUpdate: 'true',
-			bInsert: 'false',
-			bNoWorkflow: (bNoWorkflow) ? 'true' : 'false',
-			bNoEngine: (bNoEngine) ? 'true' : 'false'
-		}; // reclassify config
-		var oReclassifyError = {};
-		var sResultId = this._gtRecordWrite.doRecord(oReclassifyValues, oReclassifyConfig, oReclassifyError);
-		if ((sResultId) && (!oReclassifyError['code'])) {
-			return true;
-		} // if updated
-		gs.error('JobRunner._reclassifyTargetRecord failed for ' + sSysId + ' from ' + sCurrentClass + ' to ' + sNewClass + ': ' + JSON.stringify(oReclassifyError));
-		return false;
-	}, // function _reclassifyTargetRecord
-
-	_writeTrueUpRecordError: function (grJobLogTableChunk, sTableId, sSysId, sErrorCode, sErrorMessage) {
-		var grRecordError = new GlideRecord('x_snc_instanc_sync_job_log_record_error');
-		grRecordError.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
-		grRecordError.setValue('job_log_table', grJobLogTableChunk.getValue('job_log_table'));
-		grRecordError.setValue('job_log_table_chunk', grJobLogTableChunk.getUniqueValue());
-		grRecordError.setValue('table', sTableId);
-		grRecordError.setValue('remote_record_sysid', sSysId);
-		grRecordError.setValue('error_messages', JSON.stringify({ 'code': sErrorCode, 'message': sErrorMessage }));
-		if (!grRecordError.insert()) {
-			gs.error('JobRunner._writeTrueUpRecordError failed for chunk ' + grJobLogTableChunk.getUniqueValue() + ' sys_id ' + sSysId + ': ' + grRecordError.getLastErrorMessage());
-		} // if insert error
-	}, // function _writeTrueUpRecordError
-
-	_writeTrueUpRecordLog: function (grJobLogTableChunk, sTableId, sSysId, sCode, sMessage) {
-		var grRecordLog = new GlideRecord('x_snc_instanc_sync_job_log_record_error');
-		grRecordLog.setValue('job_log', grJobLogTableChunk.getValue('job_log'));
-		grRecordLog.setValue('job_log_table', grJobLogTableChunk.getValue('job_log_table'));
-		grRecordLog.setValue('job_log_table_chunk', grJobLogTableChunk.getUniqueValue());
-		grRecordLog.setValue('table', sTableId);
-		grRecordLog.setValue('remote_record_sysid', sSysId);
-		grRecordLog.setValue('error_messages', JSON.stringify({ 'code': sCode, 'message': sMessage }));
-		grRecordLog.setValue('status', 3); // Information
-		if (!grRecordLog.insert()) {
-			gs.error('JobRunner._writeTrueUpRecordLog failed for chunk ' + grJobLogTableChunk.getUniqueValue() + ' sys_id ' + sSysId + ': ' + grRecordLog.getLastErrorMessage());
-		} // if insert error
-	}, // function _writeTrueUpRecordLog
-
-	_runAttachmentOnlyTrigger: function (grJobLogTableChunk, grJobLogTable, oRESTAPI, sTableName, sMappedClass, oJob) {
-		if (this.bTimer) { this._gtDateTime.startTimer('_runAttachmentOnlyTrigger'); }
-		var sSourceTableName = (sMappedClass) ? sMappedClass : sTableName;
-		var sQueryOrderBy = this._gtObject.getValue('sQueryOrderBy', 'ORDERBYsys_created_on^ORDERBYsys_id', oJob);
-		var sQuery = grJobLogTableChunk.getValue('condition');
-		sQuery = (sQuery) ? sQuery : grJobLogTable.getValue('condition');
-		if (sQueryOrderBy) {
-			sQueryOrderBy = ((!sQuery) || (sQueryOrderBy.startsWith('^'))) ? sQueryOrderBy : '^' + sQueryOrderBy;
-			sQuery = (sQuery) ? sQuery + sQueryOrderBy : sQueryOrderBy;
-		} // if order by query
-		var iChunkSize = grJobLogTableChunk.getValue('chunksize');
-		var iOffset = grJobLogTableChunk.getValue('offset');
-		var iErrorCode = -103; // undefined error
-		var aRecords;
-		try {
-			var gdtStart = new GlideDateTime();
-			aRecords = oRESTAPI.doNOWRESTQuery(sSourceTableName, sQuery, iOffset, iChunkSize, ['sys_id']);
-			var gdtEnd = new GlideDateTime();
-			grJobLogTableChunk.rest_request_duration.setDateNumericValue(gdtEnd.getNumericValue() - gdtStart.getNumericValue());
-		} catch (oEx) {
-			aRecords = '';
-			if (String(oEx).indexOf('33554432') != -1) {
-				iErrorCode = -105;
-			} else {
-				iErrorCode = -104; // undefined error during rest query
-			} // if string to long
-			gs.error('JobRunner._runAttachmentOnlyTrigger sSourceTableName: ' + sSourceTableName + ' error in rest query: ' + String(oEx));
-		} // if catch
-		if (this._gtArray.isValidArray(aRecords)) {
-			var aAttachmentRecordPairs = [];
-			var iMatchedRecordCount = 0;
-			aRecords.forEach(function (oRecord) {
-				var sSysId = this._gtObject.getValue('sys_id', '', oRecord);
-				if (sSysId) {
-					if (this._gtRecordRead.getRecord(sTableName, sSysId, false, false)) {
-						iMatchedRecordCount++;
-						aAttachmentRecordPairs.push({ sSourceSysId: sSysId, sTargetSysId: sSysId });
-					} // if local record exists
-				} // if sysid
-			}, this); // each source record
-			this._syncAttachments(aAttachmentRecordPairs, oJob, grJobLogTableChunk, grJobLogTable.getValue('table'), oRESTAPI, sSourceTableName, sTableName);
-			grJobLogTableChunk.setValue('successful_record_count', 0);
-			grJobLogTableChunk.setValue('no_operation_count', iMatchedRecordCount);
-			grJobLogTableChunk.setValue('error_count', 0);
+	} else if (iErrorCode == -105) {
+		grJobLogTableChunk.setValue('status', 'pending_retry');
+		grJobLogTableChunk.setValue('error_code', -105); // error string size to big
+	} else {
+		if ((aRecords) && (typeof aRecords == 'object') && (aRecords.hasOwnProperty('error_code'))) {
+			iErrorCode = aRecords['error_code'];
+		} // if has error code
+		if ((iErrorCode == -103) && (this._gt.getType(aRecords) == 'array') && (aRecords.length == 0)) {
 			grJobLogTableChunk.setValue('status', 'completed');
-			grJobLogTableChunk.setValue('error_code', 0);
-		} else if (iErrorCode == -105) {
-			grJobLogTableChunk.setValue('status', 'pending_retry');
-			grJobLogTableChunk.setValue('error_code', -105); // error string size to big
 		} else {
-			if ((aRecords) && (typeof aRecords == 'object') && (aRecords.hasOwnProperty('error_code'))) {
-				iErrorCode = aRecords['error_code'];
-			} // if has error code
-			if ((iErrorCode == -103) && (this._gt.getType(aRecords) == 'array') && (aRecords.length == 0)) {
-				grJobLogTableChunk.setValue('status', 'completed');
+			var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
+			var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
+			grJobLogTableChunk.setValue('status', sStatus);
+			grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
+			grJobLogTableChunk.setValue('error_code', iErrorCode); // error no records
+		} // if no content returned
+	} // if records
+	if (this.bTimer) { this._gtDateTime.stopTimer('_runAttachmentTableTrigger'); }
+}, // function _runAttachmentTableTrigger
+
+_deleteOrphanedAttachments: function (sRawCondition, grJobLogTable, aSourceAttachmentIds) {
+	if (this.bTimer) { this._gtDateTime.startTimer('_deleteOrphanedAttachments'); }
+	var sSourceClass = '';
+	var iTableNameStart = sRawCondition.indexOf('table_name=');
+	if (iTableNameStart != -1) {
+		var sTableNamePart = sRawCondition.substring(iTableNameStart + 11);
+		var iTableNameEnd = sTableNamePart.indexOf('^');
+		sSourceClass = (iTableNameEnd != -1) ? sTableNamePart.substring(0, iTableNameEnd) : sTableNamePart;
+	} // if table_name segment present
+	var aTouchedIds = [];
+	var iIdsStart = sRawCondition.indexOf('table_sys_idIN');
+	if (iIdsStart != -1) {
+		var sIdsPart = sRawCondition.substring(iIdsStart + 14);
+		var iIdsEnd = sIdsPart.indexOf('^');
+		sIdsPart = (iIdsEnd != -1) ? sIdsPart.substring(0, iIdsEnd) : sIdsPart;
+		aTouchedIds = sIdsPart.split(',').filter(function (sId) { return ((sId) && (sId.length == 32)); });
+	} // if table_sys_idIN segment present
+	if ((!sSourceClass) || (!this._gtArray.isValidArray(aTouchedIds))) {
+		gs.warn('JobRunner._deleteOrphanedAttachments skipped, cannot parse a table_name/table_sys_idIN scope from condition: ' + sRawCondition);
+		if (this.bTimer) { this._gtDateTime.stopTimer('_deleteOrphanedAttachments'); }
+		return;
+	} // if scope not parseable
+	var sTargetClass = grJobLogTable.getValue('mapped_class');
+	sTargetClass = (sTargetClass) ? sTargetClass : sSourceClass;
+	var grLocalAttachment = new GlideRecord('sys_attachment');
+	grLocalAttachment.addEncodedQuery('table_name=' + sTargetClass + '^table_sys_idIN' + aTouchedIds.join(','));
+	grLocalAttachment.query();
+	var iDeletedCount = 0;
+	while (grLocalAttachment.next()) {
+		var sLocalId = grLocalAttachment.getUniqueValue();
+		if (aSourceAttachmentIds.indexOf(sLocalId) == -1) {
+			var oDeleteConfig = { sTargetTable: 'sys_attachment', aQueryFields: ['sys_id'], bDelete: true, bNoWorkflow: true, bNoEngine: true };
+			var oDeleteError = {};
+			var bDeleted = this._gtRecordWrite.doRecord({ 'sys_id': sLocalId }, oDeleteConfig, oDeleteError);
+			if ((bDeleted === true) || (oDeleteError['code'] == '006')) {
+				iDeletedCount++;
 			} else {
-				var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
-				var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
-				grJobLogTableChunk.setValue('status', sStatus);
-				grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
-				grJobLogTableChunk.setValue('error_code', iErrorCode); // error no records
-			} // if no content returned
-		} // if records
-		if (this.bTimer) { this._gtDateTime.stopTimer('_runAttachmentOnlyTrigger'); }
-	}, // function _runAttachmentOnlyTrigger
+				gs.error('JobRunner._deleteOrphanedAttachments failed to delete orphan sys_attachment ' + sLocalId + ': ' + JSON.stringify(oDeleteError));
+			} // if deleted
+		} // if orphaned
+	} // while local attachments
+	if (this.bLog) { gs.info('JobRunner._deleteOrphanedAttachments deleted: ' + iDeletedCount + ' for table_name: ' + sTargetClass); }
+	if (this.bTimer) { this._gtDateTime.stopTimer('_deleteOrphanedAttachments'); }
+}, // function _deleteOrphanedAttachments
 
-	_syncAttachments: function (aRecordPairs, oJob, grJobLogTableChunk, sTableId, oRESTAPI, sSourceClass, sTargetClass) {
-		if (!this._gtArray.isValidArray(aRecordPairs)) { return; }
-		if (this.bTimer) { this._gtDateTime.startTimer('_syncAttachments'); }
-		var sAttachmentQuery = this._gtObject.getValue('sAttachmentQuery', '', oJob);
-		var bAttachmentCompareHash = this._gtObject.getValue('bAttachmentCompareHash', true, oJob);
-		var bAttachmentDeleteOrphaned = this._gtObject.getValue('bAttachmentDeleteOrphaned', false, oJob);
-		if ((bAttachmentDeleteOrphaned) && (sAttachmentQuery)) {
-			bAttachmentDeleteOrphaned = false; // sAttachmentQuery narrows what is fetched from source, so "missing from source list" would wrongly include attachments outside the query scope, not just deleted ones
-			gs.warn('JobRunner._syncAttachments bAttachmentDeleteOrphaned is ignored because sAttachmentQuery is set, to avoid deleting target attachments that are simply outside the query scope');
-		} // if delete orphaned combined with attachment query
-		var oTargetAttachmentsBySysId = this._getLocalAttachmentsBySysId(aRecordPairs.map(function (oPair) { return oPair['sTargetSysId']; }), sTargetClass);
-		var oSourceAttachmentsBySysId = this._getRemoteAttachmentsBySysId(aRecordPairs.map(function (oPair) { return oPair['sSourceSysId']; }), sSourceClass, sAttachmentQuery, oRESTAPI);
-		var iAttachmentSuccessCount = 0, iAttachmentErrorCount = 0, iAttachmentDeletedCount = 0;
-		aRecordPairs.forEach(function (oPair) {
-			var aSourceAttachments = oSourceAttachmentsBySysId[oPair['sSourceSysId']] || [];
-			var oExistingTargetAttachments = oTargetAttachmentsBySysId[oPair['sTargetSysId']] || {};
-			var aSourceFileNames = [];
-			aSourceAttachments.forEach(function (oSourceAttachment) {
-				var sFileName = oSourceAttachment['file_name'];
-				aSourceFileNames.push(sFileName);
-				var oExisting = oExistingTargetAttachments[sFileName];
-				var bAlreadySynced = (oExisting) && ((!bAttachmentCompareHash) || (oExisting['hash'] == oSourceAttachment['hash']));
-				if (!bAlreadySynced) {
-					var oDownloadResult;
-					try {
-						oDownloadResult = oRESTAPI.doRESTRequest('api/now/attachment/' + oSourceAttachment['sys_id'] + '/file', 'GET', { sTable: sTargetClass, sSysId: oPair['sTargetSysId'], sFilename: sFileName });
-					} catch (oEx) {
-						oDownloadResult = { success: false, message: String(oEx), error_code: '-99' };
-					} // try download
-					if ((oDownloadResult) && (this._gt.getType(oDownloadResult) == 'object') && (oDownloadResult.hasOwnProperty('error_code'))) {
-						iAttachmentErrorCount++;
-						this._writeTrueUpRecordError(grJobLogTableChunk, sTableId, oPair['sSourceSysId'], 'attachment_failed', sFileName + ': ' + this._gtObject.getValue('message', '', oDownloadResult));
-					} else if (oDownloadResult) {
-						iAttachmentSuccessCount++;
-					} else {
-						iAttachmentErrorCount++;
-						this._writeTrueUpRecordError(grJobLogTableChunk, sTableId, oPair['sSourceSysId'], 'attachment_failed', sFileName + ': no response');
-					} // if error
-				} // if not already synced
-			}, this); // each source attachment
-			if (bAttachmentDeleteOrphaned) {
-				Object.keys(oExistingTargetAttachments).forEach(function (sExistingFileName) {
-					if (aSourceFileNames.indexOf(sExistingFileName) == -1) {
-						this._gtAttachment.deleteAttachment(sTargetClass, oPair['sTargetSysId'], sExistingFileName);
-						iAttachmentDeletedCount++;
-					} // if orphaned
-				}, this); // each existing attachment
-			} // if delete orphaned
-		}, this); // each record pair
-		if (this.bLog) { gs.info('JobRunner._syncAttachments success: ' + iAttachmentSuccessCount + ' error: ' + iAttachmentErrorCount + ' deleted: ' + iAttachmentDeletedCount); }
-		if (this.bTimer) { this._gtDateTime.stopTimer('_syncAttachments'); }
-	}, // function _syncAttachments
+_spawnAttachmentDocSync: function (aChangedAttachments, grJobLogTableChunk, oRESTAPI) {
+	if (this.bTimer) { this._gtDateTime.startTimer('_spawnAttachmentDocSync'); }
+	var sJobLogId = grJobLogTableChunk.getValue('job_log');
+	var sDocTableId = this._gtTable.getTableId('sys_attachment_doc');
+	var grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
+	grJobLogTable.addEncodedQuery('job_log=' + sJobLogId + '^table=' + sDocTableId + '^mapped_classISEMPTY');
+	grJobLogTable.setLimit(1);
+	grJobLogTable.query();
+	if (!grJobLogTable.next()) {
+		grJobLogTable.initialize();
+		grJobLogTable.setValue('job_log', sJobLogId);
+		grJobLogTable.setValue('table', sDocTableId);
+		grJobLogTable.setValue('basetable', sDocTableId);
+		grJobLogTable.setValue('start_time', new GlideDateTime());
+		if (!grJobLogTable.insert()) {
+			gs.error('JobRunner._spawnAttachmentDocSync error creating sys_attachment_doc job_log_table. Error: ' + grJobLogTable.getLastErrorMessage());
+			if (this.bTimer) { this._gtDateTime.stopTimer('_spawnAttachmentDocSync'); }
+			return;
+		} // if insert error
+	} // if job_log_table does not exist yet
+	var iByteBudget = 25 * 1024 * 1024; // ~25 MB base64 per doc chunk
+	var iChunkNumber = this._getNextChunkNumber(grJobLogTable.getUniqueValue());
+	var aGroupIds = [];
+	var iGroupBytes = 0;
+	aChangedAttachments.forEach(function (oAttachment) {
+		var iEstimatedBytes = Math.ceil(oAttachment['iSizeCompressed'] * 1.34);
+		if (iEstimatedBytes > iByteBudget) {
+			if (aGroupIds.length > 0) {
+				iChunkNumber = this._insertDocGroupChunk(grJobLogTable, aGroupIds, iChunkNumber, oRESTAPI);
+				aGroupIds = [];
+				iGroupBytes = 0;
+			} // if pending group
+			var iChunkSizeBytes = oAttachment['iChunkSizeBytes'];
+			if (!iChunkSizeBytes) {
+				var sSingleCondition = 'sys_attachment=' + oAttachment['sAttachmentId'];
+				var iSingleRows = this._countDocRows(oRESTAPI, sSingleCondition);
+				if (iSingleRows > 0) {
+					this._insertAttachmentChunk(grJobLogTable, sSingleCondition, iSingleRows, iChunkNumber, this.iPriorityAttachmentDoc);
+					iChunkNumber++;
+				} // if doc rows
+			} else {
+				var iEstimatedBytesPerRow = Math.ceil(iChunkSizeBytes * 1.34);
+				var iRowsPerChunk = Math.floor(iByteBudget / iEstimatedBytesPerRow);
+				iRowsPerChunk = (iRowsPerChunk > 0) ? iRowsPerChunk : 1;
+				var iTotalRows = Math.ceil(oAttachment['iSizeCompressed'] / iChunkSizeBytes);
+				iTotalRows = (iTotalRows > 0) ? iTotalRows : 1;
+				for (var iStart = 0; iStart < iTotalRows; iStart += iRowsPerChunk) {
+					var iEnd = ((iStart + iRowsPerChunk - 1) < (iTotalRows - 1)) ? (iStart + iRowsPerChunk - 1) : (iTotalRows - 1);
+					this._insertAttachmentChunk(grJobLogTable, 'sys_attachment=' + oAttachment['sAttachmentId'] + '^position>=' + iStart + '^position<=' + iEnd, (iEnd - iStart + 1), iChunkNumber, this.iPriorityAttachmentDoc);
+					iChunkNumber++;
+				} // each position range
+			} // if chunk size known
+		} else if ((iGroupBytes + iEstimatedBytes) > iByteBudget) {
+			iChunkNumber = this._insertDocGroupChunk(grJobLogTable, aGroupIds, iChunkNumber, oRESTAPI);
+			aGroupIds = [oAttachment['sAttachmentId']];
+			iGroupBytes = iEstimatedBytes;
+		} else {
+			aGroupIds.push(oAttachment['sAttachmentId']);
+			iGroupBytes += iEstimatedBytes;
+		} // if oversize, group full, or fits
+	}, this); // each changed attachment
+	if (aGroupIds.length > 0) {
+		iChunkNumber = this._insertDocGroupChunk(grJobLogTable, aGroupIds, iChunkNumber, oRESTAPI);
+	} // if remaining group
+	if (this.bTimer) { this._gtDateTime.stopTimer('_spawnAttachmentDocSync'); }
+}, // function _spawnAttachmentDocSync
 
-	_getLocalAttachmentsBySysId: function (aSysIds, sTargetClass) {
-		var oResult = {};
-		aSysIds = this._gtArray.unique(aSysIds, true);
-		if ((!this._gtArray.isValidArray(aSysIds)) || (!sTargetClass)) { return oResult; }
-		var grAttachment = new GlideRecord('sys_attachment');
-		grAttachment.addEncodedQuery('table_sys_idIN' + aSysIds.join(',') + '^table_name=' + sTargetClass); // a sys_id can carry rows of other classes, so scope to the chunk target table (also excludes the ZZ_YY hidden compare attachments)
-		grAttachment.query();
-		var sTargetSysId = '';
-		while (grAttachment.next()) {
-			sTargetSysId = grAttachment.getValue('table_sys_id');
-			if (!oResult.hasOwnProperty(sTargetSysId)) {
-				oResult[sTargetSysId] = {};
-			} // if new target
-			oResult[sTargetSysId][grAttachment.getValue('file_name')] = { hash: grAttachment.getValue('hash') };
-		} // while attachments
-		return oResult;
-	}, // function _getLocalAttachmentsBySysId
+_insertDocGroupChunk: function (grJobLogTable, aGroupIds, iChunkNumber, oRESTAPI) {
+	var sCondition = 'sys_attachmentIN' + aGroupIds.join(',');
+	var iDocRows = this._countDocRows(oRESTAPI, sCondition);
+	if (iDocRows > 0) {
+		this._insertAttachmentChunk(grJobLogTable, sCondition, iDocRows, iChunkNumber, this.iPriorityAttachmentDoc);
+		return iChunkNumber + 1;
+	} // if doc rows
+	return iChunkNumber;
+}, // function _insertDocGroupChunk
 
-	_getRemoteAttachmentsBySysId: function (aSysIds, sSourceClass, sAttachmentQuery, oRESTAPI) {
-		var oResult = {};
-		aSysIds = this._gtArray.unique(aSysIds, true);
-		if ((!this._gtArray.isValidArray(aSysIds)) || (!sSourceClass)) { return oResult; }
-		var sClassQuery = 'table_name=' + sSourceClass; // a sys_id can carry rows of other classes, so scope to the chunk source class (also excludes the ZZ_YY hidden compare attachments)
-		var iMaxURLSize = 2000 - String(oRESTAPI.sRemoteUrl).length - sClassQuery.length - 250; // buffer to avoid url length error
-		var iMaxSysIds = Math.floor(iMaxURLSize / 33);
-		var aBatchIds = [];
-		for (var i = 0; i < aSysIds.length; i++) {
-			aBatchIds.push(aSysIds[i]);
-			if ((aBatchIds.length >= iMaxSysIds) || (i == aSysIds.length - 1)) {
-				var sBatchQuery = this._gtRecordRead.combineQueries('table_sys_idIN' + aBatchIds.join(',') + '^' + sClassQuery, sAttachmentQuery);
-				var aBatchRecords = oRESTAPI.doNOWRESTQuery('sys_attachment', sBatchQuery, 0, 10000, ['sys_id', 'file_name', 'table_sys_id', 'table_name', 'hash']);
-				if (this._gtArray.isValidArray(aBatchRecords)) {
-					if (aBatchRecords.length >= 10000) {
-						gs.warn('JobRunner._getRemoteAttachmentsBySysId batch returned 10000 or more attachments, results may be truncated for query: ' + sBatchQuery);
-					} // if truncated
-					aBatchRecords.forEach(function (oAttachment) {
-						var sSourceSysId = this._gtObject.getValue('table_sys_id', '', oAttachment);
-						if (!oResult.hasOwnProperty(sSourceSysId)) {
-							oResult[sSourceSysId] = [];
-						} // if new source
-						oResult[sSourceSysId].push(oAttachment);
-					}, this); // each attachment
-				} // if valid array
-				aBatchIds = [];
-			} // if batch full
-		} // each sys_id
-		return oResult;
-	}, // function _getRemoteAttachmentsBySysId
+_countDocRows: function (oRESTAPI, sCondition) {
+	var iCount = oRESTAPI.doNOWRESTCount('sys_attachment_doc', sCondition);
+	if ((isNaN(iCount)) || (typeof iCount == 'object')) {
+		gs.error('JobRunner._spawnAttachmentDocSync count failed for condition: ' + sCondition + ' returned: ' + JSON.stringify(iCount));
+		return 0;
+	} // if count invalid
+	return Number(iCount);
+}, // function _countDocRows
 
-	type: 'JobRunner',
+_runAttachmentDocTrigger: function (grJobLogTableChunk, grJobLogTable, oRESTAPI) {
+	if (this.bTimer) { this._gtDateTime.startTimer('_runAttachmentDocTrigger'); }
+	var sQuery = grJobLogTableChunk.getValue('condition');
+	sQuery = (sQuery) ? sQuery + '^ORDERBYsys_attachment^ORDERBYposition' : 'ORDERBYsys_attachment^ORDERBYposition';
+	var iChunkSize = grJobLogTableChunk.getValue('chunksize');
+	iChunkSize = (iChunkSize) ? iChunkSize : 10000;
+	var iOffset = grJobLogTableChunk.getValue('offset');
+	var iErrorCode = -103; // undefined error
+	var aRecords;
+	var aFields = ['sys_id', 'sys_attachment', 'position', 'length', 'compressed', 'data'];
+	try {
+		var gdtStart = new GlideDateTime();
+		aRecords = oRESTAPI.doNOWRESTQuery('sys_attachment_doc', sQuery, iOffset, iChunkSize, aFields);
+		var gdtEnd = new GlideDateTime();
+		grJobLogTableChunk.rest_request_duration.setDateNumericValue(gdtEnd.getNumericValue() - gdtStart.getNumericValue());
+	} catch (oEx) {
+		aRecords = '';
+		if (String(oEx).indexOf('33554432') != -1) {
+			iErrorCode = -105; // error string size to big
+		} else {
+			iErrorCode = -104; // undefined error during rest query
+			gs.error('JobRunner._runAttachmentDocTrigger error in rest query: ' + String(oEx));
+		} // if string too big
+	} // if catch
+	if (this._gtArray.isValidArray(aRecords)) {
+		var iSuccessRecordCount = 0;
+		var iErrorCount = 0;
+		aRecords.forEach(function (oRecord) {
+			var sSysId = this._gtObject.getValue('sys_id', '', oRecord);
+			if (!sSysId) {
+				iErrorCount++;
+				this._writeRecordError(grJobLogTable.getValue('table'), 'sys_attachment_doc', '', '', { code: -98, message: 'No SysId in Payload' }, true, ['all'], grJobLogTableChunk);
+				return;
+			} // if no sys id
+			try {
+				var oValues = {
+					'sys_id': sSysId,
+					'sys_attachment': oRecord['sys_attachment'],
+					'position': oRecord['position'],
+					'length': oRecord['length'],
+					'compressed': oRecord['compressed'],
+					'data': oRecord['data']
+				}; // upsert values
+				var oWriteConfig = { sTargetTable: 'sys_attachment_doc', aQueryFields: ['sys_id'], bKeepSysId: true, bInsert: true, bUpdate: true, bNoWorkflow: true, bNoEngine: true };
+				var oWriteError = {};
+				var sResultId = this._gtRecordWrite.doRecord(oValues, oWriteConfig, oWriteError);
+				if (!sResultId) {
+					iErrorCount++;
+					this._writeRecordError(grJobLogTable.getValue('table'), 'sys_attachment_doc', sSysId, '', { code: -97, message: JSON.stringify(oWriteError) }, true, ['all'], grJobLogTableChunk);
+				} else {
+					iSuccessRecordCount++;
+				} // if write error
+			} catch (oEx) {
+				iErrorCount++;
+				this._writeRecordError(grJobLogTable.getValue('table'), 'sys_attachment_doc', sSysId, '', { code: -97, message: String(oEx) }, true, ['all'], grJobLogTableChunk);
+			} // try write doc row
+		}, this); // each source doc row
+		grJobLogTableChunk.setValue('successful_record_count', iSuccessRecordCount);
+		grJobLogTableChunk.setValue('no_operation_count', 0);
+		grJobLogTableChunk.setValue('error_count', iErrorCount);
+		grJobLogTableChunk.setValue('status', 'completed');
+		grJobLogTableChunk.setValue('error_code', 0);
+	} else if (iErrorCode == -105) {
+		grJobLogTableChunk.setValue('status', 'pending_retry');
+		grJobLogTableChunk.setValue('error_code', -105); // error string size to big
+	} else {
+		if ((aRecords) && (typeof aRecords == 'object') && (aRecords.hasOwnProperty('error_code'))) {
+			iErrorCode = aRecords['error_code'];
+		} // if has error code
+		if ((iErrorCode == -103) && (this._gt.getType(aRecords) == 'array') && (aRecords.length == 0)) {
+			grJobLogTableChunk.setValue('status', 'completed');
+		} else {
+			var iCurrentRetryCount = Number(grJobLogTableChunk.getValue('retry_count')) + 1;
+			var sStatus = (iCurrentRetryCount < this.iMaxRetryCount) ? 'pending_retry' : 'failed';
+			grJobLogTableChunk.setValue('status', sStatus);
+			grJobLogTableChunk.setValue('retry_count', iCurrentRetryCount);
+			grJobLogTableChunk.setValue('error_code', iErrorCode); // error no records
+		} // if no content returned
+	} // if records
+	if (this.bTimer) { this._gtDateTime.stopTimer('_runAttachmentDocTrigger'); }
+}, // function _runAttachmentDocTrigger
+
+_insertAttachmentChunk: function (grJobLogTable, sCondition, iCount, iChunk, iPriority) {
+	this._JobCommon.insertJobLogTableChunk({
+		job_log: grJobLogTable.getValue('job_log'),
+		job_log_table: grJobLogTable.getUniqueValue(),
+		chunk: iChunk,
+		chunksize: iCount,
+		expected_record_count: iCount,
+		condition: sCondition,
+		priority: iPriority
+	}); // chunk values
+}, // function _insertAttachmentChunk
+
+_getNextChunkNumber: function (sJobLogTableId) {
+	var gaMaxChunk = new GlideAggregate('x_snc_instanc_sync_job_log_table_chunks');
+	gaMaxChunk.addEncodedQuery('job_log_table=' + sJobLogTableId);
+	gaMaxChunk.addAggregate('MAX', 'chunk');
+	gaMaxChunk.query();
+	if (gaMaxChunk.next()) {
+		var sMaxChunk = gaMaxChunk.getAggregate('MAX', 'chunk');
+		return (sMaxChunk) ? Number(sMaxChunk) + 1 : 0;
+	} // if aggregate found
+	return 0;
+}, // function _getNextChunkNumber
+
+type: 'JobRunner',
 	version: '1.0.14',
-	author: 'ServiceNow Customer Outcomes, Tom Hauri',
-	email: 'tom@hauri.biz',
+		author: 'ServiceNow Customer Outcomes, Tom Hauri',
+			email: 'tom@hauri.biz',
 };]]></script>
         <sys_class_name>sys_script_include</sys_class_name>
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>155</sys_mod_count>
+        <sys_mod_count>161</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2026-08-19 14:29:24</sys_updated_on>
+        <sys_updated_on>2026-09-19 11:45:44</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
