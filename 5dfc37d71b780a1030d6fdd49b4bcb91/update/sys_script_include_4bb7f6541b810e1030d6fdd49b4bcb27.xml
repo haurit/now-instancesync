@@ -805,40 +805,20 @@ _writeTrueUpRecordLog: function (grJobLogTableChunk, sTableId, sSysId, sCode, sM
 _spawnAttachmentSync: function (aRecordPairs, sSourceClass, sTargetClass, grJobLogTableChunk, oRESTAPI) {
 	if (!this._gtArray.isValidArray(aRecordPairs)) { return; }
 	if (this.bTimer) { this._gtDateTime.startTimer('_spawnAttachmentSync'); }
-	var sJobLogId = grJobLogTableChunk.getValue('job_log');
-	var sAttachmentTableId = this._gtTable.getTableId('sys_attachment');
-	var grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
-	grJobLogTable.addEncodedQuery('job_log=' + sJobLogId + '^table=' + sAttachmentTableId + '^mapped_class=' + sTargetClass);
-	grJobLogTable.setLimit(1);
-	grJobLogTable.query();
-	if (!grJobLogTable.next()) {
-		grJobLogTable.initialize();
-		grJobLogTable.setValue('job_log', sJobLogId);
-		grJobLogTable.setValue('table', sAttachmentTableId);
-		grJobLogTable.setValue('basetable', sAttachmentTableId);
-		grJobLogTable.setValue('mapped_class', sTargetClass);
-		grJobLogTable.setValue('start_time', new GlideDateTime());
-		if (!grJobLogTable.insert()) {
-			gs.error('JobRunner._spawnAttachmentSync error creating sys_attachment job_log_table for sTargetClass: ' + sTargetClass + ' Error: ' + grJobLogTable.getLastErrorMessage());
-			if (this.bTimer) { this._gtDateTime.stopTimer('_spawnAttachmentSync'); }
-			return;
-		} // if insert error
-	} // if job_log_table does not exist yet
+	var oAttachmentJobLogTable = this._getAttachmentJobLogTableContext(grJobLogTableChunk.getValue('job_log'), 'sys_attachment', sTargetClass);
 	var aSourceSysIds = aRecordPairs.map(function (oPair) { return oPair['sSourceSysId']; });
 	var sConditionPrefix = 'table_name=' + sSourceClass + '^table_sys_idIN';
 	var iMaxSysIds = this._JobCommon.getMaxIdsPerBatch(oRESTAPI, sConditionPrefix, 4000);
 	var aBatchIds = [];
-	var iChunkNumber = this._getNextChunkNumber(grJobLogTable.getUniqueValue());
 	for (var i = 0; i < aSourceSysIds.length; i++) {
 		aBatchIds.push(aSourceSysIds[i]);
 		if ((aBatchIds.length >= iMaxSysIds) || (i == aSourceSysIds.length - 1)) {
 			var sBatchCondition = sConditionPrefix + aBatchIds.join(',');
 			var iAttachmentCount = oRESTAPI.doNOWRESTCount('sys_attachment', sBatchCondition);
 			if ((isNaN(iAttachmentCount)) || (typeof iAttachmentCount == 'object')) {
-				gs.error('JobRunner._spawnAttachmentSync count failed for condition: ' + sBatchCondition + ' returned: ' + JSON.stringify(iAttachmentCount));
+				gs.error('JobRunner._spawnAttachmentSync count failed for job_log: ' + oAttachmentJobLogTable['sJobLogId'] + ' chunk: ' + grJobLogTableChunk.getUniqueValue() + ' condition: ' + sBatchCondition + ' returned: ' + JSON.stringify(iAttachmentCount));
 			} else if (iAttachmentCount > 0) {
-				this._insertAttachmentChunk(grJobLogTable, sBatchCondition, Number(iAttachmentCount), iChunkNumber, this.iPriorityAttachment);
-				iChunkNumber++;
+				this._insertAttachmentChunk(oAttachmentJobLogTable, sBatchCondition, Number(iAttachmentCount), this.iPriorityAttachment);
 			} // if count valid
 			aBatchIds = [];
 		} // if batch full
@@ -1002,43 +982,24 @@ _deleteOrphanedAttachments: function (sRawCondition, grJobLogTable, aSourceAttac
 
 _spawnAttachmentDocSync: function (aChangedAttachments, grJobLogTableChunk, oRESTAPI) {
 	if (this.bTimer) { this._gtDateTime.startTimer('_spawnAttachmentDocSync'); }
-	var sJobLogId = grJobLogTableChunk.getValue('job_log');
-	var sDocTableId = this._gtTable.getTableId('sys_attachment_doc');
-	var grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
-	grJobLogTable.addEncodedQuery('job_log=' + sJobLogId + '^table=' + sDocTableId + '^mapped_classISEMPTY');
-	grJobLogTable.setLimit(1);
-	grJobLogTable.query();
-	if (!grJobLogTable.next()) {
-		grJobLogTable.initialize();
-		grJobLogTable.setValue('job_log', sJobLogId);
-		grJobLogTable.setValue('table', sDocTableId);
-		grJobLogTable.setValue('basetable', sDocTableId);
-		grJobLogTable.setValue('start_time', new GlideDateTime());
-		if (!grJobLogTable.insert()) {
-			gs.error('JobRunner._spawnAttachmentDocSync error creating sys_attachment_doc job_log_table. Error: ' + grJobLogTable.getLastErrorMessage());
-			if (this.bTimer) { this._gtDateTime.stopTimer('_spawnAttachmentDocSync'); }
-			return;
-		} // if insert error
-	} // if job_log_table does not exist yet
+	var oAttachmentJobLogTable = this._getAttachmentJobLogTableContext(grJobLogTableChunk.getValue('job_log'), 'sys_attachment_doc', '');
 	var iByteBudget = 25 * 1024 * 1024; // ~25 MB base64 per doc chunk
-	var iChunkNumber = this._getNextChunkNumber(grJobLogTable.getUniqueValue());
 	var aGroupIds = [];
 	var iGroupBytes = 0;
 	aChangedAttachments.forEach(function (oAttachment) {
 		var iEstimatedBytes = Math.ceil(oAttachment['iSizeCompressed'] * 1.34);
 		if (iEstimatedBytes > iByteBudget) {
 			if (aGroupIds.length > 0) {
-				iChunkNumber = this._insertDocGroupChunk(grJobLogTable, aGroupIds, iChunkNumber, oRESTAPI);
+				this._insertDocGroupChunk(oAttachmentJobLogTable, aGroupIds, oRESTAPI);
 				aGroupIds = [];
 				iGroupBytes = 0;
 			} // if pending group
 			var iChunkSizeBytes = oAttachment['iChunkSizeBytes'];
 			if (!iChunkSizeBytes) {
 				var sSingleCondition = 'sys_attachment=' + oAttachment['sAttachmentId'];
-				var iSingleRows = this._countDocRows(oRESTAPI, sSingleCondition);
+				var iSingleRows = this._countDocRows(oRESTAPI, sSingleCondition, oAttachmentJobLogTable['sJobLogId']);
 				if (iSingleRows > 0) {
-					this._insertAttachmentChunk(grJobLogTable, sSingleCondition, iSingleRows, iChunkNumber, this.iPriorityAttachmentDoc);
-					iChunkNumber++;
+					this._insertAttachmentChunk(oAttachmentJobLogTable, sSingleCondition, iSingleRows, this.iPriorityAttachmentDoc);
 				} // if doc rows
 			} else {
 				var iEstimatedBytesPerRow = Math.ceil(iChunkSizeBytes * 1.34);
@@ -1048,12 +1009,11 @@ _spawnAttachmentDocSync: function (aChangedAttachments, grJobLogTableChunk, oRES
 				iTotalRows = (iTotalRows > 0) ? iTotalRows : 1;
 				for (var iStart = 0; iStart < iTotalRows; iStart += iRowsPerChunk) {
 					var iEnd = ((iStart + iRowsPerChunk - 1) < (iTotalRows - 1)) ? (iStart + iRowsPerChunk - 1) : (iTotalRows - 1);
-					this._insertAttachmentChunk(grJobLogTable, 'sys_attachment=' + oAttachment['sAttachmentId'] + '^position>=' + iStart + '^position<=' + iEnd, (iEnd - iStart + 1), iChunkNumber, this.iPriorityAttachmentDoc);
-					iChunkNumber++;
+					this._insertAttachmentChunk(oAttachmentJobLogTable, 'sys_attachment=' + oAttachment['sAttachmentId'] + '^position>=' + iStart + '^position<=' + iEnd, (iEnd - iStart + 1), this.iPriorityAttachmentDoc);
 				} // each position range
 			} // if chunk size known
 		} else if ((iGroupBytes + iEstimatedBytes) > iByteBudget) {
-			iChunkNumber = this._insertDocGroupChunk(grJobLogTable, aGroupIds, iChunkNumber, oRESTAPI);
+			this._insertDocGroupChunk(oAttachmentJobLogTable, aGroupIds, oRESTAPI);
 			aGroupIds = [oAttachment['sAttachmentId']];
 			iGroupBytes = iEstimatedBytes;
 		} else {
@@ -1062,25 +1022,23 @@ _spawnAttachmentDocSync: function (aChangedAttachments, grJobLogTableChunk, oRES
 		} // if oversize, group full, or fits
 	}, this); // each changed attachment
 	if (aGroupIds.length > 0) {
-		iChunkNumber = this._insertDocGroupChunk(grJobLogTable, aGroupIds, iChunkNumber, oRESTAPI);
+		this._insertDocGroupChunk(oAttachmentJobLogTable, aGroupIds, oRESTAPI);
 	} // if remaining group
 	if (this.bTimer) { this._gtDateTime.stopTimer('_spawnAttachmentDocSync'); }
 }, // function _spawnAttachmentDocSync
 
-_insertDocGroupChunk: function (grJobLogTable, aGroupIds, iChunkNumber, oRESTAPI) {
+_insertDocGroupChunk: function (oAttachmentJobLogTable, aGroupIds, oRESTAPI) {
 	var sCondition = 'sys_attachmentIN' + aGroupIds.join(',');
-	var iDocRows = this._countDocRows(oRESTAPI, sCondition);
+	var iDocRows = this._countDocRows(oRESTAPI, sCondition, oAttachmentJobLogTable['sJobLogId']);
 	if (iDocRows > 0) {
-		this._insertAttachmentChunk(grJobLogTable, sCondition, iDocRows, iChunkNumber, this.iPriorityAttachmentDoc);
-		return iChunkNumber + 1;
+		this._insertAttachmentChunk(oAttachmentJobLogTable, sCondition, iDocRows, this.iPriorityAttachmentDoc);
 	} // if doc rows
-	return iChunkNumber;
 }, // function _insertDocGroupChunk
 
-_countDocRows: function (oRESTAPI, sCondition) {
+_countDocRows: function (oRESTAPI, sCondition, sJobLogId) {
 	var iCount = oRESTAPI.doNOWRESTCount('sys_attachment_doc', sCondition);
 	if ((isNaN(iCount)) || (typeof iCount == 'object')) {
-		gs.error('JobRunner._spawnAttachmentDocSync count failed for condition: ' + sCondition + ' returned: ' + JSON.stringify(iCount));
+		gs.error('JobRunner._spawnAttachmentDocSync count failed for job_log: ' + sJobLogId + ' condition: ' + sCondition + ' returned: ' + JSON.stringify(iCount));
 		return 0;
 	} // if count invalid
 	return Number(iCount);
@@ -1168,16 +1126,51 @@ _runAttachmentDocTrigger: function (grJobLogTableChunk, grJobLogTable, oRESTAPI)
 	if (this.bTimer) { this._gtDateTime.stopTimer('_runAttachmentDocTrigger'); }
 }, // function _runAttachmentDocTrigger
 
-_insertAttachmentChunk: function (grJobLogTable, sCondition, iCount, iChunk, iPriority) {
+_getAttachmentJobLogTableContext: function (sJobLogId, sTableName, sMappedClass) {
+	return { 'sJobLogId': sJobLogId, 'sTableName': sTableName, 'sMappedClass': sMappedClass, 'grJobLogTable': null, 'iChunkNumber': 0 };
+}, // function _getAttachmentJobLogTableContext
+
+_getAttachmentJobLogTable: function (oAttachmentJobLogTable) {
+	if (oAttachmentJobLogTable['grJobLogTable']) { return oAttachmentJobLogTable['grJobLogTable']; }
+	var sTableName = oAttachmentJobLogTable['sTableName'];
+	var sMappedClass = oAttachmentJobLogTable['sMappedClass'];
+	var sTableId = this._gtTable.getTableId(sTableName);
+	var grJobLogTable = new GlideRecord('x_snc_instanc_sync_job_log_table');
+	grJobLogTable.addEncodedQuery('job_log=' + oAttachmentJobLogTable['sJobLogId'] + '^table=' + sTableId + '^mapped_class' + ((sMappedClass) ? '=' + sMappedClass : 'ISEMPTY'));
+	grJobLogTable.setLimit(1);
+	grJobLogTable.query();
+	if (!grJobLogTable.next()) {
+		grJobLogTable.initialize();
+		grJobLogTable.setValue('job_log', oAttachmentJobLogTable['sJobLogId']);
+		grJobLogTable.setValue('table', sTableId);
+		grJobLogTable.setValue('basetable', sTableId);
+		if (sMappedClass) {
+			grJobLogTable.setValue('mapped_class', sMappedClass);
+		} // if mapped class
+		grJobLogTable.setValue('start_time', new GlideDateTime());
+		if (!grJobLogTable.insert()) {
+			gs.error('JobRunner._getAttachmentJobLogTable error creating ' + sTableName + ' job_log_table for job_log: ' + oAttachmentJobLogTable['sJobLogId'] + ' mapped_class: ' + sMappedClass + ' Error: ' + grJobLogTable.getLastErrorMessage());
+			return null;
+		} // if insert error
+	} // if job_log_table does not exist yet
+	oAttachmentJobLogTable['grJobLogTable'] = grJobLogTable;
+	oAttachmentJobLogTable['iChunkNumber'] = this._getNextChunkNumber(grJobLogTable.getUniqueValue());
+	return grJobLogTable;
+}, // function _getAttachmentJobLogTable
+
+_insertAttachmentChunk: function (oAttachmentJobLogTable, sCondition, iCount, iPriority) {
+	var grJobLogTable = this._getAttachmentJobLogTable(oAttachmentJobLogTable);
+	if (!grJobLogTable) { return; }
 	this._JobCommon.insertJobLogTableChunk({
 		job_log: grJobLogTable.getValue('job_log'),
 		job_log_table: grJobLogTable.getUniqueValue(),
-		chunk: iChunk,
+		chunk: oAttachmentJobLogTable['iChunkNumber'],
 		chunksize: iCount,
 		expected_record_count: iCount,
 		condition: sCondition,
 		priority: iPriority
 	}); // chunk values
+	oAttachmentJobLogTable['iChunkNumber']++;
 }, // function _insertAttachmentChunk
 
 _getNextChunkNumber: function (sJobLogTableId) {
@@ -1201,14 +1194,14 @@ type: 'JobRunner',
         <sys_created_by>tom.hauri</sys_created_by>
         <sys_created_on>2024-03-16 05:32:21</sys_created_on>
         <sys_id>4bb7f6541b810e1030d6fdd49b4bcb27</sys_id>
-        <sys_mod_count>162</sys_mod_count>
+        <sys_mod_count>163</sys_mod_count>
         <sys_name>JobRunner</sys_name>
         <sys_package display_value="Instance Sync" source="x_snc_instanc_sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_package>
         <sys_policy>read</sys_policy>
         <sys_scope display_value="Instance Sync">5dfc37d71b780a1030d6fdd49b4bcb91</sys_scope>
         <sys_update_name>sys_script_include_4bb7f6541b810e1030d6fdd49b4bcb27</sys_update_name>
         <sys_updated_by>tom.hauri</sys_updated_by>
-        <sys_updated_on>2026-09-22 11:37:40</sys_updated_on>
+        <sys_updated_on>2026-10-18 11:18:24</sys_updated_on>
     </sys_script_include>
     <sys_es_latest_script action="INSERT_OR_UPDATE">
         <id>4bb7f6541b810e1030d6fdd49b4bcb27</id>
